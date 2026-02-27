@@ -15,6 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
 세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
 
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
 ## Commands
 
 ```bash
@@ -109,11 +111,12 @@ npm test
 - 메인 컨텍스트 윈도우를 깨끗하게 유지하기 위해 **서브에이전트를 적극 활용**
 - 리서치, 탐색, 병렬 분석은 서브에이전트에 오프로드
 - 서브에이전트 하나에 한 가지 작업만 (focused execution)
+- 프로젝트 전용 에이전트 정의: `.claude/agents/` (researcher, implementer, reviewer, tester, advisor)
 
 ### 3. Self-Improvement Loop
 - **사용자의 수정/지적이 있을 때마다**: `tasks/lessons.md`에 해당 패턴을 기록
 - 세션 시작 시 `tasks/lessons.md`를 먼저 확인하여 과거 교훈 리뷰
-- 반복 검증된 패턴은 `update_notes/analysis/{주제}/_lessons.md`로 승격
+- 반복 검증된 패턴은 `skill_graph/analysis/{주제}/_lessons.md`로 승격
 
 ### 4. Verification Before Done
 - **작동을 증명하지 않은 채 완료 처리 금지**
@@ -175,12 +178,14 @@ tasks/
 
 ---
 
-## Update Notes
+## Skill Graph (변경 기록)
 
-유의미한 작업 시 반드시 `update_notes/` 아래에 `.md` 파일로 기록한다.
+유의미한 작업 시 반드시 `skill_graph/` 아래에 `.md` 파일로 기록한다.
+`skill_graph/index.md`에 키워드 기반 인덱스·그래프 유지.
 
 ```
-update_notes/
+skill_graph/
+├── index.md                      # 키워드 인덱스 + 문서 간 그래프
 ├── features/                     # 신규 기능 구현 기록
 │   ├── _TEMPLATE.md
 │   └── YYYY-MM-DD_기능명.md

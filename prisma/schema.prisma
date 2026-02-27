@@ -10,30 +10,55 @@ datasource db {
 model Project {
   id          String         @id @default(uuid())
   name        String
-  type        String         // "LOCAL" or "SSH"
+  type        String         // "LOCAL" | "SSH" | "DOCKER"
+  color       String         @default("#64748b")
   path        String
   sshConfigId String?
+  dockerContainer String?
   sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
   sessions    AgentSession[]
+  agents      ProjectAgent[]
+  skills      Skill[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 }
 
+model ProjectAgent {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  agentType   String   // "terminal" | "claude-code" | "codex"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([projectId, name])
+}
+
 model SshConfig {
-  id         String    @id @default(uuid())
-  host       String
-  port       Int       @default(22)
-  username   String
-  authMethod String    // "key" or "password"
-  keyPath    String?
-  projects   Project[]
-  createdAt  DateTime  @default(now())
+  id            String      @id @default(uuid())
+  label         String?
+  tags          String?
+  host          String
+  port          Int         @default(22)
+  username      String
+  authMethod    String      // "key" or "password"
+  keyPath       String?
+  password      String?
+  defaultPath   String?
+  defaultDockerContainer String?
+  proxyConfigId String?
+  proxyConfig   SshConfig?  @relation("SshProxy", fields: [proxyConfigId], references: [id], onDelete: SetNull)
+  proxiedBy     SshConfig[] @relation("SshProxy")
+  projects      Project[]
+  createdAt     DateTime    @default(now())
 }
 
 model AgentSession {
   id          String   @id @default(uuid())
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id])
+  name        String?  // 사용자 지정 세션 이름
   agentType   String   // "claude-code", "codex", etc.
   sessionRef  String   // 에이전트 고유 세션 ID (resume용)
   lastContext String?  // 마지막 대화 맥락 요약
@@ -43,9 +68,41 @@ model AgentSession {
 }
 
 model Skill {
-  id          String @id @default(uuid())
+  id          String      @id @default(uuid())
+  projectId   String?
+  project     Project?    @relation(fields: [projectId], references: [id])
   name        String
+  description String?
   mcpEndpoint String?
-  config      String @default("{}") // JSON string
+  config      String      @default("{}")
+  posX        Float       @default(0)
+  posY        Float       @default(0)
+  nodeType    String      @default("default")
+  edgesFrom   SkillEdge[] @relation("EdgeSource")
+  edgesTo     SkillEdge[] @relation("EdgeTarget")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model SkillEdge {
+  id       String @id @default(uuid())
+  sourceId String
+  targetId String
+  source   Skill  @relation("EdgeSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target   Skill  @relation("EdgeTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  label    String?
+  animated Boolean @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([sourceId, targetId])
+}
+
+model InterceptorRule {
+  id          String   @id @default(uuid())
+  pattern     String
+  description String
+  severity    String   @default("block") // "warn" | "block"
+  enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
