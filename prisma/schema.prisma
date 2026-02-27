@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String         @id @default(uuid())
+  name        String
+  type        String         // "LOCAL" or "SSH"
+  path        String
+  sshConfigId String?
+  sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
+  sessions    AgentSession[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model SshConfig {
+  id         String    @id @default(uuid())
+  host       String
+  port       Int       @default(22)
+  username   String
+  authMethod String    // "key" or "password"
+  keyPath    String?
+  projects   Project[]
+  createdAt  DateTime  @default(now())
+}
+
+model AgentSession {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  agentType   String   // "claude-code", "codex", etc.
+  sessionRef  String   // 에이전트 고유 세션 ID (resume용)
+  lastContext String?  // 마지막 대화 맥락 요약
+  status      String   @default("active") // "active", "paused", "terminated"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Skill {
+  id          String @id @default(uuid())
+  name        String
+  mcpEndpoint String?
+  config      String @default("{}") // JSON string
+  createdAt   DateTime @default(now())
+}
