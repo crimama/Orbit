@@ -292,7 +292,9 @@ export interface CreateSkillEdgeRequest {
 
 // --- Phase 4: Interceptor & Delta ---
 
-export type InterceptorSeverity = "warn" | "block";
+export type InterceptorSeverity = "warn" | "block" | "allow";
+
+export type InterceptorMode = "blacklist" | "allowlist" | "hybrid";
 
 export interface InterceptorRuleInfo {
   id: string;

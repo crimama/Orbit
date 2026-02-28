@@ -101,8 +101,13 @@ model InterceptorRule {
   id          String   @id @default(uuid())
   pattern     String
   description String
-  severity    String   @default("block") // "warn" | "block"
+  severity    String   @default("block") // "warn" | "block" | "allow"
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model InterceptorConfig {
+  id    String @id @default("singleton")
+  mode  String @default("hybrid")  // "blacklist" | "allowlist" | "hybrid"
 }

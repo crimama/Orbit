@@ -76,6 +76,28 @@ export const OBS_EXTRACT_BUFFER_MAX = 8192;
 /** Debounce PTY output before event extraction (ms) */
 export const OBS_EXTRACT_DEBOUNCE_MS = 200;
 
+/** Default interceptor mode */
+export const DEFAULT_INTERCEPTOR_MODE: import("@/lib/types").InterceptorMode = "hybrid";
+
+/** Default safe command patterns (allowlist) */
+export const DEFAULT_SAFE_PATTERNS = [
+  { pattern: "^(ls|dir)(\\s|$)", description: "List directory", severity: "allow" as const },
+  { pattern: "^cd\\s", description: "Change directory", severity: "allow" as const },
+  { pattern: "^pwd$", description: "Print working directory", severity: "allow" as const },
+  { pattern: "^cat\\s", description: "View file contents", severity: "allow" as const },
+  { pattern: "^head\\s|^tail\\s", description: "View file head/tail", severity: "allow" as const },
+  { pattern: "^echo\\s", description: "Echo output", severity: "allow" as const },
+  { pattern: "^git\\s+(status|log|diff|branch|show)", description: "Git read-only commands", severity: "allow" as const },
+  { pattern: "^npm\\s+(run|test|start|build|lint)", description: "NPM scripts", severity: "allow" as const },
+  { pattern: "^npx\\s+tsc", description: "TypeScript compiler", severity: "allow" as const },
+  { pattern: "^(node|python|python3)\\s", description: "Script execution", severity: "allow" as const },
+  { pattern: "^which\\s|^type\\s|^command\\s", description: "Command lookup", severity: "allow" as const },
+  { pattern: "^(grep|rg|find|wc|sort|uniq|cut)\\s", description: "Search/filter tools", severity: "allow" as const },
+  { pattern: "^mkdir\\s", description: "Create directory", severity: "allow" as const },
+  { pattern: "^touch\\s", description: "Create/update file", severity: "allow" as const },
+  { pattern: "^cp\\s(?!.*-r.*\\/)", description: "Copy (non-recursive root)", severity: "allow" as const },
+];
+
 /** Default dangerous command patterns */
 export const DEFAULT_DANGEROUS_PATTERNS = [
   { pattern: "rm\\s+-[^\\s]*r[^\\s]*f|rm\\s+-[^\\s]*f[^\\s]*r", description: "Recursive force delete", severity: "block" as const },
