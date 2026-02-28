@@ -1,12 +1,9 @@
 import { sshManager } from "@/server/ssh/sshManager";
+import { shellQuote } from "@/lib/shellQuote";
 import type { SessionInfo } from "@/lib/types";
 
 function toProjectKey(projectPath: string): string {
   return projectPath.replace(/[\\/]/g, "-");
-}
-
-function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
 /**
@@ -74,6 +71,7 @@ export async function scanRemoteSessions(
         if (spaceIdx === -1) continue;
 
         const timestamp = parseFloat(line.substring(0, spaceIdx));
+        if (isNaN(timestamp)) continue;
         const filename = line.substring(spaceIdx + 1).trim();
         if (!filename.endsWith(".jsonl")) continue;
 

@@ -63,7 +63,9 @@ class CommandInterceptor {
       let matches = false;
       try {
         const regex = new RegExp(rule.pattern);
-        matches = regex.test(command);
+        // Guard against ReDoS: test with a truncated version of the command
+        const testInput = command.length > 1000 ? command.slice(0, 1000) : command;
+        matches = regex.test(testInput);
       } catch {
         // Invalid regex pattern — skip rule
         continue;

@@ -123,10 +123,12 @@ class RemotePtyManager implements PtyBackend {
   resize(sessionId: string, cols: number, rows: number): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
-    session.cols = cols;
-    session.rows = rows;
+    const safeCols = Math.max(1, Math.floor(cols) || 80);
+    const safeRows = Math.max(1, Math.floor(rows) || 24);
+    session.cols = safeCols;
+    session.rows = safeRows;
     try {
-      session.channel.setWindow(rows, cols, rows * 16, cols * 8);
+      session.channel.setWindow(safeRows, safeCols, safeRows * 16, safeCols * 8);
     } catch {
       // Resize can fail if channel is closed
     }

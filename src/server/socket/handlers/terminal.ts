@@ -3,6 +3,7 @@ import { ptyManager } from "@/server/pty/ptyManager";
 import { getPtyBackend } from "@/server/pty/ptyBackend";
 import { commandInterceptor } from "@/server/pty/interceptor";
 import { sessionManager } from "@/server/session/sessionManager";
+import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
 
 export function registerTerminalHandlers(
   io: OrbitServer,
@@ -10,8 +11,11 @@ export function registerTerminalHandlers(
 ): void {
   let unsubData: (() => void) | null = null;
   let unsubExit: (() => void) | null = null;
+  let batcher: DeltaBatcher | null = null;
 
   function detach() {
+    batcher?.destroy();
+    batcher = null;
     if (unsubData) {
       unsubData();
       unsubData = null;
@@ -42,13 +46,28 @@ export function registerTerminalHandlers(
     // Re-lookup backend after ensureSessionRunning may have created it
     const backend = getPtyBackend(sessionId) ?? ptyManager;
 
+    // Scrollback recovery — always attempt compression (can be up to 50KB)
     const scrollback = backend.getScrollback(sessionId);
     if (scrollback) {
-      socket.emit("terminal-data", scrollback);
+      const result = compressIfNeeded(scrollback);
+      if (result.compressed) {
+        socket.emit("terminal-data-compressed", result.payload as Buffer);
+      } else {
+        socket.emit("terminal-data", result.payload as string);
+      }
     }
 
+    // Streaming data — batch small chunks + compress when beneficial
+    batcher = new DeltaBatcher((payload, compressed) => {
+      if (compressed) {
+        socket.emit("terminal-data-compressed", payload as Buffer);
+      } else {
+        socket.emit("terminal-data", payload as string);
+      }
+    });
+
     unsubData = backend.onData(sessionId, (data) => {
-      socket.emit("terminal-data", data);
+      batcher!.push(data);
     });
 
     unsubExit = backend.onExit(sessionId, (exitCode) => {

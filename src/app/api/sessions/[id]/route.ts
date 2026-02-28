@@ -7,14 +7,15 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   const body = await request.json();
-  const name = typeof body.name === "string" ? body.name.trim() || null : undefined;
 
-  if (name === undefined && !("name" in body)) {
+  if (!("name" in body)) {
     return NextResponse.json(
       { error: "name field is required" },
       { status: 400 },
     );
   }
+
+  const name = typeof body.name === "string" ? body.name.trim() || null : null;
 
   try {
     await prisma.agentSession.update({

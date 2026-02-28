@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import pako from "pako";
 import type { OrbitSocket } from "@/lib/socketClient";
 import { useSocket } from "@/lib/useSocket";
 
@@ -51,6 +52,11 @@ export default function TerminalView({
 
     const onTerminalData = (data: string) => {
       termRef.current?.write(data);
+    };
+
+    const onCompressedData = (data: Buffer) => {
+      const inflated = pako.inflate(new Uint8Array(data), { to: "string" });
+      termRef.current?.write(inflated);
     };
 
     const onSessionExit = (sid: string, exitCode: number) => {
@@ -110,6 +116,7 @@ export default function TerminalView({
 
       // Socket → Terminal
       socket.on("terminal-data", onTerminalData);
+      socket.on("terminal-data-compressed", onCompressedData);
 
       // Terminal → Socket
       termDataDisposable = term.onData((data: string) => {
@@ -135,6 +142,7 @@ export default function TerminalView({
       termDataDisposable?.dispose();
 
       socket.off("terminal-data", onTerminalData);
+      socket.off("terminal-data-compressed", onCompressedData);
       socket.off("session-exit", onSessionExit);
       socket.emit("session-detach");
 

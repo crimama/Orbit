@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { sshManager } from "@/server/ssh/sshManager";
+import { shellQuote } from "@/lib/shellQuote";
 import type { DockerContainerInfo } from "@/lib/types";
-
-function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`;
-}
 
 export async function GET(
   _request: Request,
