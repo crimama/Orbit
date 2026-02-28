@@ -17,6 +17,9 @@ export interface ServerToClientEvents {
   "interceptor-pending": (approval: PendingApproval) => void;
   "interceptor-resolved": (approvalId: string, approved: boolean) => void;
   "interceptor-warn": (warning: InterceptorWarning) => void;
+  // Observability
+  "session-event": (event: SessionEvent) => void;
+  "session-metrics": (snapshot: SessionMetricsSnapshot) => void;
 }
 
 export interface ClientToServerEvents {
@@ -50,6 +53,12 @@ export interface ClientToServerEvents {
   // Phase 4: Interceptor
   "interceptor-approve": (approvalId: string) => void;
   "interceptor-deny": (approvalId: string) => void;
+  // Observability
+  "metrics-subscribe": (
+    sessionId: string,
+    callback: (snapshot: SessionMetricsSnapshot) => void,
+  ) => void;
+  "metrics-unsubscribe": (sessionId: string) => void;
 }
 
 export interface InterServerEvents {
@@ -59,6 +68,7 @@ export interface InterServerEvents {
 export interface SocketData {
   attachedSessionId: string | null;
   subscribedGraphProjectId?: string | null;
+  subscribedMetricsSessionId?: string | null;
 }
 
 // --- PTY Session (in-memory) ---
@@ -314,4 +324,38 @@ export interface CreateInterceptorRuleRequest {
   description: string;
   severity?: InterceptorSeverity;
   enabled?: boolean;
+}
+
+// --- Observability ---
+
+export type SessionEventType =
+  | "file_edit"
+  | "command_run"
+  | "test_result"
+  | "error"
+  | "tool_call"
+  | "info";
+
+export interface SessionEvent {
+  id: string;
+  sessionId: string;
+  type: SessionEventType;
+  summary: string;
+  raw: string;
+  timestamp: string;
+}
+
+export interface SessionMetrics {
+  sessionId: string;
+  eventCounts: Record<SessionEventType, number>;
+  totalEvents: number;
+  errorRate: number;
+  activeDurationMs: number;
+  lastActivityAt: string;
+  startedAt: string;
+}
+
+export interface SessionMetricsSnapshot {
+  metrics: SessionMetrics;
+  recentEvents: SessionEvent[];
 }

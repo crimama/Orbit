@@ -1,14 +1,12 @@
 import { prisma } from "@/lib/prisma";
+import { shellQuote } from "@/lib/shellQuote";
 import { ptyManager } from "@/server/pty/ptyManager";
 import { remotePtyManager } from "@/server/ssh/remotePty";
 import { sshManager } from "@/server/ssh/sshManager";
 import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
 import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
 import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
-
-function shellQuote(value: string): string {
-  return `'${value.replace(/'/g, `'\\''`)}'`;
-}
 
 function dockerInnerCommand(
   workdir: string,
@@ -67,6 +65,7 @@ function toSessionInfo(
 
 class SessionManager {
   private gcTimer: ReturnType<typeof setInterval> | null = null;
+  private bootstrapTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   private registerExitHandler(sessionId: string, backend: "local" | "remote" = "local"): void {
     const manager = backend === "remote" ? remotePtyManager : ptyManager;
@@ -174,6 +173,12 @@ class SessionManager {
   }
 
   async terminateSession(sessionId: string): Promise<void> {
+    const pendingTimer = this.bootstrapTimers.get(sessionId);
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      this.bootstrapTimers.delete(sessionId);
+    }
+    sessionMetricsManager.clear(sessionId);
     if (remotePtyManager.has(sessionId)) {
       remotePtyManager.destroy(sessionId);
     } else {
@@ -400,10 +405,12 @@ class SessionManager {
           req.resumeSessionRef,
         )
       : this.getRemoteHostBootstrapCommand(pathPart, req.agentType, req.resumeSessionRef);
-    setTimeout(() => {
+    const timer = setTimeout(() => {
+      this.bootstrapTimers.delete(sessionId);
       if (!remotePtyManager.has(sessionId)) return;
       remotePtyManager.write(sessionId, command);
     }, 120);
+    this.bootstrapTimers.set(sessionId, timer);
   }
 
   private getRemoteHostBootstrapCommand(

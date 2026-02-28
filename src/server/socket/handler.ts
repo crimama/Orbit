@@ -3,12 +3,14 @@ import { registerTerminalHandlers } from "@/server/socket/handlers/terminal";
 import { registerSshHandlers } from "@/server/socket/handlers/ssh";
 import { registerGraphHandlers } from "@/server/socket/handlers/graph";
 import { registerInterceptorHandlers } from "@/server/socket/handlers/interceptor";
+import { registerObservabilityHandlers } from "@/server/socket/handlers/observability";
 
 const registrars: SocketHandlerRegistrar[] = [
   registerTerminalHandlers,
   registerSshHandlers,
   registerGraphHandlers,
   registerInterceptorHandlers,
+  registerObservabilityHandlers,
 ];
 
 export function registerSocketHandlers(io: OrbitServer): void {

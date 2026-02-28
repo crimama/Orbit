@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MultiTerminal from "./MultiTerminal";
+import SessionMetricsPanel from "./SessionMetricsPanel";
 import type { SessionInfo, ApiResponse } from "@/lib/types";
 
 interface TerminalPageProps {
@@ -100,14 +101,15 @@ export default function TerminalPage({
       </div>
 
       <div className="flex-1 overflow-hidden p-2 sm:p-3">
-        <div className="h-full overflow-hidden rounded border border-neutral-800 bg-neutral-950">
+        <div className="flex h-full flex-col overflow-hidden rounded border border-neutral-800 bg-neutral-950">
           <div className="flex items-center gap-2 border-b border-neutral-800 px-3 py-2 text-sm">
             <span className="rounded border border-neutral-700 bg-neutral-900 px-2 py-0.5 text-neutral-100">
               Session
             </span>
             <span className="text-neutral-300">Multi Terminal</span>
           </div>
-          <div className="min-h-0 h-[calc(100%-37px)]">
+          <SessionMetricsPanel sessionId={sessionId} />
+          <div className="min-h-0 flex-1">
             <MultiTerminal initialSessionId={sessionId} />
           </div>
         </div>

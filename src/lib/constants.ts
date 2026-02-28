@@ -53,8 +53,28 @@ export const GRAPH_AUTOSAVE_DEBOUNCE_MS = 1_000;
 /** Minimum payload size (bytes) to apply delta compression */
 export const DELTA_MIN_PAYLOAD_BYTES = 256;
 
+/** Delta batching: flush interval (ms) — ~60fps cadence */
+export const DELTA_FLUSH_INTERVAL_MS = 16;
+
+/** Delta batching: flush immediately when buffer reaches this size (bytes) */
+export const DELTA_FLUSH_THRESHOLD_BYTES = 4096;
+
 /** Auto-deny timeout for pending approvals (ms) */
 export const INTERCEPTOR_AUTO_DENY_MS = 30_000;
+
+// --- Observability ---
+
+/** Max recent events kept per session (ring buffer) */
+export const OBS_MAX_RECENT_EVENTS = 50;
+
+/** Metrics broadcast interval to subscribed clients (ms) */
+export const OBS_METRICS_BROADCAST_INTERVAL_MS = 2_000;
+
+/** Max PTY output buffer before forced flush (bytes) */
+export const OBS_EXTRACT_BUFFER_MAX = 8192;
+
+/** Debounce PTY output before event extraction (ms) */
+export const OBS_EXTRACT_DEBOUNCE_MS = 200;
 
 /** Default dangerous command patterns */
 export const DEFAULT_DANGEROUS_PATTERNS = [
