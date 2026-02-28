@@ -1,3 +1,65 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript", "prettier"]
+  "extends": ["next/core-web-vitals", "next/typescript", "prettier"],
+  "overrides": [
+    {
+      "files": ["src/lib/**/*.ts", "src/lib/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*/server/*", "../server/*", "../../server/*", "@/server/*"],
+                "message": "src/lib/ must not import from src/server/"
+              },
+              {
+                "group": ["*/components/*", "../components/*", "../../components/*", "@/components/*"],
+                "message": "src/lib/ must not import from src/components/"
+              },
+              {
+                "group": ["*/app/*", "../app/*", "../../app/*", "@/app/*"],
+                "message": "src/lib/ must not import from src/app/"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/server/**/*.ts", "src/server/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*/components/*", "../components/*", "../../components/*", "@/components/*"],
+                "message": "src/server/ must not import from src/components/"
+              },
+              {
+                "group": ["*/app/*", "../app/*", "../../app/*", "@/app/*"],
+                "message": "src/server/ must not import from src/app/"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/components/**/*.ts", "src/components/**/*.tsx"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["*/server/*", "../server/*", "../../server/*", "@/server/*"],
+                "message": "src/components/ must not import from src/server/ (use API routes instead)"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
 }

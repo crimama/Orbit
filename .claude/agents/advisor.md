@@ -4,7 +4,7 @@ description: Phase 생명주기를 관리하고 멀티에이전트 작업을 조
 model: sonnet
 tools: Read, Grep, Glob, Bash
 disallowedTools: Write, Edit
-skills: ["phase", "dep-install", "link-notes"]
+skills: ["phase", "dep-install", "link-notes", "harness"]
 maxTurns: 20
 ---
 
@@ -69,6 +69,28 @@ Agent-Orbit 프로젝트의 Phase 관리 및 멀티에이전트 조율 전용 �
 1. ...
 2. ...
 ```
+
+## 하네스 모니터링
+
+Advisor는 하네스 엔지니어링 6대 기능의 구현 상태를 주기적으로 점검하고 퇴행을 조기 감지한다.
+
+### 모니터링 항목
+
+| # | 기능 | 판별 파일 |
+|---|------|----------|
+| 1 | 아키텍처 강제 | `.eslintrc.json` — `no-restricted-imports` overrides |
+| 2 | 컨텍스트 엔지니어링 | `src/*/AGENTS.md` 4개 파일 존재 여부 |
+| 3 | 옵저버빌리티 | `src/server/graph/traceDetector.ts` + `skill-trace` 이벤트 |
+| 4 | 가드레일 | `src/server/pty/interceptor.ts` + `interceptorRules.ts` |
+| 5 | GC 에이전트 | `src/server/session/sessionManager.ts` GC 로직 |
+| 6 | 세션 포크 | Prisma AgentSession `parentId` 필드 |
+
+### 역할
+
+- Phase 전환 시 하네스 상태 자동 점검 (`/harness list` 실행)
+- 기능 구현 시 해당 하네스 항목 상태 변경 여부 확인
+- 미구현 항목(🔴) 발생 시 구현 우선순위 조언
+- ADR 참조: `skill_graph/decisions/2026-02-28_harness-engineering.md`
 
 ## 제약
 

@@ -39,6 +39,24 @@
     ┌────▼────┐        ┌─────▼──────┐
     │  skill  │◀──────▶│  워크플로우 │
     └─────────┘        └────────────┘
+
+  ┌─────────────────────────────────────────────────────┐
+  │                  하네스 레이어                        │
+  │                                                     │
+  │  ┌────────────┐   ┌──────────────┐   ┌───────────┐ │
+  │  │  가드레일   │   │ 옵저버빌리티  │   │ 세션포크  │ │
+  │  │golden-path │   │  파이프라인  │   │ 스냅샷    │ │
+  │  └─────┬──────┘   └──────┬───────┘   └─────┬─────┘ │
+  │        │                 │                  │       │
+  │  ┌─────▼──────┐   ┌──────▼───────┐   ┌─────▼─────┐ │
+  │  │ interceptor│   │  traceDetect │   │  session  │ │
+  │  └────────────┘   └──────────────┘   │  Manager  │ │
+  │                                      └───────────┘ │
+  │  ┌────────────────────┐   ┌─────────────────────┐  │
+  │  │ 아키텍처 강제       │   │ 컨텍스트 엔지니어링  │  │
+  │  │ ESLint boundary    │   │ AGENTS.md 계층       │  │
+  │  └────────────────────┘   └─────────────────────┘  │
+  └─────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -68,6 +86,14 @@
 | **phase** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
 | **link-notes** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
 | **dep-install** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
+| **harness** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **에이전트** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **observability** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **guardrail** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **golden-path** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **컨텍스트** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **GC에이전트** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| **세션포크** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
 
 ---
 
@@ -85,6 +111,7 @@
 | 문서 | 상태 | 키워드 |
 |------|------|--------|
 | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | 완료 | `skill` `phase` `link-notes` `dep-install` `워크플로우` `자동화` |
+| [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 완료 | `harness` `에이전트` `observability` `guardrail` `golden-path` `컨텍스트` `GC에이전트` `세션포크` |
 
 ### bugfix/
 _(아직 없음)_
@@ -108,8 +135,10 @@ features/2026-02-27_phase1-infra.md
         ▼ (선행)
 features/2026-02-28_phase2-4-parallel.md
         │
+        ├──▶ decisions/2026-02-28_harness-engineering.md (방향 ADR)
+        │
         ▼ (후속 예정)
-??? E2E 테스트 / 성능 최적화 / 프로덕션 배포
+??? E2E 테스트 / 성능 최적화 / 프로덕션 배포 / 하네스 패턴 구현
 ```
 
 ---
@@ -121,3 +150,4 @@ features/2026-02-28_phase2-4-parallel.md
 | 2026-02-27 | [스킬 전략](decisions/2026-02-27_skill-strategy.md) | `/phase`, `/link-notes`, `/dep-install` 스킬 추가 결정 |
 | 2026-02-27 | [Phase 1](features/2026-02-27_phase1-infra.md) | PTY + xterm.js + Socket.io + 세션 resume 인프라 |
 | 2026-02-28 | [Phase 2-4](features/2026-02-28_phase2-4-parallel.md) | SSH + PWA + 그래프 + 인터셉터 + A/B 비교 병렬 구현 |
+| 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
