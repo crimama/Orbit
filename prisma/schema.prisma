@@ -19,8 +19,37 @@ model Project {
   sessions    AgentSession[]
   agents      ProjectAgent[]
   skills      Skill[]
+  harnessConfig ProjectHarnessConfig?
+  workspaces  WorkspaceLayout[]
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
+}
+
+model WorkspaceLayout {
+  id           String   @id @default(uuid())
+  projectId    String?
+  project      Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name         String
+  tree         String   // Serialized PaneNode JSON
+  activePaneId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([projectId, updatedAt])
+}
+
+model ProjectHarnessConfig {
+  id              String   @id @default(uuid())
+  projectId       String   @unique
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(true)
+  provider        String   @default("oh-my-opencode") // "oh-my-opencode" | "claude-code" | "codex" | "terminal"
+  profileName     String?
+  autoApproveSafe Boolean  @default(false)
+  maxParallel     Int      @default(3)
+  config          String   @default("{}")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model ProjectAgent {
@@ -28,7 +57,7 @@ model ProjectAgent {
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name        String
-  agentType   String   // "terminal" | "claude-code" | "codex"
+  agentType   String   // "terminal" | "claude-code" | "codex" | "opencode"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -59,12 +88,26 @@ model AgentSession {
   projectId   String
   project     Project  @relation(fields: [projectId], references: [id])
   name        String?  // 사용자 지정 세션 이름
-  agentType   String   // "claude-code", "codex", etc.
+  agentType   String   // "claude-code", "codex", "opencode", etc.
   sessionRef  String   // 에이전트 고유 세션 ID (resume용)
   lastContext String?  // 마지막 대화 맥락 요약
   status      String   @default("active") // "active", "paused", "terminated"
+  chatMessages SessionChatMessage[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model SessionChatMessage {
+  id        String       @id @default(uuid())
+  sessionId String
+  session   AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role      String       // "user" | "assistant"
+  text      String
+  position  Int
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([sessionId, position])
 }
 
 model Skill {

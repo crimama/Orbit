@@ -105,6 +105,25 @@ export interface SessionInfo {
 
 export type ProjectType = "LOCAL" | "SSH" | "DOCKER";
 
+export type ProjectHarnessProvider =
+  | "oh-my-opencode"
+  | "claude-code"
+  | "codex"
+  | "terminal";
+
+export interface ProjectHarnessConfigInfo {
+  id: string;
+  projectId: string;
+  enabled: boolean;
+  provider: ProjectHarnessProvider;
+  profileName: string | null;
+  autoApproveSafe: boolean;
+  maxParallel: number;
+  config: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProjectInfo {
   id: string;
   name: string;
@@ -116,6 +135,77 @@ export interface ProjectInfo {
   sessionCount: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface UpsertProjectHarnessRequest {
+  enabled?: boolean;
+  provider?: ProjectHarnessProvider;
+  profileName?: string | null;
+  autoApproveSafe?: boolean;
+  maxParallel?: number;
+  config?: string;
+}
+
+export interface ContextResourceItem {
+  uri: string;
+  title: string;
+  description: string;
+}
+
+export interface ProjectContextResource {
+  uri: string;
+  project: ProjectInfo;
+  activeSessions: number;
+  harnessEnabled: boolean;
+  next: ContextResourceItem[];
+}
+
+export interface SessionContextResource {
+  uri: string;
+  session: SessionInfo;
+  projectPath: string;
+  next: ContextResourceItem[];
+}
+
+export type ChatMessageRole = "user" | "assistant";
+
+export interface SessionChatMessageInfo {
+  id: string;
+  sessionId: string;
+  role: ChatMessageRole;
+  text: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReplaceSessionChatMessagesRequest {
+  messages: Array<{
+    role: ChatMessageRole;
+    text: string;
+  }>;
+}
+
+export interface WorkspaceLayoutInfo {
+  id: string;
+  projectId: string | null;
+  name: string;
+  tree: string;
+  activePaneId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateWorkspaceLayoutRequest {
+  name: string;
+  tree: string;
+  activePaneId?: string | null;
+}
+
+export interface UpdateWorkspaceLayoutRequest {
+  name?: string;
+  tree?: string;
+  activePaneId?: string | null;
 }
 
 // --- API Request/Response ---
@@ -170,7 +260,7 @@ export interface ProjectAgentInfo {
   id: string;
   projectId: string;
   name: string;
-  agentType: "terminal" | "claude-code" | "codex";
+  agentType: "terminal" | "claude-code" | "codex" | "opencode";
   createdAt: string;
   updatedAt: string;
 }
@@ -178,7 +268,7 @@ export interface ProjectAgentInfo {
 export interface CreateProjectAgentRequest {
   projectId: string;
   name: string;
-  agentType: "terminal" | "claude-code" | "codex";
+  agentType: "terminal" | "claude-code" | "codex" | "opencode";
 }
 
 // --- Phase 2: SSH & PWA ---
@@ -198,7 +288,11 @@ export interface SshConfigInfo {
   createdAt: string;
 }
 
-export type SshConnectionState = "disconnected" | "connecting" | "connected" | "error";
+export type SshConnectionState =
+  | "disconnected"
+  | "connecting"
+  | "connected"
+  | "error";
 
 export interface SshConnectionStatus {
   configId: string;

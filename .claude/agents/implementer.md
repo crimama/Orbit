@@ -3,7 +3,7 @@ name: implementer
 description: 프로젝트 컨벤션에 따라 모듈을 구현하는 에이전트. PTY Manager, Socket Handler, Session Manager 등 코드 작성에 사용한다.
 model: sonnet
 tools: Read, Write, Edit, Glob, Grep, Bash
-skills: ["feature", "bugfix"]
+skills: ["feature", "bugfix", "simplify"]
 maxTurns: 30
 ---
 

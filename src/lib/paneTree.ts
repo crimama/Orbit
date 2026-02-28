@@ -39,10 +39,7 @@ export function splitPane(
         id: nextId(),
         direction,
         ratio: 0.5,
-        children: [
-          { ...root },
-          createLeaf(newSessionId),
-        ],
+        children: [{ ...root }, createLeaf(newSessionId)],
       };
     }
     return root;
@@ -53,7 +50,10 @@ export function splitPane(
     splitPane(child, paneId, direction, newSessionId),
   ) as [PaneNode, PaneNode];
 
-  if (newChildren[0] === root.children[0] && newChildren[1] === root.children[1]) {
+  if (
+    newChildren[0] === root.children[0] &&
+    newChildren[1] === root.children[1]
+  ) {
     return root; // no change
   }
   return { ...root, children: newChildren };
@@ -86,13 +86,15 @@ export function findLeaf(root: PaneNode, paneId: string): PaneLeaf | null {
   if (root.type === "leaf") {
     return root.id === paneId ? root : null;
   }
-  return findLeaf(root.children[0], paneId) ?? findLeaf(root.children[1], paneId);
+  return (
+    findLeaf(root.children[0], paneId) ?? findLeaf(root.children[1], paneId)
+  );
 }
 
 export function updateLeafSession(
   root: PaneNode,
   paneId: string,
-  sessionId: string,
+  sessionId: string | null,
 ): PaneNode {
   if (root.type === "leaf") {
     if (root.id === paneId) return { ...root, sessionId };
@@ -103,7 +105,10 @@ export function updateLeafSession(
     updateLeafSession(child, paneId, sessionId),
   ) as [PaneNode, PaneNode];
 
-  if (newChildren[0] === root.children[0] && newChildren[1] === root.children[1]) {
+  if (
+    newChildren[0] === root.children[0] &&
+    newChildren[1] === root.children[1]
+  ) {
     return root;
   }
   return { ...root, children: newChildren };
@@ -124,7 +129,10 @@ export function updateSplitRatio(
     updateSplitRatio(child, splitId, ratio),
   ) as [PaneNode, PaneNode];
 
-  if (newChildren[0] === root.children[0] && newChildren[1] === root.children[1]) {
+  if (
+    newChildren[0] === root.children[0] &&
+    newChildren[1] === root.children[1]
+  ) {
     return root;
   }
   return { ...root, children: newChildren };

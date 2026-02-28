@@ -12,8 +12,13 @@ export function registerTerminalHandlers(
   let unsubData: (() => void) | null = null;
   let unsubExit: (() => void) | null = null;
   let batcher: DeltaBatcher | null = null;
+  let sessionRoom: string | null = null;
 
   function detach() {
+    if (sessionRoom) {
+      socket.leave(sessionRoom);
+      sessionRoom = null;
+    }
     batcher?.destroy();
     batcher = null;
     if (unsubData) {
@@ -42,6 +47,8 @@ export function registerTerminalHandlers(
     }
 
     socket.data.attachedSessionId = sessionId;
+    sessionRoom = `session:${sessionId}`;
+    await socket.join(sessionRoom);
 
     // Re-lookup backend after ensureSessionRunning may have created it
     const backend = getPtyBackend(sessionId) ?? ptyManager;
@@ -88,8 +95,8 @@ export function registerTerminalHandlers(
     const forwarded = await commandInterceptor.intercept(
       sid,
       data,
-      (approval) => io.emit("interceptor-pending", approval),
-      (warning) => io.emit("interceptor-warn", warning),
+      (approval) => io.to(`session:${sid}`).emit("interceptor-pending", approval),
+      (warning) => io.to(`session:${sid}`).emit("interceptor-warn", warning),
     );
 
     if (forwarded) {

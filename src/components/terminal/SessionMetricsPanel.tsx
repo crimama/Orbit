@@ -46,9 +46,9 @@ export default function SessionMetricsPanel({
     : recentEvents.slice(-5);
 
   return (
-    <div className="border-b border-neutral-800 bg-neutral-950 px-3 py-2 text-xs">
+    <div className="border-b border-slate-200 bg-white px-3 py-2 text-xs">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-neutral-400">Metrics</span>
+        <span className="font-semibold text-slate-700">Run Metrics</span>
 
         {(
           Object.entries(EVENT_TYPE_CONFIG) as [
@@ -72,19 +72,19 @@ export default function SessionMetricsPanel({
           className={`rounded px-1.5 py-0.5 ${
             errorRatePercent > 20
               ? "bg-red-900 text-red-300"
-              : "bg-neutral-800 text-neutral-400"
+              : "bg-white text-slate-700"
           }`}
         >
           Err {errorRatePercent}%
         </span>
 
-        <span className="text-neutral-500">
+        <span className="text-slate-700">
           {formatDuration(metrics.activeDurationMs)}
         </span>
 
         <button
           onClick={() => setExpanded((p) => !p)}
-          className="ml-auto text-neutral-500 hover:text-neutral-300"
+          className="ml-auto text-slate-600 hover:text-slate-900"
         >
           {expanded ? "Collapse" : "Expand"} ({recentEvents.length})
         </button>
@@ -95,12 +95,15 @@ export default function SessionMetricsPanel({
           {displayEvents.map((evt) => {
             const cfg = EVENT_TYPE_CONFIG[evt.type];
             return (
-              <div key={evt.id} className="flex items-center gap-2 text-neutral-400">
+              <div
+                key={evt.id}
+                className="flex items-center gap-2 text-slate-700"
+              >
                 <span
-                  className={`${cfg.color} inline-block w-1.5 h-1.5 rounded-full flex-shrink-0`}
+                  className={`${cfg.color} inline-block h-1.5 w-1.5 flex-shrink-0 rounded-full`}
                 />
                 <span className="truncate">{evt.summary}</span>
-                <span className="ml-auto flex-shrink-0 text-neutral-600">
+                <span className="ml-auto flex-shrink-0 text-slate-500">
                   {new Date(evt.timestamp).toLocaleTimeString()}
                 </span>
               </div>

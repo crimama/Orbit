@@ -160,6 +160,18 @@ class CommandInterceptor {
     }));
   }
 
+  getPendingById(approvalId: string): PendingApproval | null {
+    const held = this.pendingApprovals.get(approvalId);
+    if (!held) return null;
+    return {
+      id: held.id,
+      sessionId: held.sessionId,
+      command: held.command,
+      matchedRule: held.matchedRule,
+      timestamp: held.timestamp,
+    };
+  }
+
   /**
    * Clear the input buffer for a session (e.g., on detach).
    */

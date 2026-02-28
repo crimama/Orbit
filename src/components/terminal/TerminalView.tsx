@@ -62,7 +62,9 @@ export default function TerminalView({
     const onSessionExit = (sid: string, exitCode: number) => {
       // Ignore exit events for other sessions on shared socket.
       if (sid !== sessionId) return;
-      termRef.current?.write(`\r\n\x1b[33m[Session exited: ${exitCode}]\x1b[0m\r\n`);
+      termRef.current?.write(
+        `\r\n\x1b[33m[Session exited: ${exitCode}]\x1b[0m\r\n`,
+      );
       attachedRef.current = false;
       onExitRef.current?.(exitCode);
     };
@@ -75,29 +77,24 @@ export default function TerminalView({
 
       const term = new Terminal({
         cursorBlink: true,
-        fontSize: 16,
+        fontSize: 15,
         lineHeight: 1.45,
-        fontFamily: "var(--font-geist-mono), monospace",
+        fontWeight: "500",
+        fontWeightBold: "700",
+        fontFamily:
+          '"JetBrains Mono", "Cascadia Mono", "SF Mono", "Consolas", "Menlo", ui-monospace, monospace',
+        minimumContrastRatio: 4.5,
         theme: {
-          background: "#020617",
-          foreground: "#e2e8f0",
-          cursor: "#7dd3fc",
+          background: "#0b1220",
+          foreground: "#e6edf3",
+          cursor: "#93c5fd",
+          selectionBackground: "#334155",
         },
         allowProposedApi: true,
       });
 
       const fitAddon = new FitAddon();
       term.loadAddon(fitAddon);
-
-      // Try WebGL addon for hardware acceleration
-      try {
-        const { WebglAddon } = await import("@xterm/addon-webgl");
-        if (!disposed) {
-          term.loadAddon(new WebglAddon());
-        }
-      } catch {
-        // WebGL not available — fallback to canvas renderer
-      }
 
       term.open(containerRef.current!);
       fitAddon.fit();
@@ -156,7 +153,7 @@ export default function TerminalView({
     <div
       ref={containerRef}
       className="h-full w-full"
-      style={{ backgroundColor: "#020617" }}
+      style={{ backgroundColor: "#0b1220" }}
     />
   );
 }

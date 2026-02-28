@@ -18,8 +18,20 @@ interface PaneRendererProps {
   onSplit: (paneId: string, direction: "horizontal" | "vertical") => void;
   onClose: (paneId: string) => void;
   onSelectSession: (paneId: string, sessionId: string) => void;
+  onDropSession: (
+    paneId: string,
+    sessionId: string,
+    position: "top" | "bottom" | "left" | "right" | "center",
+  ) => void;
+  onSwapPanes: (sourcePaneId: string, targetPaneId: string) => void;
+  onMovePane: (
+    sourcePaneId: string,
+    targetPaneId: string,
+    position: "top" | "bottom" | "left" | "right",
+  ) => void;
   onRatioChange: (splitId: string, ratio: number) => void;
   onPaneExit: (paneId: string) => void;
+  onKillSession: (paneId: string, sessionId: string) => Promise<void> | void;
 }
 
 export default function PaneRenderer({
@@ -34,10 +46,15 @@ export default function PaneRenderer({
   onSplit,
   onClose,
   onSelectSession,
+  onDropSession,
+  onSwapPanes,
+  onMovePane,
   onRatioChange,
   onPaneExit,
+  onKillSession,
 }: PaneRendererProps) {
   if (node.type === "leaf") {
+    const leafSessionId = node.sessionId;
     return (
       <TerminalPane
         paneId={node.id}
@@ -51,8 +68,18 @@ export default function PaneRenderer({
         onSplit={(dir) => onSplit(node.id, dir)}
         onClose={() => onClose(node.id)}
         onSelectSession={(sid) => onSelectSession(node.id, sid)}
+        onDropSession={(sid, position) => onDropSession(node.id, sid, position)}
+        onSwapPane={(sourcePaneId) => onSwapPanes(sourcePaneId, node.id)}
+        onMovePane={(sourcePaneId, position) =>
+          onMovePane(sourcePaneId, node.id, position)
+        }
         onExit={() => onPaneExit(node.id)}
-        canClose={leafCount > 1}
+        canClose={true}
+        onKillSession={
+          leafSessionId
+            ? () => onKillSession(node.id, leafSessionId)
+            : undefined
+        }
       />
     );
   }
@@ -73,8 +100,12 @@ export default function PaneRenderer({
     onSplit,
     onClose,
     onSelectSession,
+    onDropSession,
+    onSwapPanes,
+    onMovePane,
     onRatioChange,
     onPaneExit,
+    onKillSession,
   };
 
   return (

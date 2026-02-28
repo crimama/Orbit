@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import TerminalPage from "@/components/terminal/TerminalPage";
 import type { SessionInfo, ApiResponse } from "@/lib/types";
 
 export default function SessionPage() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,7 +26,7 @@ export default function SessionPage() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0a0a]">
+      <div className="flex h-screen items-center justify-center bg-slate-50">
         <p className="text-red-400">{error}</p>
       </div>
     );
@@ -33,15 +34,18 @@ export default function SessionPage() {
 
   if (!session) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0a0a]">
-        <p className="text-neutral-500">Loading session...</p>
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <p className="text-slate-500">Loading session...</p>
       </div>
     );
   }
 
+  const workspaceId = searchParams.get("workspaceId");
+
   return (
     <TerminalPage
       sessionId={session.id}
+      initialWorkspaceId={workspaceId}
       projectName={session.projectName}
     />
   );

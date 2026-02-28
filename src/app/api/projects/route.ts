@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { CreateProjectRequest, ProjectInfo } from "@/lib/types";
+import { registerProject } from "@/server/project/projectRegistry";
 
 function isValidHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
@@ -83,6 +84,13 @@ export async function POST(request: Request) {
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
+
+  await registerProject({
+    projectId: project.id,
+    name: project.name,
+    type: project.type,
+    path: project.path,
+  });
 
   return NextResponse.json({ data }, { status: 201 });
 }

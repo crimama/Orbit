@@ -9,6 +9,7 @@ interface SessionListProps {
   onTerminate: (id: string) => void;
   onResume: (sessionRef: string) => void;
   onRename?: (id: string, newName: string) => void;
+  onOpenSession?: (sessionId: string) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -22,6 +23,7 @@ export default function SessionList({
   onTerminate,
   onResume,
   onRename,
+  onOpenSession,
 }: SessionListProps) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -71,6 +73,13 @@ export default function SessionList({
         return (
           <div
             key={s.id}
+            draggable={s.status === "active"}
+            onDragStart={(e) => {
+              if (s.status !== "active") return;
+              e.dataTransfer.setData("application/x-orbit-session-id", s.id);
+              e.dataTransfer.setData("text/plain", `session:${s.id}`);
+              e.dataTransfer.effectAllowed = "move";
+            }}
             className="group flex items-center justify-between overflow-hidden rounded-lg py-2 pl-4 pr-3 text-neutral-300 transition-colors"
             style={{ borderLeft: `3px solid ${s.projectColor}` }}
             onMouseEnter={(e) => {
@@ -84,7 +93,11 @@ export default function SessionList({
               className="min-w-0 flex-1 cursor-pointer"
               onClick={() => {
                 if (s.status === "active") {
-                  router.push(`/sessions/${s.id}`);
+                  if (onOpenSession) {
+                    onOpenSession(s.id);
+                  } else {
+                    router.push(`/sessions/${s.id}`);
+                  }
                 }
               }}
             >
@@ -115,20 +128,27 @@ export default function SessionList({
                       e.stopPropagation();
                       startEditing(s);
                     }}
-                    title={s.name ? `${s.name} (${s.id.slice(0, 8)})` : s.id.slice(0, 8)}
+                    title={
+                      s.name
+                        ? `${s.name} (${s.id.slice(0, 8)})`
+                        : s.id.slice(0, 8)
+                    }
                   >
                     {displayName}
                   </span>
                 )}
               </div>
               <div className="text-xs text-neutral-500">
-                {s.agentType} &middot; {new Date(s.updatedAt).toLocaleTimeString()}
+                {s.agentType} &middot;{" "}
+                {new Date(s.updatedAt).toLocaleTimeString()}
                 {s.source === "claude-history" && (
                   <span className="ml-2 text-neutral-600">history</span>
                 )}
               </div>
               {s.lastContext && (
-                <div className="truncate text-xs text-neutral-600">{s.lastContext}</div>
+                <div className="truncate text-xs text-neutral-600">
+                  {s.lastContext}
+                </div>
               )}
             </div>
             <div className="flex items-center gap-1">

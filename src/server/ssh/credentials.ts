@@ -14,12 +14,9 @@ export function encryptSshPassword(password: string): string {
   if (!key) {
     if (!warnedMissingSecret) {
       warnedMissingSecret = true;
-      console.warn(
-        "[SSH] SSH_PASSWORD_SECRET is not set. Storing SSH password as plain text.",
-      );
+      console.warn("[SSH] SSH_PASSWORD_SECRET is not set. Password auth is disabled.");
     }
-    // Backward-compatible fallback for local/dev setups without secret.
-    return password;
+    throw new Error("SSH_PASSWORD_SECRET is required for password auth");
   }
 
   const iv = randomBytes(12);

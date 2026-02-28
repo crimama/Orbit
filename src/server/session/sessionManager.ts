@@ -20,6 +20,9 @@ function dockerInnerCommand(
   if (agentType === "codex") {
     return `cd ${qPath} 2>/dev/null || cd /; if command -v codex >/dev/null 2>&1; then exec codex; else echo "[Agent Orbit] codex not found in container PATH."; exec /bin/bash -il; fi`;
   }
+  if (agentType === "opencode") {
+    return `cd ${qPath} 2>/dev/null || cd /; if command -v opencode >/dev/null 2>&1; then exec opencode; else echo "[Agent Orbit] opencode not found in container PATH."; exec /bin/bash -il; fi`;
+  }
   const resumeArgs = resumeSessionRef?.trim()
     ? ` --resume ${shellQuote(resumeSessionRef.trim())} --fork-session`
     : "";
@@ -33,20 +36,18 @@ function dockerInnerCommand(
   return `cd ${qPath} 2>/dev/null || cd /; ${claudeCmd}`;
 }
 
-function toSessionInfo(
-  row: {
-    id: string;
-    projectId: string;
-    name: string | null;
-    agentType: string;
-    sessionRef: string;
-    status: string;
-    lastContext: string | null;
-    createdAt: Date;
-    updatedAt: Date;
-    project: { name: string; color: string };
-  },
-): SessionInfo {
+function toSessionInfo(row: {
+  id: string;
+  projectId: string;
+  name: string | null;
+  agentType: string;
+  sessionRef: string;
+  status: string;
+  lastContext: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  project: { name: string; color: string };
+}): SessionInfo {
   return {
     id: row.id,
     projectId: row.projectId,
@@ -67,7 +68,10 @@ class SessionManager {
   private gcTimer: ReturnType<typeof setInterval> | null = null;
   private bootstrapTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  private registerExitHandler(sessionId: string, backend: "local" | "remote" = "local"): void {
+  private registerExitHandler(
+    sessionId: string,
+    backend: "local" | "remote" = "local",
+  ): void {
     const manager = backend === "remote" ? remotePtyManager : ptyManager;
     manager.onExit(sessionId, async () => {
       try {
@@ -194,6 +198,25 @@ class SessionManager {
     }
   }
 
+  async sendInput(sessionId: string, input: string): Promise<void> {
+    const running = await this.ensureSessionRunning(sessionId);
+    if (!running) {
+      throw new Error("Session is not active");
+    }
+
+    if (remotePtyManager.has(sessionId)) {
+      remotePtyManager.write(sessionId, input);
+      return;
+    }
+
+    if (ptyManager.has(sessionId)) {
+      ptyManager.write(sessionId, input);
+      return;
+    }
+
+    throw new Error("Session backend is unavailable");
+  }
+
   async getSession(id: string): Promise<SessionInfo | null> {
     const row = await prisma.agentSession.findUnique({
       where: { id },
@@ -213,7 +236,8 @@ class SessionManager {
   }
 
   async ensureSessionRunning(sessionId: string): Promise<boolean> {
-    if (ptyManager.has(sessionId) || remotePtyManager.has(sessionId)) return true;
+    if (ptyManager.has(sessionId) || remotePtyManager.has(sessionId))
+      return true;
 
     const row = await prisma.agentSession.findUnique({
       where: { id: sessionId },
@@ -248,14 +272,18 @@ class SessionManager {
         await remotePtyManager.create(sessionId, {
           sshConfigId: row.project.sshConfigId!,
         });
-        this.bootstrapRemoteAgent(sessionId, {
-          agentType: row.agentType,
-          resumeSessionRef:
-            row.sessionRef !== sessionId ? row.sessionRef : undefined,
-        }, {
-          path: row.project.path,
-          dockerContainer: row.project.dockerContainer,
-        });
+        this.bootstrapRemoteAgent(
+          sessionId,
+          {
+            agentType: row.agentType,
+            resumeSessionRef:
+              row.sessionRef !== sessionId ? row.sessionRef : undefined,
+          },
+          {
+            path: row.project.path,
+            dockerContainer: row.project.dockerContainer,
+          },
+        );
         this.registerExitHandler(sessionId, "remote");
       } else {
         if (row.project.type === "DOCKER" && !row.project.dockerContainer) {
@@ -324,6 +352,16 @@ class SessionManager {
       };
     }
 
+    if (req.agentType === "opencode") {
+      return {
+        cols: req.cols,
+        rows: req.rows,
+        cwd: project.path,
+        command: "opencode",
+        args: [],
+      };
+    }
+
     const resumeRef = req.resumeSessionRef?.trim();
     return {
       cols: req.cols,
@@ -341,7 +379,8 @@ class SessionManager {
     project: { type: string; path: string; dockerContainer: string | null },
   ) {
     if (project.type === "DOCKER") {
-      const canResume = sessionRef.trim().length > 0 && sessionRef !== dbSessionId;
+      const canResume =
+        sessionRef.trim().length > 0 && sessionRef !== dbSessionId;
       return {
         cwd: process.env.HOME ?? "/",
         command: "docker",
@@ -366,7 +405,16 @@ class SessionManager {
       };
     }
 
-    const canResume = sessionRef.trim().length > 0 && sessionRef !== dbSessionId;
+    if (agentType === "opencode") {
+      return {
+        cwd: project.path,
+        command: "opencode",
+        args: [],
+      };
+    }
+
+    const canResume =
+      sessionRef.trim().length > 0 && sessionRef !== dbSessionId;
     return {
       cwd: project.path,
       command: "claude",
@@ -404,7 +452,11 @@ class SessionManager {
           req.agentType,
           req.resumeSessionRef,
         )
-      : this.getRemoteHostBootstrapCommand(pathPart, req.agentType, req.resumeSessionRef);
+      : this.getRemoteHostBootstrapCommand(
+          pathPart,
+          req.agentType,
+          req.resumeSessionRef,
+        );
     const timer = setTimeout(() => {
       this.bootstrapTimers.delete(sessionId);
       if (!remotePtyManager.has(sessionId)) return;
@@ -424,6 +476,9 @@ class SessionManager {
     }
     if (agentType === "codex") {
       return `cd ${qPath} && codex\r`;
+    }
+    if (agentType === "opencode") {
+      return `cd ${qPath} && opencode\r`;
     }
     if (resumeSessionRef?.trim()) {
       return `cd ${qPath} && claude --resume ${shellQuote(resumeSessionRef.trim())} --fork-session\r`;
@@ -478,7 +533,13 @@ class SessionManager {
     sshConfigId: string,
     dockerContainer?: string,
   ): Promise<SessionInfo[]> {
-    return scanRemoteSessions(sshConfigId, projectId, projectName, projectPath, dockerContainer);
+    return scanRemoteSessions(
+      sshConfigId,
+      projectId,
+      projectName,
+      projectPath,
+      dockerContainer,
+    );
   }
 }
 

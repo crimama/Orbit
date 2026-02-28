@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import ProjectList from "./ProjectList";
 import SessionList from "./SessionList";
 import AddProjectForm from "./AddProjectForm";
@@ -10,20 +10,24 @@ import AddSshProjectForm from "./AddSshProjectForm";
 import AddDockerProjectForm from "./AddDockerProjectForm";
 import InterceptorBanner from "./InterceptorBanner";
 import InterceptorModal from "./InterceptorModal";
+import ProjectHarnessPanel from "./ProjectHarnessPanel";
+import MultiTerminal from "@/components/terminal/MultiTerminal";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import type {
   ProjectInfo,
   SessionInfo,
   ProjectAgentInfo,
   SshConfigInfo,
+  WorkspaceLayoutInfo,
   GraphState,
   ApiResponse,
   CreateSessionRequest,
 } from "@/lib/types";
 
 type AddProjectMode = null | "local" | "ssh" | "docker";
-type NewSessionAgent = "terminal" | "claude-code" | "codex";
+type NewSessionAgent = "terminal" | "claude-code" | "codex" | "opencode";
 type LeftPanelMode = "projects" | "vaults";
+type SessionViewMode = "active" | "all";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -34,16 +38,22 @@ export default function Dashboard() {
   );
   const [addProjectMode, setAddProjectMode] = useState<AddProjectMode>(null);
   const [leftPanelMode, setLeftPanelMode] = useState<LeftPanelMode>("projects");
+  const [isProjectsListCollapsed, setIsProjectsListCollapsed] = useState(false);
+  const [isSessionsListCollapsed, setIsSessionsListCollapsed] = useState(false);
   const [creatingSession, setCreatingSession] = useState(false);
+  const [sessionViewMode, setSessionViewMode] =
+    useState<SessionViewMode>("all");
+  const [showHarnessManager, setShowHarnessManager] = useState(false);
+  const [inlineSessionId, setInlineSessionId] = useState<string | null>(null);
   const [newSessionAgent, setNewSessionAgent] =
     useState<NewSessionAgent>("claude-code");
   const [projectAgents, setProjectAgents] = useState<ProjectAgentInfo[]>([]);
   const [selectedAgentId, setSelectedAgentId] = useState("");
-  const [newAgentName, setNewAgentName] = useState("");
-  const [newAgentType, setNewAgentType] = useState<NewSessionAgent>("claude-code");
-  const [creatingAgent, setCreatingAgent] = useState(false);
   const [skillCount, setSkillCount] = useState(0);
   const [sshConfigs, setSshConfigs] = useState<SshConfigInfo[]>([]);
+  const [globalWorkspaces, setGlobalWorkspaces] = useState<
+    WorkspaceLayoutInfo[]
+  >([]);
   const [prefillSshProfileId, setPrefillSshProfileId] = useState<string | null>(
     null,
   );
@@ -78,17 +88,14 @@ export default function Dashboard() {
   }, []);
 
   // Fetch sessions
-  const fetchSessions = useCallback(
-    async (projectId?: string) => {
-      const url = projectId
-        ? `/api/sessions?projectId=${projectId}`
-        : "/api/sessions";
-      const res = await fetch(url);
-      const json = (await res.json()) as ApiResponse<SessionInfo[]>;
-      if ("data" in json) setSessions(json.data);
-    },
-    [],
-  );
+  const fetchSessions = useCallback(async (projectId?: string) => {
+    const url = projectId
+      ? `/api/sessions?projectId=${projectId}`
+      : "/api/sessions";
+    const res = await fetch(url);
+    const json = (await res.json()) as ApiResponse<SessionInfo[]>;
+    if ("data" in json) setSessions(json.data);
+  }, []);
 
   const fetchSshConfigs = useCallback(async () => {
     const res = await fetch("/api/ssh-configs");
@@ -96,17 +103,26 @@ export default function Dashboard() {
     if ("data" in json) setSshConfigs(json.data);
   }, []);
 
+  const fetchGlobalWorkspaces = useCallback(async () => {
+    const res = await fetch("/api/workspaces");
+    const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo[]>;
+    if ("data" in json) setGlobalWorkspaces(json.data);
+  }, []);
+
   useEffect(() => {
     fetchProjects();
     fetchSessions();
     fetchSshConfigs();
-  }, [fetchProjects, fetchSessions, fetchSshConfigs]);
+    fetchGlobalWorkspaces();
+  }, [fetchProjects, fetchSessions, fetchSshConfigs, fetchGlobalWorkspaces]);
 
   // When project selected, fetch its sessions
   const handleSelectProject = useCallback(
     (project: ProjectInfo) => {
       setSelectedProject(project);
-      fetchSessions(project.id);
+      setSessionViewMode("active");
+      setShowHarnessManager(false);
+      fetchSessions();
     },
     [fetchSessions],
   );
@@ -154,9 +170,7 @@ export default function Dashboard() {
       });
       const json = (await res.json()) as ApiResponse<ProjectInfo>;
       if ("data" in json) {
-        setProjects((prev) =>
-          prev.map((p) => (p.id === id ? json.data : p)),
-        );
+        setProjects((prev) => prev.map((p) => (p.id === id ? json.data : p)));
         if (selectedProject?.id === id) {
           setSelectedProject(json.data);
         }
@@ -174,9 +188,7 @@ export default function Dashboard() {
       });
       const json = (await res.json()) as ApiResponse<ProjectInfo>;
       if ("data" in json) {
-        setProjects((prev) =>
-          prev.map((p) => (p.id === id ? json.data : p)),
-        );
+        setProjects((prev) => prev.map((p) => (p.id === id ? json.data : p)));
         if (selectedProject?.id === id) {
           setSelectedProject(json.data);
         }
@@ -197,9 +209,7 @@ export default function Dashboard() {
       });
       const json = (await res.json()) as ApiResponse<ProjectInfo>;
       if ("data" in json) {
-        setProjects((prev) =>
-          prev.map((p) => (p.id === id ? json.data : p)),
-        );
+        setProjects((prev) => prev.map((p) => (p.id === id ? json.data : p)));
         if (selectedProject?.id === id) {
           setSelectedProject(json.data);
         }
@@ -223,9 +233,9 @@ export default function Dashboard() {
   const handleTerminateSession = useCallback(
     async (id: string) => {
       await fetch(`/api/sessions/${id}`, { method: "DELETE" });
-      fetchSessions(selectedProject?.id);
+      fetchSessions();
     },
-    [selectedProject, fetchSessions],
+    [fetchSessions],
   );
 
   const handleRenameSession = useCallback(
@@ -235,9 +245,9 @@ export default function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName }),
       });
-      fetchSessions(selectedProject?.id);
+      fetchSessions();
     },
-    [selectedProject, fetchSessions],
+    [fetchSessions],
   );
 
   const handleCreateSession = useCallback(async () => {
@@ -257,41 +267,19 @@ export default function Dashboard() {
       });
       const json = (await res.json()) as ApiResponse<SessionInfo>;
       if ("data" in json) {
-        router.push(`/sessions/${json.data.id}`);
+        setInlineSessionId(json.data.id);
+        fetchSessions();
       }
     } finally {
       setCreatingSession(false);
     }
-  }, [selectedProject, router, newSessionAgent, projectAgents, selectedAgentId]);
-
-  const handleCreateProjectAgent = useCallback(async () => {
-    if (!selectedProject || !newAgentName.trim()) return;
-    setCreatingAgent(true);
-    try {
-      await fetch("/api/project-agents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectId: selectedProject.id,
-          name: newAgentName.trim(),
-          agentType: newAgentType,
-        }),
-      });
-      setNewAgentName("");
-      await fetchProjectAgents(selectedProject.id);
-    } finally {
-      setCreatingAgent(false);
-    }
-  }, [selectedProject, newAgentName, newAgentType, fetchProjectAgents]);
-
-  const handleDeleteProjectAgent = useCallback(
-    async (id: string) => {
-      if (!selectedProject) return;
-      await fetch(`/api/project-agents/${id}`, { method: "DELETE" });
-      await fetchProjectAgents(selectedProject.id);
-    },
-    [selectedProject, fetchProjectAgents],
-  );
+  }, [
+    selectedProject,
+    newSessionAgent,
+    projectAgents,
+    selectedAgentId,
+    fetchSessions,
+  ]);
 
   const handleResumeClaudeSession = useCallback(
     async (sessionRef: string) => {
@@ -310,13 +298,14 @@ export default function Dashboard() {
         });
         const json = (await res.json()) as ApiResponse<SessionInfo>;
         if ("data" in json) {
-          router.push(`/sessions/${json.data.id}`);
+          setInlineSessionId(json.data.id);
+          fetchSessions();
         }
       } finally {
         setCreatingSession(false);
       }
     },
-    [selectedProject, router],
+    [selectedProject, fetchSessions],
   );
 
   const handleProjectCreated = useCallback(
@@ -332,8 +321,113 @@ export default function Dashboard() {
 
   const handleGoHome = useCallback(() => {
     setSelectedProject(null);
+    setSessionViewMode("all");
+    setShowHarnessManager(false);
+    setInlineSessionId(null);
     fetchSessions();
   }, [fetchSessions]);
+
+  const handleOpenGlobalWorkspace = useCallback(
+    (workspace: WorkspaceLayoutInfo) => {
+      try {
+        const parsed = JSON.parse(workspace.tree) as unknown;
+        const candidateIds: string[] = [];
+
+        const walk = (node: unknown): void => {
+          if (!node || typeof node !== "object") return;
+          const value = node as {
+            type?: string;
+            sessionId?: string | null;
+            children?: unknown[];
+          };
+          if (value.type === "leaf") {
+            if (typeof value.sessionId === "string" && value.sessionId.trim()) {
+              candidateIds.push(value.sessionId);
+            }
+            return;
+          }
+          if (value.type === "split" && Array.isArray(value.children)) {
+            for (const child of value.children) {
+              walk(child);
+            }
+          }
+        };
+
+        walk(parsed);
+
+        const activeSet = new Set(
+          sessions.filter((s) => s.status === "active").map((s) => s.id),
+        );
+        const targetSessionId = candidateIds.find((id) => activeSet.has(id));
+        if (!targetSessionId) return;
+
+        router.push(
+          `/sessions/${targetSessionId}?workspaceId=${encodeURIComponent(workspace.id)}`,
+        );
+      } catch {
+        return;
+      }
+    },
+    [sessions, router],
+  );
+
+  const getWorkspaceLaunchSessionId = useCallback(
+    (workspace: WorkspaceLayoutInfo): string | null => {
+      try {
+        const parsed = JSON.parse(workspace.tree) as unknown;
+        const candidateIds: string[] = [];
+
+        const walk = (node: unknown): void => {
+          if (!node || typeof node !== "object") return;
+          const value = node as {
+            type?: string;
+            sessionId?: string | null;
+            children?: unknown[];
+          };
+          if (value.type === "leaf") {
+            if (typeof value.sessionId === "string" && value.sessionId.trim()) {
+              candidateIds.push(value.sessionId);
+            }
+            return;
+          }
+          if (value.type === "split" && Array.isArray(value.children)) {
+            for (const child of value.children) walk(child);
+          }
+        };
+
+        walk(parsed);
+        const activeSet = new Set(
+          sessions.filter((s) => s.status === "active").map((s) => s.id),
+        );
+        return candidateIds.find((id) => activeSet.has(id)) ?? null;
+      } catch {
+        return null;
+      }
+    },
+    [sessions],
+  );
+
+  const visibleSessions = useMemo(() => {
+    if (sessionViewMode === "all") return sessions;
+    return sessions.filter((s) => s.status === "active");
+  }, [sessionViewMode, sessions]);
+
+  const activeSessions = useMemo(
+    () => sessions.filter((s) => s.status === "active"),
+    [sessions],
+  );
+
+  useEffect(() => {
+    if (!selectedProject) return;
+    if (!inlineSessionId) {
+      setInlineSessionId(activeSessions[0]?.id ?? null);
+      return;
+    }
+  }, [selectedProject, inlineSessionId, activeSessions]);
+
+  const handleOpenSessionFromList = useCallback((sessionId: string) => {
+    setInlineSessionId(sessionId);
+  }, []);
 
   const handleDeleteSshVault = useCallback(
     async (id: string) => {
@@ -341,6 +435,27 @@ export default function Dashboard() {
       fetchSshConfigs();
     },
     [fetchSshConfigs],
+  );
+
+  const openSessionInDashboard = useCallback(
+    (session: SessionInfo) => {
+      const project = projects.find((p) => p.id === session.projectId);
+      if (project) {
+        setSelectedProject(project);
+        setSessionViewMode("active");
+        setShowHarnessManager(false);
+        setInlineSessionId(session.id);
+        void fetchSessions();
+        return;
+      }
+
+      // Fallback when project list is stale.
+      setSessionViewMode("active");
+      setShowHarnessManager(false);
+      setInlineSessionId(session.id);
+      void fetchSessions();
+    },
+    [projects, fetchSessions],
   );
 
   return (
@@ -398,129 +513,162 @@ export default function Dashboard() {
 
       <div className="flex flex-1 flex-col md:min-h-0 md:flex-row md:overflow-hidden">
         {/* Left Panel — Projects */}
-        <div className="flex w-full min-h-[260px] flex-col border-b border-neutral-800 md:w-72 md:min-h-0 md:border-b-0 md:border-r">
-          <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-3">
+        <div
+          className={`flex min-h-[260px] w-full flex-col border-b border-neutral-800 md:min-h-0 md:border-b-0 md:border-r ${
+            isProjectsListCollapsed ? "md:w-20" : "md:w-72"
+          }`}
+        >
+          <div
+            className={`flex items-center border-b border-neutral-800 py-3 ${
+              isProjectsListCollapsed
+                ? "justify-center px-2"
+                : "justify-between px-4"
+            }`}
+          >
+            {!isProjectsListCollapsed && (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setLeftPanelMode("projects");
+                    setPrefillSshProfileId(null);
+                    setAddProjectMode(null);
+                  }}
+                  className={`rounded px-2 py-0.5 text-xs ${
+                    leftPanelMode === "projects"
+                      ? "bg-neutral-800 text-neutral-200"
+                      : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+                  }`}
+                >
+                  Projects
+                </button>
+                <button
+                  onClick={() => {
+                    setLeftPanelMode("vaults");
+                    setSelectedProject(null);
+                    setAddProjectMode(null);
+                  }}
+                  className={`rounded px-2 py-0.5 text-xs ${
+                    leftPanelMode === "vaults"
+                      ? "bg-neutral-800 text-neutral-200"
+                      : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+                  }`}
+                >
+                  Vaults
+                </button>
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <button
-                onClick={() => {
-                  setLeftPanelMode("projects");
-                  setPrefillSshProfileId(null);
-                  setAddProjectMode(null);
-                }}
-                className={`rounded px-2 py-0.5 text-xs ${
-                  leftPanelMode === "projects"
-                    ? "bg-neutral-800 text-neutral-200"
-                    : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-                }`}
+                onClick={() => setIsProjectsListCollapsed((prev) => !prev)}
+                className="flex h-7 w-7 items-center justify-center rounded border border-neutral-700 bg-neutral-900 text-sm font-semibold text-neutral-200 hover:bg-neutral-800"
+                title={
+                  isProjectsListCollapsed
+                    ? "Expand projects"
+                    : "Collapse projects"
+                }
               >
-                Projects
+                {isProjectsListCollapsed ? "▶" : "◀"}
               </button>
-              <button
-                onClick={() => {
-                  setLeftPanelMode("vaults");
-                  setSelectedProject(null);
-                  setAddProjectMode(null);
-                }}
-                className={`rounded px-2 py-0.5 text-xs ${
-                  leftPanelMode === "vaults"
-                    ? "bg-neutral-800 text-neutral-200"
-                    : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-                }`}
-              >
-                Vaults
-              </button>
-            </div>
-            <div className="flex gap-1">
-              {leftPanelMode === "projects" ? (
+              {!isProjectsListCollapsed && leftPanelMode === "projects" ? (
                 <button
                   onClick={() =>
                     setAddProjectMode(addProjectMode === null ? "local" : null)
                   }
+                  disabled={isProjectsListCollapsed}
                   className="rounded px-2 py-0.5 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 >
                   {addProjectMode === null ? "+ Project" : "Cancel"}
                 </button>
-              ) : (
+              ) : !isProjectsListCollapsed ? (
                 <button
                   onClick={() => {
                     setLeftPanelMode("vaults");
                     setPrefillSshProfileId(null);
                     setAddProjectMode(addProjectMode === "ssh" ? null : "ssh");
                   }}
+                  disabled={isProjectsListCollapsed}
                   className="rounded px-2 py-0.5 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                 >
                   {addProjectMode === "ssh" ? "Cancel" : "+ SSH"}
                 </button>
-              )}
+              ) : null}
             </div>
           </div>
 
-          {leftPanelMode === "projects" && addProjectMode !== null && (
-            <div className="max-h-[55vh] overflow-y-auto border-b border-neutral-800 p-2">
-              <div className="mb-2 flex rounded border border-neutral-700 bg-neutral-900 p-0.5">
-                <button
-                  onClick={() => setAddProjectMode("local")}
-                  className={`flex-1 rounded px-2 py-1 text-xs ${
-                    addProjectMode === "local"
-                      ? "bg-neutral-700 text-neutral-100"
-                      : "text-neutral-400 hover:text-neutral-200"
-                  }`}
-                >
-                  Local
-                </button>
-                <button
-                  onClick={() => setAddProjectMode("ssh")}
-                  className={`flex-1 rounded px-2 py-1 text-xs ${
-                    addProjectMode === "ssh"
-                      ? "bg-neutral-700 text-neutral-100"
-                      : "text-neutral-400 hover:text-neutral-200"
-                  }`}
-                >
-                  SSH
-                </button>
-                <button
-                  onClick={() => setAddProjectMode("docker")}
-                  className={`flex-1 rounded px-2 py-1 text-xs ${
-                    addProjectMode === "docker"
-                      ? "bg-neutral-700 text-neutral-100"
-                      : "text-neutral-400 hover:text-neutral-200"
-                  }`}
-                >
-                  Docker
-                </button>
+          {!isProjectsListCollapsed &&
+            leftPanelMode === "projects" &&
+            addProjectMode !== null && (
+              <div className="max-h-[55vh] overflow-y-auto border-b border-neutral-800 p-2">
+                <div className="mb-2 flex rounded border border-neutral-700 bg-neutral-900 p-0.5">
+                  <button
+                    onClick={() => setAddProjectMode("local")}
+                    className={`flex-1 rounded px-2 py-1 text-xs ${
+                      addProjectMode === "local"
+                        ? "bg-neutral-700 text-neutral-100"
+                        : "text-neutral-400 hover:text-neutral-200"
+                    }`}
+                  >
+                    Local
+                  </button>
+                  <button
+                    onClick={() => setAddProjectMode("ssh")}
+                    className={`flex-1 rounded px-2 py-1 text-xs ${
+                      addProjectMode === "ssh"
+                        ? "bg-neutral-700 text-neutral-100"
+                        : "text-neutral-400 hover:text-neutral-200"
+                    }`}
+                  >
+                    SSH
+                  </button>
+                  <button
+                    onClick={() => setAddProjectMode("docker")}
+                    className={`flex-1 rounded px-2 py-1 text-xs ${
+                      addProjectMode === "docker"
+                        ? "bg-neutral-700 text-neutral-100"
+                        : "text-neutral-400 hover:text-neutral-200"
+                    }`}
+                  >
+                    Docker
+                  </button>
+                </div>
+                {addProjectMode === "local" && (
+                  <AddProjectForm onCreated={handleProjectCreated} />
+                )}
+                {addProjectMode === "ssh" && (
+                  <AddSshProjectForm
+                    onCreated={handleProjectCreated}
+                    initialProfileId={prefillSshProfileId}
+                  />
+                )}
+                {addProjectMode === "docker" && (
+                  <AddDockerProjectForm onCreated={handleProjectCreated} />
+                )}
               </div>
-              {addProjectMode === "local" && (
-                <AddProjectForm onCreated={handleProjectCreated} />
-              )}
-              {addProjectMode === "ssh" && (
+            )}
+
+          {!isProjectsListCollapsed &&
+            leftPanelMode === "vaults" &&
+            addProjectMode === "ssh" && (
+              <div className="max-h-[55vh] overflow-y-auto border-b border-neutral-800">
                 <AddSshProjectForm
-                  onCreated={handleProjectCreated}
+                  mode="vault"
                   initialProfileId={prefillSshProfileId}
+                  editingProfileId={prefillSshProfileId}
+                  onSaved={() => {
+                    setAddProjectMode(null);
+                    setPrefillSshProfileId(null);
+                    void fetchSshConfigs();
+                  }}
                 />
-              )}
-              {addProjectMode === "docker" && (
-                <AddDockerProjectForm onCreated={handleProjectCreated} />
-              )}
-            </div>
-          )}
+              </div>
+            )}
 
-          {leftPanelMode === "vaults" && addProjectMode === "ssh" && (
-            <div className="max-h-[55vh] overflow-y-auto border-b border-neutral-800">
-              <AddSshProjectForm
-                mode="vault"
-                initialProfileId={prefillSshProfileId}
-                editingProfileId={prefillSshProfileId}
-                onSaved={() => {
-                  setAddProjectMode(null);
-                  setPrefillSshProfileId(null);
-                  void fetchSshConfigs();
-                }}
-              />
-            </div>
-          )}
-
-          <div className="flex-1 overflow-visible md:overflow-y-auto">
-            {leftPanelMode === "projects" ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {isProjectsListCollapsed ? (
+              <div className="px-2 py-4 text-center text-xs tracking-wide text-neutral-500">
+                Projects
+              </div>
+            ) : leftPanelMode === "projects" ? (
               <ProjectList
                 projects={projects}
                 selectedId={selectedProject?.id ?? null}
@@ -543,7 +691,8 @@ export default function Dashboard() {
                     className="rounded-lg px-3 py-2 text-neutral-300 hover:bg-neutral-800/50"
                   >
                     <div className="truncate text-sm font-medium">
-                      {cfg.label?.trim() || `${cfg.username}@${cfg.host}:${cfg.port}`}
+                      {cfg.label?.trim() ||
+                        `${cfg.username}@${cfg.host}:${cfg.port}`}
                     </div>
                     <div className="truncate text-xs text-neutral-500">
                       {cfg.username}@{cfg.host}:{cfg.port}
@@ -589,7 +738,7 @@ export default function Dashboard() {
         </div>
 
         {/* Right Panel — Sessions */}
-          <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col">
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 px-3 py-3 sm:px-4">
             <h2 className="text-sm font-semibold">
               {selectedProject ? "Sessions" : "Dashboard Home"}
@@ -628,6 +777,7 @@ export default function Dashboard() {
                     <option value="terminal">Terminal</option>
                     <option value="claude-code">Claude Code</option>
                     <option value="codex">Codex</option>
+                    <option value="opencode">OpenCode</option>
                   </select>
                 )}
                 <button
@@ -637,77 +787,138 @@ export default function Dashboard() {
                 >
                   {creatingSession ? "Creating..." : "+ New Session"}
                 </button>
+                <button
+                  onClick={() => setShowHarnessManager((prev) => !prev)}
+                  className={`w-full rounded border px-3 py-1 text-xs transition-colors sm:w-auto ${
+                    showHarnessManager
+                      ? "border-cyan-700 bg-cyan-500/20 text-cyan-100"
+                      : "border-neutral-700 bg-neutral-900 text-neutral-300 hover:bg-neutral-800"
+                  }`}
+                >
+                  {showHarnessManager ? "Hide Harness" : "Harness"}
+                </button>
               </div>
             )}
           </div>
 
-          <div className="flex-1 overflow-visible md:overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto">
             {selectedProject ? (
-              <div className="flex h-full flex-col">
-                <div className="border-b border-neutral-800 p-3">
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs text-neutral-500">
-                      Skills: {skillCount}
-                    </span>
-                    <Link
-                      href={`/graph?projectId=${selectedProject.id}`}
-                      className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-                    >
-                      Manage Skills
-                    </Link>
-                  </div>
-                  <div className="mb-2 text-xs text-neutral-500">Project Agents</div>
-                  <div className="mb-2 flex flex-wrap gap-1">
-                    {projectAgents.map((agent) => (
-                      <span
-                        key={agent.id}
-                        className="inline-flex items-center gap-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300"
-                      >
-                        {agent.name}
-                        <span className="text-neutral-500">({agent.agentType})</span>
-                        <button
-                          onClick={() => handleDeleteProjectAgent(agent.id)}
-                          className="text-neutral-500 hover:text-red-400"
-                          title="Delete agent"
-                        >
-                          x
-                        </button>
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                {showHarnessManager && (
+                  <div className="border-b border-neutral-800 p-3">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs text-neutral-500">
+                        Skills: {skillCount}
                       </span>
-                    ))}
+                      <Link
+                        href={`/graph?projectId=${selectedProject.id}`}
+                        className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+                      >
+                        Manage Skills
+                      </Link>
+                    </div>
+                    <ProjectHarnessPanel projectId={selectedProject.id} />
                   </div>
-                  <div className="flex gap-1">
-                    <input
-                      type="text"
-                      placeholder="Agent name"
-                      value={newAgentName}
-                      onChange={(e) => setNewAgentName(e.target.value)}
-                      className="flex-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none"
-                    />
-                    <select
-                      value={newAgentType}
-                      onChange={(e) => setNewAgentType(e.target.value as NewSessionAgent)}
-                      className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
-                    >
-                      <option value="terminal">terminal</option>
-                      <option value="claude-code">claude-code</option>
-                      <option value="codex">codex</option>
-                    </select>
-                    <button
-                      onClick={handleCreateProjectAgent}
-                      disabled={creatingAgent || !newAgentName.trim()}
-                      className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50"
-                    >
-                      {creatingAgent ? "Adding..." : "Add"}
-                    </button>
+                )}
+
+                <div
+                  className={`min-h-0 flex-1 md:grid ${
+                    isSessionsListCollapsed
+                      ? "md:grid-cols-[56px_minmax(0,1fr)]"
+                      : "md:grid-cols-[320px_minmax(0,1fr)]"
+                  }`}
+                >
+                  <div className="flex min-h-0 flex-col border-b border-neutral-800 md:border-b-0 md:border-r">
+                    <div className="border-b border-neutral-800 bg-neutral-950 px-3 py-4">
+                      <div
+                        className={`flex items-center ${
+                          isSessionsListCollapsed
+                            ? "justify-center"
+                            : "justify-between"
+                        }`}
+                      >
+                        {!isSessionsListCollapsed && (
+                          <div className="text-xs uppercase tracking-wide text-neutral-500">
+                            Session Scope
+                          </div>
+                        )}
+                        <button
+                          onClick={() =>
+                            setIsSessionsListCollapsed((prev) => !prev)
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded border border-neutral-700 bg-neutral-900 text-sm font-semibold text-neutral-200 hover:bg-neutral-800"
+                          title={
+                            isSessionsListCollapsed
+                              ? "Expand sessions"
+                              : "Collapse sessions"
+                          }
+                        >
+                          {isSessionsListCollapsed ? "▶" : "◀"}
+                        </button>
+                      </div>
+                      {!isSessionsListCollapsed && (
+                        <div className="mt-1 text-sm font-semibold text-neutral-200">
+                          All projects
+                        </div>
+                      )}
+                    </div>
+                    {!isSessionsListCollapsed && (
+                      <>
+                        <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
+                          <span className="text-xs text-neutral-500">
+                            Sessions
+                          </span>
+                          <div className="inline-flex rounded border border-neutral-700 bg-neutral-900 p-0.5 text-xs">
+                            <button
+                              onClick={() => setSessionViewMode("active")}
+                              className={`rounded px-2 py-1 ${
+                                sessionViewMode === "active"
+                                  ? "bg-neutral-700 text-neutral-100"
+                                  : "text-neutral-400 hover:text-neutral-200"
+                              }`}
+                            >
+                              Active
+                            </button>
+                            <button
+                              onClick={() => setSessionViewMode("all")}
+                              className={`rounded px-2 py-1 ${
+                                sessionViewMode === "all"
+                                  ? "bg-neutral-700 text-neutral-100"
+                                  : "text-neutral-400 hover:text-neutral-200"
+                              }`}
+                            >
+                              All
+                            </button>
+                          </div>
+                        </div>
+                        <div className="min-h-0 flex-1 overflow-y-auto">
+                          <SessionList
+                            sessions={visibleSessions}
+                            onTerminate={handleTerminateSession}
+                            onResume={handleResumeClaudeSession}
+                            onRename={handleRenameSession}
+                            onOpenSession={handleOpenSessionFromList}
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
-                <div className="flex-1 overflow-visible md:overflow-y-auto">
-                  <SessionList
-                    sessions={sessions}
-                    onTerminate={handleTerminateSession}
-                    onResume={handleResumeClaudeSession}
-                    onRename={handleRenameSession}
-                  />
+
+                  <div className="min-h-0 border-t border-neutral-800 p-2 sm:p-3 md:border-t-0">
+                    {inlineSessionId ? (
+                      <div className="h-full min-h-[260px] overflow-hidden rounded-xl border border-neutral-700 bg-neutral-950">
+                        <MultiTerminal
+                          key={inlineSessionId}
+                          initialSessionId={inlineSessionId}
+                          onKillSession={handleTerminateSession}
+                        />
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 text-sm text-neutral-500">
+                        Active session을 선택하면 이 영역에서 바로 실행됩니다.
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
@@ -720,13 +931,17 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
-                    <div className="text-xs text-neutral-500">Active Sessions</div>
+                    <div className="text-xs text-neutral-500">
+                      Active Sessions
+                    </div>
                     <div className="mt-1 text-2xl font-semibold text-green-400">
                       {sessions.filter((s) => s.status === "active").length}
                     </div>
                   </div>
                   <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
-                    <div className="text-xs text-neutral-500">Pending Approvals</div>
+                    <div className="text-xs text-neutral-500">
+                      Pending Approvals
+                    </div>
                     <div className="mt-1 text-2xl font-semibold text-amber-400">
                       {pendingApprovals.length}
                     </div>
@@ -734,7 +949,9 @@ export default function Dashboard() {
                 </div>
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
-                  <div className="mb-2 text-xs text-neutral-500">Quick Start</div>
+                  <div className="mb-2 text-xs text-neutral-500">
+                    Quick Start
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <button
                       onClick={() => {
@@ -788,7 +1005,8 @@ export default function Dashboard() {
                           className="flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs text-neutral-300 hover:bg-neutral-800"
                         >
                           <span className="truncate">
-                            {cfg.label?.trim() || `${cfg.username}@${cfg.host}:${cfg.port}`}
+                            {cfg.label?.trim() ||
+                              `${cfg.username}@${cfg.host}:${cfg.port}`}
                           </span>
                           <span className="text-neutral-500">Use</span>
                         </button>
@@ -799,9 +1017,56 @@ export default function Dashboard() {
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                   <div className="mb-2 text-xs text-neutral-500">
+                    Saved Workspaces (Global)
+                  </div>
+                  {globalWorkspaces.length === 0 ? (
+                    <p className="text-sm text-neutral-600">
+                      No saved workspace yet.
+                    </p>
+                  ) : (
+                    <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
+                      {globalWorkspaces.map((workspace) => {
+                        const launchSessionId =
+                          getWorkspaceLaunchSessionId(workspace);
+                        return (
+                          <div
+                            key={workspace.id}
+                            className="flex items-center gap-2 rounded px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate">{workspace.name}</p>
+                              <p className="text-[11px] text-neutral-500">
+                                Updated{" "}
+                                {new Date(workspace.updatedAt).toLocaleString()}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleOpenGlobalWorkspace(workspace)
+                              }
+                              disabled={!launchSessionId}
+                              className="rounded border border-neutral-700 px-2 py-0.5 text-[11px] text-neutral-300 hover:bg-neutral-700 disabled:opacity-40"
+                              title={
+                                launchSessionId
+                                  ? "Open workspace"
+                                  : "No active session found in this workspace"
+                              }
+                            >
+                              Open
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
+                  <div className="mb-2 text-xs text-neutral-500">
                     Active Sessions (All)
                   </div>
-                  {sessions.filter((s) => s.status === "active").length === 0 ? (
+                  {sessions.filter((s) => s.status === "active").length ===
+                  0 ? (
                     <p className="text-sm text-neutral-600">
                       No active sessions.
                     </p>
@@ -812,11 +1077,13 @@ export default function Dashboard() {
                         .map((s) => (
                           <button
                             key={s.id}
-                            onClick={() => router.push(`/sessions/${s.id}`)}
+                            onClick={() => openSessionInDashboard(s)}
                             className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-neutral-300 hover:bg-neutral-800"
-                            style={{ borderLeft: `2px solid ${s.projectColor}` }}
+                            style={{
+                              borderLeft: `2px solid ${s.projectColor}`,
+                            }}
                           >
-                            <span className="truncate flex-1">
+                            <span className="flex-1 truncate">
                               {s.projectName} / {s.name ?? s.id.slice(0, 8)}
                             </span>
                             <span className="text-green-400">active</span>

@@ -63,37 +63,40 @@
 
 ## 키워드 → 문서 매핑
 
-| 키워드 | 문서 | 카테고리 |
-|--------|------|----------|
-| **pty** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **terminal** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **xterm** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **socket.io** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **custom-server** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **session** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **dashboard** | [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | feature |
-| **SSH** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **PWA** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **모바일** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **스킬그래프** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **React Flow** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **인터셉터** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **Delta** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **A/B비교** | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | feature |
-| **skill** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md), [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | decision, feature |
-| **워크플로우** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
-| **자동화** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
-| **phase** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
-| **link-notes** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
-| **dep-install** | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | decision |
-| **harness** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **에이전트** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **observability** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **guardrail** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **golden-path** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **컨텍스트** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **GC에이전트** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
-| **세션포크** | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | decision |
+| 키워드              | 문서                                                                                                                | 카테고리          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| **pty**             | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **terminal**        | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **xterm**           | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **socket.io**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **custom-server**   | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **session**         | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **dashboard**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+| **SSH**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **PWA**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **모바일**          | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **스킬그래프**      | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **React Flow**      | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **인터셉터**        | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **Delta**           | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **A/B비교**         | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **oh-my-opencode**  | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md)                               | feature           |
+| **chat-ui**         | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md)                               | feature           |
+| **project-harness** | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md)                               | feature           |
+| **skill**           | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md), [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | decision, feature |
+| **워크플로우**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+| **자동화**          | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+| **phase**           | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+| **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+| **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+| **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **golden-path**     | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **컨텍스트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **GC에이전트**      | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **세션포크**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
 
 ---
 
@@ -101,25 +104,29 @@
 
 ### features/
 
-| 문서 | Phase | 상태 | 키워드 |
-|------|-------|------|--------|
-| [Phase 1 인프라](features/2026-02-27_phase1-infra.md) | 1 | 🟢 | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm` |
-| [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md) | 2/3/4 | 🟢 | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+| 문서                                                                                  | Phase | 상태 | 키워드                                                                      |
+| ------------------------------------------------------------------------------------- | ----- | ---- | --------------------------------------------------------------------------- |
+| [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
+| [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+| [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
 
 ### decisions/
 
-| 문서 | 상태 | 키워드 |
-|------|------|--------|
-| [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md) | 완료 | `skill` `phase` `link-notes` `dep-install` `워크플로우` `자동화` |
+| 문서                                                                 | 상태 | 키워드                                                                                            |
+| -------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------- |
+| [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)              | 완료 | `skill` `phase` `link-notes` `dep-install` `워크플로우` `자동화`                                  |
 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 완료 | `harness` `에이전트` `observability` `guardrail` `golden-path` `컨텍스트` `GC에이전트` `세션포크` |
 
 ### bugfix/
+
 _(아직 없음)_
 
 ### refactor/
+
 _(아직 없음)_
 
 ### devops/
+
 _(아직 없음)_
 
 ---
@@ -145,9 +152,10 @@ features/2026-02-28_phase2-4-parallel.md
 
 ## 타임라인
 
-| 날짜 | 문서 | 요약 |
-|------|------|------|
-| 2026-02-27 | [스킬 전략](decisions/2026-02-27_skill-strategy.md) | `/phase`, `/link-notes`, `/dep-install` 스킬 추가 결정 |
-| 2026-02-27 | [Phase 1](features/2026-02-27_phase1-infra.md) | PTY + xterm.js + Socket.io + 세션 resume 인프라 |
-| 2026-02-28 | [Phase 2-4](features/2026-02-28_phase2-4-parallel.md) | SSH + PWA + 그래프 + 인터셉터 + A/B 비교 병렬 구현 |
-| 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+| 날짜       | 문서                                                                                  | 요약                                                                                       |
+| ---------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 2026-02-27 | [스킬 전략](decisions/2026-02-27_skill-strategy.md)                                   | `/phase`, `/link-notes`, `/dep-install` 스킬 추가 결정                                     |
+| 2026-02-27 | [Phase 1](features/2026-02-27_phase1-infra.md)                                        | PTY + xterm.js + Socket.io + 세션 resume 인프라                                            |
+| 2026-02-28 | [Phase 2-4](features/2026-02-28_phase2-4-parallel.md)                                 | SSH + PWA + 그래프 + 인터셉터 + A/B 비교 병렬 구현                                         |
+| 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+| 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |

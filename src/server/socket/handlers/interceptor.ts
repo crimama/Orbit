@@ -28,14 +28,23 @@ export function registerInterceptorHandlers(
       if (backend) {
         backend.write(result.sessionId, result.data);
       }
+      io.to(`session:${result.sessionId}`).emit("interceptor-resolved", approvalId, true);
+      return;
     }
-    // Notify all clients that the approval was resolved
-    io.emit("interceptor-resolved", approvalId, true);
+    socket.emit("interceptor-resolved", approvalId, true);
   });
 
   socket.on("interceptor-deny", (approvalId) => {
+    const pending = commandInterceptor.getPendingById(approvalId);
     commandInterceptor.resolve(approvalId, false);
-    // Notify all clients that the approval was denied
-    io.emit("interceptor-resolved", approvalId, false);
+    if (pending) {
+      io.to(`session:${pending.sessionId}`).emit(
+        "interceptor-resolved",
+        approvalId,
+        false,
+      );
+      return;
+    }
+    socket.emit("interceptor-resolved", approvalId, false);
   });
 }

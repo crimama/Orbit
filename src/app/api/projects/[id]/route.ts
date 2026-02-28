@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ProjectInfo } from "@/lib/types";
+import {
+  registerProject,
+  unregisterProject,
+} from "@/server/project/projectRegistry";
 
 function isValidHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
@@ -49,7 +53,9 @@ export async function PATCH(
     "dockerContainer",
   );
   const dockerContainer =
-    typeof body.dockerContainer === "string" ? body.dockerContainer.trim() : null;
+    typeof body.dockerContainer === "string"
+      ? body.dockerContainer.trim()
+      : null;
 
   if (!name && !color && !path && !hasDockerContainer) {
     return NextResponse.json(
@@ -114,9 +120,19 @@ export async function PATCH(
       updatedAt: project.updatedAt.toISOString(),
     };
 
+    await registerProject({
+      projectId: project.id,
+      name: project.name,
+      type: project.type,
+      path: project.path,
+    });
+
     return NextResponse.json({ data });
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025") {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2025"
+    ) {
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
     return NextResponse.json(
@@ -137,11 +153,15 @@ export async function DELETE(
       });
       await tx.project.delete({ where: { id: params.id } });
     });
+    await unregisterProject(params.id);
     return NextResponse.json({ data: { deleted: true } });
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2025") {
-        return NextResponse.json({ error: "Project not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "Project not found" },
+          { status: 404 },
+        );
       }
     }
     return NextResponse.json(

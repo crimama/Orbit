@@ -40,6 +40,31 @@ npm run build
 npm start
 ```
 
+### Security Defaults
+
+- API/Socket are loopback-only by default (`127.0.0.1`).
+- To allow remote access explicitly, set `ORBIT_ALLOW_REMOTE=true`.
+- Optional: `ORBIT_REMOTE_SCOPE=tailscale` to accept only loopback/Tailscale clients.
+- To require authentication, set `ORBIT_ACCESS_TOKEN`.
+- Sign in on `/login` with the token (or open with `?token=<value>` once).
+- Password-based SSH profiles require `SSH_PASSWORD_SECRET` (AES-GCM encryption key material).
+
+### Tailscale-Only Access (Recommended)
+
+For personal multi-device use, run Orbit so only Tailnet clients can connect:
+
+```bash
+export ORBIT_ACCESS_TOKEN="change-this-to-a-long-random-token"
+export SSH_PASSWORD_SECRET="change-this-too"
+npm run dev:tailnet
+```
+
+- This sets:
+  - `ORBIT_ALLOW_REMOTE=true`
+  - `ORBIT_REMOTE_SCOPE=tailscale` (rejects non-loopback/non-tailnet IPs)
+  - `HOST=0.0.0.0`
+- Then open from another Tailnet device: `http://<tailscale-ip>:3000/login`
+
 ## Development
 
 ```bash

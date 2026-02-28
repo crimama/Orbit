@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import type {
-  ProjectAgentInfo,
-  CreateProjectAgentRequest,
-} from "@/lib/types";
+import type { ProjectAgentInfo, CreateProjectAgentRequest } from "@/lib/types";
 
 function toInfo(row: {
   id: string;
@@ -48,9 +45,14 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!["terminal", "claude-code", "codex"].includes(body.agentType)) {
+  if (
+    !["terminal", "claude-code", "codex", "opencode"].includes(body.agentType)
+  ) {
     return NextResponse.json(
-      { error: 'agentType must be "terminal" | "claude-code" | "codex"' },
+      {
+        error:
+          'agentType must be "terminal" | "claude-code" | "codex" | "opencode"',
+      },
       { status: 400 },
     );
   }
@@ -71,4 +73,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
