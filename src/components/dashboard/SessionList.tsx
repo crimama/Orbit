@@ -138,9 +138,22 @@ export default function SessionList({
                   </span>
                 )}
               </div>
-              <div className="text-xs text-neutral-500">
-                {s.agentType} &middot;{" "}
-                {new Date(s.updatedAt).toLocaleTimeString()}
+              <div className="flex items-center gap-2 text-xs text-neutral-500">
+                <span
+                  className="inline-block h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: s.projectColor }}
+                  aria-hidden
+                />
+                <span
+                  className="max-w-[180px] truncate text-neutral-400"
+                  title={s.projectName}
+                >
+                  {s.projectName}
+                </span>
+                <span>&middot;</span>
+                <span>{s.agentType}</span>
+                <span>&middot;</span>
+                <span>{new Date(s.updatedAt).toLocaleTimeString()}</span>
                 {s.source === "claude-history" && (
                   <span className="ml-2 text-neutral-600">history</span>
                 )}

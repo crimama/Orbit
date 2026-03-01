@@ -2,13 +2,21 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const allowRemote = process.env.ORBIT_ALLOW_REMOTE === "true";
-const accessToken = process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "";
 const tokenCookieName = "orbit_token";
-const remoteScope = process.env.ORBIT_REMOTE_SCOPE?.trim().toLowerCase() ?? "any";
+const remoteScope =
+  process.env.ORBIT_REMOTE_SCOPE?.trim().toLowerCase() ?? "any";
+
+function currentAccessToken(): string {
+  return process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "";
+}
 
 function isLoopbackHostname(value: string): boolean {
   const normalized = value.replace(/^\[|\]$/g, "").toLowerCase();
-  return normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1";
+  return (
+    normalized === "localhost" ||
+    normalized === "127.0.0.1" ||
+    normalized === "::1"
+  );
 }
 
 function isLoopbackIp(value: string | null): boolean {
@@ -31,7 +39,10 @@ function isTailscaleIp(value: string | null): boolean {
 
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(normalized)) {
     const octets = normalized.split(".").map((part) => Number(part));
-    if (octets.length !== 4 || octets.some((n) => Number.isNaN(n) || n < 0 || n > 255)) {
+    if (
+      octets.length !== 4 ||
+      octets.some((n) => Number.isNaN(n) || n < 0 || n > 255)
+    ) {
       return false;
     }
     const n =
@@ -57,7 +68,8 @@ function isAllowedRemoteIp(value: string | null): boolean {
 }
 
 function isAuthorizedByToken(request: NextRequest): boolean {
-  if (!accessToken) return true;
+  const accessToken = currentAccessToken();
+  if (!accessToken) return false;
 
   const byCookie = request.cookies.get(tokenCookieName)?.value?.trim();
   if (byCookie && byCookie === accessToken) return true;
@@ -83,17 +95,19 @@ function unauthorized(request: NextRequest): NextResponse {
   }
   const loginUrl = request.nextUrl.clone();
   loginUrl.pathname = "/login";
-  loginUrl.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
+  loginUrl.searchParams.set(
+    "next",
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
+  );
   return NextResponse.redirect(loginUrl);
 }
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  if (pathname === "/login" || pathname.startsWith("/api/auth/session")) {
-    return NextResponse.next();
-  }
+  const accessToken = currentAccessToken();
 
-  const tokenFromQuery = request.nextUrl.searchParams.get("token")?.trim() ?? "";
+  const tokenFromQuery =
+    request.nextUrl.searchParams.get("token")?.trim() ?? "";
   if (accessToken && tokenFromQuery && tokenFromQuery === accessToken) {
     const url = request.nextUrl.clone();
     url.searchParams.delete("token");
@@ -107,6 +121,10 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
+  if (pathname === "/login" || pathname.startsWith("/api/auth/session")) {
+    return NextResponse.next();
+  }
+
   if (allowRemote) {
     const remoteIp =
       request.ip ??
@@ -118,7 +136,9 @@ export function middleware(request: NextRequest) {
         { status: 403 },
       );
     }
-    return isAuthorizedByToken(request) ? NextResponse.next() : unauthorized(request);
+    return isAuthorizedByToken(request)
+      ? NextResponse.next()
+      : unauthorized(request);
   }
 
   const hostAllowed = isLoopbackHostname(request.nextUrl.hostname);
@@ -127,7 +147,9 @@ export function middleware(request: NextRequest) {
     isLoopbackIp(request.headers.get("x-forwarded-for"));
 
   if (hostAllowed || ipAllowed) {
-    return isAuthorizedByToken(request) ? NextResponse.next() : unauthorized(request);
+    return isAuthorizedByToken(request)
+      ? NextResponse.next()
+      : unauthorized(request);
   }
 
   return NextResponse.json(
@@ -137,5 +159,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|manifest.json).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icons|manifest.json).*)",
+  ],
 };

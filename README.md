@@ -14,15 +14,15 @@
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 14 (App Router) + TypeScript |
-| Terminal | xterm.js + WebGL Addon |
-| Visualization | React Flow (XyFlow) |
-| Real-time | Socket.io (WebSocket) |
-| Backend | Node.js + node-pty + ssh2 |
-| Database | Prisma + SQLite |
-| Mobile | PWA (next-pwa) |
+| Layer         | Technology                           |
+| ------------- | ------------------------------------ |
+| Frontend      | Next.js 14 (App Router) + TypeScript |
+| Terminal      | xterm.js + WebGL Addon               |
+| Visualization | React Flow (XyFlow)                  |
+| Real-time     | Socket.io (WebSocket)                |
+| Backend       | Node.js + node-pty + ssh2            |
+| Database      | Prisma + SQLite                      |
+| Mobile        | PWA (next-pwa)                       |
 
 ## Getting Started
 
@@ -54,10 +54,14 @@ npm start
 For personal multi-device use, run Orbit so only Tailnet clients can connect:
 
 ```bash
-export ORBIT_ACCESS_TOKEN="change-this-to-a-long-random-token"
 export SSH_PASSWORD_SECRET="change-this-too"
 npm run dev:tailnet
 ```
+
+- `ORBIT_ACCESS_TOKEN` is auto-generated on first tailnet run and persisted at `~/.orbit/access-token`.
+- To rotate it manually: `ORBIT_ACCESS_TOKEN_ROTATE=true npm run dev:tailnet`.
+- Optional override path: `ORBIT_ACCESS_TOKEN_FILE=/custom/path/token npm run dev:tailnet`.
+- To force first-time setup mode (no auto token): `ORBIT_TAILNET_AUTO_TOKEN=false npm run dev:tailnet`.
 
 - This sets:
   - `ORBIT_ALLOW_REMOTE=true`

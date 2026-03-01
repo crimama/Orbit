@@ -250,6 +250,56 @@ export interface BrowseResponse {
   entries: DirEntry[];
 }
 
+export interface ProjectFileEntryInfo {
+  name: string;
+  path: string;
+  isDir: boolean;
+  isSymlink: boolean;
+  size: number | null;
+  mtimeMs: number | null;
+}
+
+export interface ProjectFileListResponse {
+  current: string;
+  parent: string | null;
+  entries: ProjectFileEntryInfo[];
+}
+
+export interface ProjectFileReadResponse {
+  path: string;
+  content: string | null;
+  isBinary: boolean;
+  size: number;
+  mtimeMs: number;
+  encoding: "utf8" | "binary";
+}
+
+export interface ProjectFileWriteRequest {
+  content: string;
+  expectedMtimeMs?: number | null;
+  create?: boolean;
+}
+
+export interface ProjectFileWriteResponse {
+  ok: true;
+  mtimeMs: number;
+  size: number;
+}
+
+export interface ProjectFileMkdirRequest {
+  path: string;
+}
+
+export interface ProjectFileRenameRequest {
+  from: string;
+  to: string;
+}
+
+export interface ProjectFileDeleteRequest {
+  path: string;
+  recursive?: boolean;
+}
+
 export interface DockerContainerInfo {
   id: string;
   name: string;

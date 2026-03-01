@@ -19,6 +19,28 @@ interface HeldApproval extends PendingApproval {
 type PendingCallback = (approval: PendingApproval) => void;
 type WarnCallback = (warning: InterceptorWarning) => void;
 
+/** Allowlist deny rule — auto-block when command not in allowlist */
+const ALLOWLIST_DENY_RULE: InterceptorRuleInfo = {
+  id: "allowlist-deny",
+  pattern: "*",
+  description: "Command not in allowlist",
+  severity: "block",
+  enabled: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+};
+
+/** Convert held approval to public shape */
+function toPublicApproval(held: HeldApproval): PendingApproval {
+  return {
+    id: held.id,
+    sessionId: held.sessionId,
+    command: held.command,
+    matchedRule: held.matchedRule,
+    timestamp: held.timestamp,
+  };
+}
+
 class CommandInterceptor {
   /** Per-session input accumulator — collects keystrokes until Enter */
   private inputBuffers = new Map<string, string>();
@@ -32,6 +54,9 @@ class CommandInterceptor {
   private cacheTimestamp = 0;
   private modeCacheTimestamp = 0;
   private static readonly CACHE_TTL_MS = 10_000;
+
+  /** Compiled regex cache — pattern → RegExp */
+  private compiledRegexes = new Map<string, RegExp>();
 
   /**
    * Intercept terminal input data for a session.
@@ -99,15 +124,7 @@ class CommandInterceptor {
         return true; // Safe command — pass immediately
       }
       // Not in allowlist → create auto-block pending approval
-      return this.createBlock(sessionId, data, command, {
-        id: "allowlist-deny",
-        pattern: "*",
-        description: "Command not in allowlist",
-        severity: "block",
-        enabled: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }, onPending);
+      return this.createBlock(sessionId, data, command, ALLOWLIST_DENY_RULE, onPending);
     }
 
     // --- Mode: hybrid (default) — allow → block/warn → pass ---
@@ -151,25 +168,12 @@ class CommandInterceptor {
    * List all currently pending approvals.
    */
   getPending(): PendingApproval[] {
-    return Array.from(this.pendingApprovals.values()).map((held) => ({
-      id: held.id,
-      sessionId: held.sessionId,
-      command: held.command,
-      matchedRule: held.matchedRule,
-      timestamp: held.timestamp,
-    }));
+    return Array.from(this.pendingApprovals.values()).map(toPublicApproval);
   }
 
   getPendingById(approvalId: string): PendingApproval | null {
     const held = this.pendingApprovals.get(approvalId);
-    if (!held) return null;
-    return {
-      id: held.id,
-      sessionId: held.sessionId,
-      command: held.command,
-      matchedRule: held.matchedRule,
-      timestamp: held.timestamp,
-    };
+    return held ? toPublicApproval(held) : null;
   }
 
   /**
@@ -181,6 +185,16 @@ class CommandInterceptor {
 
   // --- Private helpers ---
 
+  /** Compile and cache a regex pattern */
+  private compileRegex(pattern: string): RegExp {
+    if (this.compiledRegexes.has(pattern)) {
+      return this.compiledRegexes.get(pattern)!;
+    }
+    const regex = new RegExp(pattern);
+    this.compiledRegexes.set(pattern, regex);
+    return regex;
+  }
+
   /** Test if command matches any rule in the list */
   private matchesAny(
     testInput: string,
@@ -188,7 +202,7 @@ class CommandInterceptor {
   ): boolean {
     for (const rule of rules) {
       try {
-        if (new RegExp(rule.pattern).test(testInput)) return true;
+        if (this.compileRegex(rule.pattern).test(testInput)) return true;
       } catch {
         continue;
       }
@@ -205,11 +219,11 @@ class CommandInterceptor {
     rules: InterceptorRuleInfo[],
     onPending: PendingCallback,
     onWarn: WarnCallback,
-  ): boolean | Promise<boolean> {
+  ): boolean {
     for (const rule of rules) {
       let matches = false;
       try {
-        matches = new RegExp(rule.pattern).test(testInput);
+        matches = this.compileRegex(rule.pattern).test(testInput);
       } catch {
         continue;
       }
@@ -271,35 +285,32 @@ class CommandInterceptor {
     this.cachedMode = null;
     this.cacheTimestamp = 0;
     this.modeCacheTimestamp = 0;
+    this.compiledRegexes.clear();
   }
 
   // --- Caching ---
 
+  private isCacheValid(timestamp: number): boolean {
+    return Date.now() - timestamp < CommandInterceptor.CACHE_TTL_MS;
+  }
+
   private async getActiveRulesCached(): Promise<InterceptorRuleInfo[]> {
-    const now = Date.now();
-    if (
-      this.cachedRules &&
-      now - this.cacheTimestamp < CommandInterceptor.CACHE_TTL_MS
-    ) {
+    if (this.cachedRules && this.isCacheValid(this.cacheTimestamp)) {
       return this.cachedRules;
     }
 
     this.cachedRules = await getActiveRules();
-    this.cacheTimestamp = now;
+    this.cacheTimestamp = Date.now();
     return this.cachedRules;
   }
 
   private async getModeCached(): Promise<InterceptorMode> {
-    const now = Date.now();
-    if (
-      this.cachedMode &&
-      now - this.modeCacheTimestamp < CommandInterceptor.CACHE_TTL_MS
-    ) {
+    if (this.cachedMode && this.isCacheValid(this.modeCacheTimestamp)) {
       return this.cachedMode;
     }
 
     this.cachedMode = await getInterceptorMode();
-    this.modeCacheTimestamp = now;
+    this.modeCacheTimestamp = Date.now();
     return this.cachedMode;
   }
 }

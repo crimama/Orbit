@@ -8,19 +8,25 @@ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
 import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
 import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
 
+const AGENT_TYPES = {
+  TERMINAL: "terminal",
+  CODEX: "codex",
+  OPENCODE: "opencode",
+} as const;
+
 function dockerInnerCommand(
   workdir: string,
   agentType: string,
   resumeSessionRef?: string,
 ): string {
   const qPath = shellQuote(workdir);
-  if (agentType === "terminal") {
+  if (agentType === AGENT_TYPES.TERMINAL) {
     return `cd ${qPath} 2>/dev/null || cd /; exec /bin/bash -il`;
   }
-  if (agentType === "codex") {
+  if (agentType === AGENT_TYPES.CODEX) {
     return `cd ${qPath} 2>/dev/null || cd /; if command -v codex >/dev/null 2>&1; then exec codex; else echo "[Agent Orbit] codex not found in container PATH."; exec /bin/bash -il; fi`;
   }
-  if (agentType === "opencode") {
+  if (agentType === AGENT_TYPES.OPENCODE) {
     return `cd ${qPath} 2>/dev/null || cd /; if command -v opencode >/dev/null 2>&1; then exec opencode; else echo "[Agent Orbit] opencode not found in container PATH."; exec /bin/bash -il; fi`;
   }
   const resumeArgs = resumeSessionRef?.trim()
@@ -30,9 +36,6 @@ function dockerInnerCommand(
     `if command -v claude >/dev/null 2>&1; then exec claude${resumeArgs}; ` +
     `elif command -v claude-code >/dev/null 2>&1; then exec claude-code${resumeArgs}; ` +
     `else echo "[Agent Orbit] claude/claude-code not found in container PATH."; exec /bin/sh; fi`;
-  if (resumeSessionRef?.trim()) {
-    return `cd ${qPath} 2>/dev/null || cd /; ${claudeCmd}`;
-  }
   return `cd ${qPath} 2>/dev/null || cd /; ${claudeCmd}`;
 }
 
@@ -85,6 +88,33 @@ class SessionManager {
     });
   }
 
+  private async startRemotePty(
+    sessionId: string,
+    sshConfigId: string,
+    agentType: string,
+    resumeSessionRef: string | undefined,
+    remoteProject: { path: string; dockerContainer: string | null },
+    options?: { cols?: number; rows?: number },
+  ): Promise<void> {
+    const status = sshManager.getStatus(sshConfigId);
+    if (status.state !== "connected") {
+      await sshManager.connect(sshConfigId);
+    }
+
+    await remotePtyManager.create(sessionId, {
+      ...(options?.cols !== undefined && { cols: options.cols }),
+      ...(options?.rows !== undefined && { rows: options.rows }),
+      sshConfigId,
+    });
+
+    this.bootstrapRemoteAgent(
+      sessionId,
+      { agentType, resumeSessionRef },
+      remoteProject,
+    );
+    this.registerExitHandler(sessionId, "remote");
+  }
+
   async reconcileOnStartup(): Promise<void> {
     const activeCount = await prisma.agentSession.count({
       where: { status: "active" },
@@ -128,22 +158,17 @@ class SessionManager {
         if (project.type === "DOCKER" && !project.dockerContainer) {
           throw new Error("dockerContainer is not configured for this project");
         }
-        // Ensure SSH is connected
-        const status = sshManager.getStatus(project.sshConfigId!);
-        if (status.state !== "connected") {
-          await sshManager.connect(project.sshConfigId!);
-        }
-
-        await remotePtyManager.create(session.id, {
-          cols: req.cols,
-          rows: req.rows,
-          sshConfigId: project.sshConfigId!,
-        });
-        this.bootstrapRemoteAgent(session.id, req, {
-          path: project.path,
-          dockerContainer: project.dockerContainer,
-        });
-        this.registerExitHandler(session.id, "remote");
+        await this.startRemotePty(
+          session.id,
+          project.sshConfigId!,
+          req.agentType,
+          req.resumeSessionRef,
+          {
+            path: project.path,
+            dockerContainer: project.dockerContainer,
+          },
+          { cols: req.cols, rows: req.rows },
+        );
       } else {
         if (isDocker && !project.dockerContainer) {
           throw new Error("dockerContainer is not configured for this project");
@@ -256,39 +281,28 @@ class SessionManager {
     if (!row) return false;
     if (row.status !== "active") return false;
 
+    // Guard: Docker must be configured if requested
+    if (row.project.type === "DOCKER" && !row.project.dockerContainer) {
+      return false;
+    }
+
     const isRemote =
       (row.project.type === "SSH" || row.project.type === "DOCKER") &&
       !!row.project.sshConfigId;
 
     try {
       if (isRemote) {
-        if (row.project.type === "DOCKER" && !row.project.dockerContainer) {
-          return false;
-        }
-        const status = sshManager.getStatus(row.project.sshConfigId!);
-        if (status.state !== "connected") {
-          await sshManager.connect(row.project.sshConfigId!);
-        }
-        await remotePtyManager.create(sessionId, {
-          sshConfigId: row.project.sshConfigId!,
-        });
-        this.bootstrapRemoteAgent(
+        await this.startRemotePty(
           sessionId,
-          {
-            agentType: row.agentType,
-            resumeSessionRef:
-              row.sessionRef !== sessionId ? row.sessionRef : undefined,
-          },
+          row.project.sshConfigId!,
+          row.agentType,
+          row.sessionRef !== sessionId ? row.sessionRef : undefined,
           {
             path: row.project.path,
             dockerContainer: row.project.dockerContainer,
           },
         );
-        this.registerExitHandler(sessionId, "remote");
       } else {
-        if (row.project.type === "DOCKER" && !row.project.dockerContainer) {
-          return false;
-        }
         ptyManager.create(
           sessionId,
           this.getPtyOptionsForRecover(
@@ -334,7 +348,7 @@ class SessionManager {
       };
     }
 
-    if (req.agentType === "terminal") {
+    if (req.agentType === AGENT_TYPES.TERMINAL) {
       return {
         cols: req.cols,
         rows: req.rows,
@@ -342,7 +356,7 @@ class SessionManager {
       };
     }
 
-    if (req.agentType === "codex") {
+    if (req.agentType === AGENT_TYPES.CODEX) {
       return {
         cols: req.cols,
         rows: req.rows,
@@ -352,7 +366,7 @@ class SessionManager {
       };
     }
 
-    if (req.agentType === "opencode") {
+    if (req.agentType === AGENT_TYPES.OPENCODE) {
       return {
         cols: req.cols,
         rows: req.rows,
@@ -393,11 +407,11 @@ class SessionManager {
       };
     }
 
-    if (agentType === "terminal") {
+    if (agentType === AGENT_TYPES.TERMINAL) {
       return { cwd: project.path };
     }
 
-    if (agentType === "codex") {
+    if (agentType === AGENT_TYPES.CODEX) {
       return {
         cwd: project.path,
         command: "codex",
@@ -405,7 +419,7 @@ class SessionManager {
       };
     }
 
-    if (agentType === "opencode") {
+    if (agentType === AGENT_TYPES.OPENCODE) {
       return {
         cwd: project.path,
         command: "opencode",
@@ -471,13 +485,13 @@ class SessionManager {
     resumeSessionRef?: string,
   ): string {
     const qPath = shellQuote(path);
-    if (agentType === "terminal") {
+    if (agentType === AGENT_TYPES.TERMINAL) {
       return `cd ${qPath}\r`;
     }
-    if (agentType === "codex") {
+    if (agentType === AGENT_TYPES.CODEX) {
       return `cd ${qPath} && codex\r`;
     }
-    if (agentType === "opencode") {
+    if (agentType === AGENT_TYPES.OPENCODE) {
       return `cd ${qPath} && opencode\r`;
     }
     if (resumeSessionRef?.trim()) {

@@ -123,7 +123,9 @@ _(아직 없음)_
 
 ### refactor/
 
-_(아직 없음)_
+| 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+| -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+| [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
 
 ### devops/
 
@@ -159,3 +161,4 @@ features/2026-02-28_phase2-4-parallel.md
 | 2026-02-28 | [Phase 2-4](features/2026-02-28_phase2-4-parallel.md)                                 | SSH + PWA + 그래프 + 인터셉터 + A/B 비교 병렬 구현                                         |
 | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
 | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+| 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |

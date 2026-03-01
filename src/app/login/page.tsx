@@ -1,12 +1,14 @@
 "use client";
 
-import { FormEvent, Suspense, useMemo, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [token, setToken] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [configured, setConfigured] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -15,25 +17,80 @@ function LoginPageContent() {
     return raw.startsWith("/") ? raw : "/";
   }, [searchParams]);
 
+  useEffect(() => {
+    let mounted = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      controller.abort();
+    }, 5000);
+
+    async function load() {
+      try {
+        const res = await fetch("/api/auth/session", {
+          method: "GET",
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          throw new Error("Failed to load auth status");
+        }
+        const json = (await res.json()) as { configured?: boolean };
+        if (mounted) {
+          setConfigured(Boolean(json.configured));
+        }
+      } catch {
+        if (mounted) {
+          setConfigured(true);
+          setError("Failed to load login status");
+        }
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }
+
+    load();
+    return () => {
+      mounted = false;
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, []);
+
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!token.trim()) {
-      setError("Access token is required");
+    const isSetup = configured === false;
+    const token = password.trim();
+    if (!token) {
+      setError(isSetup ? "Password is required" : "Password is required");
       return;
     }
+    if (isSetup && token.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
+    if (isSetup && !confirmPassword.trim()) {
+      setError("Password confirmation is required");
+      return;
+    }
+    if (isSetup && confirmPassword.trim() && confirmPassword.trim() !== token) {
+      setError("Password confirmation does not match");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
     try {
       const res = await fetch("/api/auth/session", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ token: token.trim() }),
+        body: JSON.stringify({ token, confirmToken: confirmPassword.trim() }),
       });
       const json = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(json.error ?? "Failed to authenticate");
         return;
       }
+      setConfigured(true);
       router.replace(nextPath);
       router.refresh();
     } catch {
@@ -53,23 +110,41 @@ function LoginPageContent() {
           Agent Orbit Access
         </h1>
         <p className="text-sm text-slate-400">
-          Enter the server access token to continue.
+          {configured === false
+            ? "Create an admin password for first-time setup."
+            : "Enter your password to continue."}
         </p>
+        {configured === null ? (
+          <p className="text-sm text-slate-300">Checking login status...</p>
+        ) : null}
         <input
           type="password"
-          value={token}
-          onChange={(e) => setToken(e.target.value)}
-          placeholder="Access token"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Password"
           className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-slate-400"
           autoFocus
         />
+        {configured === false ? (
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm password"
+            className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-slate-400"
+          />
+        ) : null}
         {error ? <p className="text-sm text-rose-400">{error}</p> : null}
         <button
           type="submit"
-          disabled={submitting}
+          disabled={submitting || configured === null}
           className="w-full rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-900 disabled:opacity-60"
         >
-          {submitting ? "Verifying..." : "Sign in"}
+          {submitting
+            ? "Verifying..."
+            : configured === false
+              ? "Set password"
+              : "Sign in"}
         </button>
       </form>
     </main>

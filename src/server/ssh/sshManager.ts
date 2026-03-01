@@ -1,5 +1,6 @@
 import { Client } from "ssh2";
 import type { ClientChannel } from "ssh2";
+import type { SFTPWrapper } from "ssh2";
 import { readFileSync } from "fs";
 import { prisma } from "@/lib/prisma";
 import { decryptSshPassword } from "@/server/ssh/credentials";
@@ -24,6 +25,7 @@ interface ConnectionEntry {
 
 class SshManager {
   private connections = new Map<string, ConnectionEntry>();
+  private connectPromises = new Map<string, Promise<void>>();
   private statusListeners = new Set<StatusCallback>();
 
   private applyAuthConfig(
@@ -87,8 +89,15 @@ class SshManager {
   async connect(configId: string): Promise<void> {
     // If already connected or connecting, skip
     const existing = this.connections.get(configId);
-    if (existing && (existing.state === "connected" || existing.state === "connecting")) {
+    if (existing?.state === "connected") {
       return;
+    }
+    if (existing?.state === "connecting") {
+      const pending = this.connectPromises.get(configId);
+      if (pending) {
+        await pending;
+        return;
+      }
     }
 
     const config = await prisma.sshConfig.findUnique({
@@ -112,7 +121,7 @@ class SshManager {
     this.connections.set(configId, entry);
     this.emitStatus(configId);
 
-    return new Promise<void>((resolve, reject) => {
+    const connectPromise = new Promise<void>((resolve, reject) => {
       const timeout = setTimeout(() => {
         client.end();
         this.setState(configId, "error", "Connection timed out");
@@ -124,7 +133,9 @@ class SshManager {
         entry.state = "connected";
         entry.retryCount = 0;
         this.emitStatus(configId);
-        console.log(`[SSH] Connected to ${config.host}:${config.port} (${configId})`);
+        console.log(
+          `[SSH] Connected to ${config.host}:${config.port} (${configId})`,
+        );
         resolve();
       });
 
@@ -144,14 +155,20 @@ class SshManager {
 
         // If we were connected, attempt reconnect
         if (current.state === "connected") {
-          console.log(`[SSH] Connection closed for ${configId}, attempting reconnect...`);
+          console.log(
+            `[SSH] Connection closed for ${configId}, attempting reconnect...`,
+          );
           this.scheduleReconnect(configId, config);
         }
       });
 
       client.on("end", () => {
         const current = this.connections.get(configId);
-        if (current && current.client === client && current.state === "connected") {
+        if (
+          current &&
+          current.client === client &&
+          current.state === "connected"
+        ) {
           this.setState(configId, "disconnected");
         }
       });
@@ -179,7 +196,9 @@ class SshManager {
           .then(() => {
             const proxyClient = this.getConnection(config.proxyConfigId!);
             if (!proxyClient) {
-              throw new Error(`Proxy SSH not connected: ${config.proxyConfigId}`);
+              throw new Error(
+                `Proxy SSH not connected: ${config.proxyConfigId}`,
+              );
             }
             proxyClient.forwardOut(
               "127.0.0.1",
@@ -189,7 +208,11 @@ class SshManager {
               (err, stream) => {
                 if (err) {
                   clearTimeout(timeout);
-                  this.setState(configId, "error", `Proxy forward failed: ${err.message}`);
+                  this.setState(
+                    configId,
+                    "error",
+                    `Proxy forward failed: ${err.message}`,
+                  );
                   reject(err);
                   return;
                 }
@@ -211,6 +234,13 @@ class SshManager {
         client.connect(connectConfig);
       }
     });
+
+    this.connectPromises.set(configId, connectPromise);
+    try {
+      await connectPromise;
+    } finally {
+      this.connectPromises.delete(configId);
+    }
   }
 
   private scheduleReconnect(
@@ -235,8 +265,11 @@ class SshManager {
     }
 
     entry.retryCount++;
-    const delay = SSH_RECONNECT_BASE_DELAY_MS * Math.pow(2, entry.retryCount - 1);
-    console.log(`[SSH] Reconnecting ${configId} in ${delay}ms (attempt ${entry.retryCount})`);
+    const delay =
+      SSH_RECONNECT_BASE_DELAY_MS * Math.pow(2, entry.retryCount - 1);
+    console.log(
+      `[SSH] Reconnecting ${configId} in ${delay}ms (attempt ${entry.retryCount})`,
+    );
 
     entry.retryTimer = setTimeout(async () => {
       const current = this.connections.get(configId);
@@ -251,7 +284,9 @@ class SshManager {
         current.state = "connected";
         current.retryCount = 0;
         this.emitStatus(configId);
-        console.log(`[SSH] Reconnected to ${config.host}:${config.port} (${configId})`);
+        console.log(
+          `[SSH] Reconnected to ${config.host}:${config.port} (${configId})`,
+        );
       });
 
       newClient.on("error", (err) => {
@@ -286,7 +321,11 @@ class SshManager {
           await this.connect(config.proxyConfigId);
           const proxyClient = this.getConnection(config.proxyConfigId);
           if (!proxyClient) {
-            this.setState(configId, "error", `Proxy SSH not connected: ${config.proxyConfigId}`);
+            this.setState(
+              configId,
+              "error",
+              `Proxy SSH not connected: ${config.proxyConfigId}`,
+            );
             return;
           }
           proxyClient.forwardOut(
@@ -296,7 +335,11 @@ class SshManager {
             config.port,
             (err, stream) => {
               if (err) {
-                this.setState(configId, "error", `Proxy forward failed: ${err.message}`);
+                this.setState(
+                  configId,
+                  "error",
+                  `Proxy forward failed: ${err.message}`,
+                );
                 return;
               }
               connectConfig.sock = stream;
@@ -406,13 +449,55 @@ class SshManager {
 
         channel.on("close", (code: number) => {
           if (code !== 0 && stderr) {
-            reject(new Error(`Command failed (exit ${code}): ${stderr.trim()}`));
+            reject(
+              new Error(`Command failed (exit ${code}): ${stderr.trim()}`),
+            );
           } else {
             resolve(stdout);
           }
         });
       });
     });
+  }
+
+  async withSftp<T>(
+    configId: string,
+    fn: (sftp: SFTPWrapper) => Promise<T>,
+  ): Promise<T> {
+    const openAndRun = async (): Promise<T> => {
+      if (this.getStatus(configId).state !== "connected") {
+        await this.connect(configId);
+      }
+
+      const client = this.getConnection(configId);
+      if (!client) {
+        throw new Error(`SSH not connected: ${configId}`);
+      }
+
+      const sftp = await new Promise<SFTPWrapper>((resolve, reject) => {
+        client.sftp((err, wrapper) => {
+          if (err || !wrapper) {
+            reject(err ?? new Error("Failed to open SFTP channel"));
+            return;
+          }
+          resolve(wrapper);
+        });
+      });
+
+      try {
+        return await fn(sftp);
+      } finally {
+        try {
+          sftp.end();
+        } catch {}
+      }
+    };
+
+    try {
+      return await openAndRun();
+    } catch {
+      return openAndRun();
+    }
   }
 
   /** Get the current connection status for a configId */

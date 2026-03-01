@@ -16,14 +16,15 @@ import type {
   SessionInfo,
   ApiResponse,
   WorkspaceLayoutInfo,
-  CreateWorkspaceLayoutRequest,
-  UpdateWorkspaceLayoutRequest,
 } from "@/lib/types";
 import PaneRenderer from "./PaneRenderer";
+
+const WORKSPACE_STORAGE_KEY = "orbit:last-workspace:global";
 
 interface MultiTerminalProps {
   initialSessionId: string | null;
   initialWorkspaceId?: string | null;
+  autoRestoreWorkspace?: boolean;
   onKillSession?: (sessionId: string) => Promise<void> | void;
 }
 
@@ -191,6 +192,7 @@ function placeNewSessionByEdge(
 export default function MultiTerminal({
   initialSessionId,
   initialWorkspaceId,
+  autoRestoreWorkspace = true,
   onKillSession,
 }: MultiTerminalProps) {
   // Pane tree state
@@ -215,7 +217,6 @@ export default function MultiTerminal({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
-  const workspaceStorageKey = "orbit:last-workspace:global";
 
   // Fetch sessions
   useEffect(() => {
@@ -285,22 +286,25 @@ export default function MultiTerminal({
         if (nextActivePane) setActivePaneId(nextActivePane);
         setWorkspaceName(workspace.name);
         setSelectedWorkspaceId(workspace.id);
-        localStorage.setItem(workspaceStorageKey, workspace.id);
+        localStorage.setItem(WORKSPACE_STORAGE_KEY, workspace.id);
       } catch {}
     },
-    [sessions, workspaceStorageKey],
+    [sessions],
   );
 
   useEffect(() => {
     if (workspaces.length === 0) return;
     const pinnedId =
-      initialWorkspaceId?.trim() || localStorage.getItem(workspaceStorageKey);
+      initialWorkspaceId?.trim() ||
+      (autoRestoreWorkspace
+        ? localStorage.getItem(WORKSPACE_STORAGE_KEY)
+        : null);
     if (!pinnedId) return;
     const found = workspaces.find((w) => w.id === pinnedId);
     if (found) {
       applyWorkspace(found);
     }
-  }, [workspaces, workspaceStorageKey, applyWorkspace, initialWorkspaceId]);
+  }, [workspaces, applyWorkspace, initialWorkspaceId, autoRestoreWorkspace]);
 
   // Ensure sockets exist for all leaves
   const ensureSocket = useCallback((paneId: string) => {
@@ -368,39 +372,55 @@ export default function MultiTerminal({
     [],
   );
 
+  const clearExitedPane = useCallback((paneIds: string[]) => {
+    setExitedPanes((prev) => {
+      if (!paneIds.some((id) => prev.has(id))) return prev;
+      const next = new Set(prev);
+      for (const id of paneIds) {
+        next.delete(id);
+      }
+      return next;
+    });
+  }, []);
+
   const handleClose = useCallback(
     (paneId: string) => {
+      let nextActivePaneId: string | null = null;
+
       setTree((prev) => {
+        let updated = prev;
         if (collectLeafIds(prev).length === 1) {
-          return updateLeafSession(prev, paneId, null);
+          updated = updateLeafSession(prev, paneId, null);
+        } else {
+          const result = closePane(prev, paneId);
+          updated = result ?? prev;
         }
-        const result = closePane(prev, paneId);
-        return result ?? prev;
-      });
-      if (paneId === activePaneId) {
-        setTree((current) => {
-          const leaves = collectLeafIds(current);
+
+        if (paneId === activePaneId) {
+          const leaves = collectLeafIds(updated);
           if (leaves.length > 0 && !leaves.includes(activePaneId)) {
-            setActivePaneId(leaves[0]);
+            nextActivePaneId = leaves[0];
           }
-          return current;
-        });
+        }
+
+        return updated;
+      });
+
+      if (nextActivePaneId) {
+        setActivePaneId(nextActivePaneId);
       }
+
+      clearExitedPane([paneId]);
     },
-    [activePaneId],
+    [activePaneId, clearExitedPane],
   );
 
   const handleSelectSession = useCallback(
     (paneId: string, sessionId: string) => {
       setTree((prev) => updateLeafSession(prev, paneId, sessionId));
-      setExitedPanes((prev) => {
-        if (!prev.has(paneId)) return prev;
-        const next = new Set(prev);
-        next.delete(paneId);
-        return next;
-      });
+      clearExitedPane([paneId]);
     },
-    [],
+    [clearExitedPane],
   );
 
   const handleDropSession = useCallback(
@@ -423,14 +443,9 @@ export default function MultiTerminal({
         });
       }
 
-      setExitedPanes((prev) => {
-        if (!prev.has(paneId)) return prev;
-        const next = new Set(prev);
-        next.delete(paneId);
-        return next;
-      });
+      clearExitedPane([paneId]);
     },
-    [],
+    [clearExitedPane],
   );
 
   const handlePaneExit = useCallback((paneId: string) => {
@@ -455,15 +470,9 @@ export default function MultiTerminal({
         return next;
       });
 
-      setExitedPanes((prev) => {
-        if (!prev.has(sourcePaneId) && !prev.has(targetPaneId)) return prev;
-        const next = new Set(prev);
-        next.delete(sourcePaneId);
-        next.delete(targetPaneId);
-        return next;
-      });
+      clearExitedPane([sourcePaneId, targetPaneId]);
     },
-    [],
+    [clearExitedPane],
   );
 
   const handleMovePane = useCallback(
@@ -499,15 +508,9 @@ export default function MultiTerminal({
         return swapped;
       });
 
-      setExitedPanes((prev) => {
-        if (!prev.has(sourcePaneId) && !prev.has(targetPaneId)) return prev;
-        const next = new Set(prev);
-        next.delete(sourcePaneId);
-        next.delete(targetPaneId);
-        return next;
-      });
+      clearExitedPane([sourcePaneId, targetPaneId]);
     },
-    [],
+    [clearExitedPane],
   );
 
   const handleKillSession = useCallback(
@@ -518,14 +521,9 @@ export default function MultiTerminal({
         await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
       }
       setTree((prev) => updateLeafSession(prev, paneId, null));
-      setExitedPanes((prev) => {
-        if (!prev.has(paneId)) return prev;
-        const next = new Set(prev);
-        next.delete(paneId);
-        return next;
-      });
+      clearExitedPane([paneId]);
     },
-    [onKillSession],
+    [onKillSession, clearExitedPane],
   );
 
   const saveWorkspace = useCallback(async () => {
@@ -533,52 +531,32 @@ export default function MultiTerminal({
     try {
       const name =
         workspaceName.trim() || `Workspace ${new Date().toLocaleString()}`;
-      if (selectedWorkspaceId) {
-        const body: UpdateWorkspaceLayoutRequest = {
-          name,
-          tree: JSON.stringify(tree),
-          activePaneId,
-        };
-        const res = await fetch(`/api/workspaces/${selectedWorkspaceId}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo>;
-        if ("data" in json) {
-          setWorkspaceName(json.data.name);
-          localStorage.setItem(workspaceStorageKey, json.data.id);
-        }
-      } else {
-        const body: CreateWorkspaceLayoutRequest = {
-          name,
-          tree: JSON.stringify(tree),
-          activePaneId,
-        };
-        const res = await fetch("/api/workspaces", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo>;
-        if ("data" in json) {
-          setSelectedWorkspaceId(json.data.id);
-          setWorkspaceName(json.data.name);
-          localStorage.setItem(workspaceStorageKey, json.data.id);
-        }
+      const method = "POST";
+      const url = "/api/workspaces";
+
+      const body = {
+        name,
+        tree: JSON.stringify(tree),
+        activePaneId,
+      };
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo>;
+      if ("data" in json) {
+        setSelectedWorkspaceId(json.data.id);
+        setWorkspaceName(json.data.name);
+        localStorage.setItem(WORKSPACE_STORAGE_KEY, json.data.id);
       }
       await fetchWorkspaces();
     } finally {
       setSavingWorkspace(false);
     }
-  }, [
-    workspaceName,
-    selectedWorkspaceId,
-    tree,
-    activePaneId,
-    workspaceStorageKey,
-    fetchWorkspaces,
-  ]);
+  }, [workspaceName, tree, activePaneId, fetchWorkspaces]);
 
   const deleteWorkspace = useCallback(async () => {
     if (!selectedWorkspaceId) return;
@@ -587,9 +565,9 @@ export default function MultiTerminal({
     });
     setSelectedWorkspaceId("");
     setWorkspaceName("");
-    localStorage.removeItem(workspaceStorageKey);
+    localStorage.removeItem(WORKSPACE_STORAGE_KEY);
     await fetchWorkspaces();
-  }, [selectedWorkspaceId, workspaceStorageKey, fetchWorkspaces]);
+  }, [selectedWorkspaceId, fetchWorkspaces]);
 
   const leafCount = collectLeafIds(tree).length;
 

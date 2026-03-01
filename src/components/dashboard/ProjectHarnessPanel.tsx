@@ -43,6 +43,28 @@ const OH_MY_OPENCODE_PRESET = JSON.stringify(
 type PermissionValue = "allow" | "ask" | "deny";
 type GuidedMode = "guided" | "json";
 
+interface ConfigJsonEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+function ConfigJsonEditor({ value, onChange }: ConfigJsonEditorProps) {
+  return (
+    <label className="space-y-1">
+      <span className="text-[11px] uppercase tracking-wide text-neutral-500">
+        Provider Config (JSON)
+      </span>
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={10}
+        className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-200"
+        placeholder={`{\n  "config": {}\n}`}
+      />
+    </label>
+  );
+}
+
 interface OhMyOpenCodeGuidedState {
   aggressiveTruncation: boolean;
   sisyphusTemperature: number;
@@ -70,6 +92,22 @@ const PROVIDERS: ProjectHarnessProvider[] = [
 ];
 
 const PERMISSION_OPTIONS: PermissionValue[] = ["allow", "ask", "deny"];
+
+type PermissionField = {
+  label: string;
+  key: keyof OhMyOpenCodeGuidedState;
+};
+
+const PERMISSION_FIELDS: PermissionField[] = [
+  { label: "Sisyphus Edit", key: "sisyphusEdit" },
+  { label: "Sisyphus Bash", key: "sisyphusBash" },
+  { label: "Sisyphus Webfetch", key: "sisyphusWebfetch" },
+  { label: "Oracle Edit", key: "oracleEdit" },
+  { label: "Oracle Bash", key: "oracleBash" },
+  { label: "Explore Edit", key: "exploreEdit" },
+  { label: "Explore Bash", key: "exploreBash" },
+];
+
 const HARNESS_ELEMENTS: HarnessElement[] = [
   {
     id: "architecture-guardrail",
@@ -274,7 +312,7 @@ export default function ProjectHarnessPanel({
   const [mode, setMode] = useState<GuidedMode>("guided");
   const [guided, setGuided] = useState<OhMyOpenCodeGuidedState>(initialGuidedState);
 
-  const provider = draft.provider ?? "oh-my-opencode";
+  const provider = draft.provider;
   const isOpencode = provider === "oh-my-opencode";
   const configValidation = useMemo(() => parseConfig(draft.config), [draft.config]);
   const configError = configValidation.ok ? null : "Config JSON is invalid";
@@ -422,16 +460,37 @@ export default function ProjectHarnessPanel({
   }
 
   function updateGuided(next: Partial<OhMyOpenCodeGuidedState>) {
-    setGuided((prev) => {
-      const merged = { ...prev, ...next };
-      setDraft((old) => ({
-        ...old,
+    const merged = { ...guided, ...next };
+    setGuided(merged);
+    setDraft((old) => ({
+      ...old,
+      config:
+        injectHarnessElements(guidedStateToConfig(merged), selectedElements) ??
+        guidedStateToConfig(merged),
+    }));
+  }
+
+  function handleProviderChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const nextProvider = e.target.value as ProjectHarnessProvider;
+
+    if (nextProvider === "oh-my-opencode") {
+      const parsedGuided = parseGuidedState(draft.config);
+      const nextGuided = parsedGuided ?? initialGuidedState();
+      setGuided(nextGuided);
+      setMode("guided");
+      setDraft((prev) => ({
+        ...prev,
+        provider: nextProvider,
         config:
-          injectHarnessElements(guidedStateToConfig(merged), selectedElements) ??
-          guidedStateToConfig(merged),
+          injectHarnessElements(
+            guidedStateToConfig(nextGuided),
+            selectedElements,
+          ) ?? guidedStateToConfig(nextGuided),
       }));
-      return merged;
-    });
+    } else {
+      setMode("json");
+      setDraft((prev) => ({ ...prev, provider: nextProvider }));
+    }
   }
 
   return (
@@ -468,27 +527,8 @@ export default function ProjectHarnessPanel({
                 Provider
               </span>
               <select
-                value={draft.provider ?? "oh-my-opencode"}
-                onChange={(e) =>
-                  setDraft((prev) => {
-                    const nextProvider = e.target.value as ProjectHarnessProvider;
-                    const next = { ...prev, provider: nextProvider };
-                    if (nextProvider === "oh-my-opencode") {
-                      const parsedGuided = parseGuidedState(prev.config);
-                      const nextGuided = parsedGuided ?? initialGuidedState();
-                      setGuided(nextGuided);
-                      setMode("guided");
-                      next.config =
-                        injectHarnessElements(
-                          guidedStateToConfig(nextGuided),
-                          selectedElements,
-                        ) ?? guidedStateToConfig(nextGuided);
-                    } else {
-                      setMode("json");
-                    }
-                    return next;
-                  })
-                }
+                value={provider}
+                onChange={handleProviderChange}
                 className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-2 py-1.5 text-xs text-neutral-200"
               >
                 {PROVIDERS.map((provider) => (
@@ -727,15 +767,7 @@ export default function ProjectHarnessPanel({
                   </div>
 
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                    {[
-                      ["Sisyphus Edit", "sisyphusEdit"],
-                      ["Sisyphus Bash", "sisyphusBash"],
-                      ["Sisyphus Webfetch", "sisyphusWebfetch"],
-                      ["Oracle Edit", "oracleEdit"],
-                      ["Oracle Bash", "oracleBash"],
-                      ["Explore Edit", "exploreEdit"],
-                      ["Explore Bash", "exploreBash"],
-                    ].map(([label, key]) => (
+                    {PERMISSION_FIELDS.map(({ label, key }) => (
                       <label
                         key={key}
                         className="space-y-1 rounded-lg border border-neutral-700 bg-neutral-900 px-2 py-1.5"
@@ -744,7 +776,7 @@ export default function ProjectHarnessPanel({
                           {label}
                         </span>
                         <select
-                          value={guided[key as keyof OhMyOpenCodeGuidedState] as string}
+                          value={guided[key] as string}
                           onChange={(e) =>
                             updateGuided({
                               [key]: e.target.value as PermissionValue,
@@ -765,37 +797,21 @@ export default function ProjectHarnessPanel({
               ) : null}
 
               {mode === "json" ? (
-                <label className="space-y-1">
-                  <span className="text-[11px] uppercase tracking-wide text-neutral-500">
-                    Provider Config (JSON)
-                  </span>
-                  <textarea
-                    value={draft.config ?? "{}"}
-                    onChange={(e) =>
-                      setDraft((prev) => ({ ...prev, config: e.target.value }))
-                    }
-                    rows={10}
-                    className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-200"
-                    placeholder={`{\n  "agents": {}\n}`}
-                  />
-                </label>
+                <ConfigJsonEditor
+                  value={draft.config ?? "{}"}
+                  onChange={(config) =>
+                    setDraft((prev) => ({ ...prev, config }))
+                  }
+                />
               ) : null}
             </div>
           ) : (
-            <label className="space-y-1">
-              <span className="text-[11px] uppercase tracking-wide text-neutral-500">
-                Provider Config (JSON)
-              </span>
-              <textarea
-                value={draft.config ?? "{}"}
-                onChange={(e) =>
-                  setDraft((prev) => ({ ...prev, config: e.target.value }))
-                }
-                rows={10}
-                className="w-full rounded-lg border border-neutral-700 bg-neutral-950 px-3 py-2 font-mono text-xs text-neutral-200"
-                placeholder={`{\n  "config": {}\n}`}
-              />
-            </label>
+            <ConfigJsonEditor
+              value={draft.config ?? "{}"}
+              onChange={(config) =>
+                setDraft((prev) => ({ ...prev, config }))
+              }
+            />
           )}
 
           {configError && <p className="text-xs text-amber-400">{configError}</p>}
