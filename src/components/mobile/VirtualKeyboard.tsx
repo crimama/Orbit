@@ -21,9 +21,7 @@ export default function VirtualKeyboard({
       if (ctrlActive) {
         // Ctrl+key: send ASCII control character (A=1, B=2, ..., Z=26)
         if (key.length === 1 && /[a-zA-Z]/.test(key)) {
-          data = String.fromCharCode(
-            key.toUpperCase().charCodeAt(0) - 64,
-          );
+          data = String.fromCharCode(key.toUpperCase().charCodeAt(0) - 64);
         }
         setCtrlActive(false);
       }
@@ -52,7 +50,10 @@ export default function VirtualKeyboard({
     "rounded bg-neutral-800 px-3 py-2 text-xs text-neutral-300 active:bg-neutral-700 transition-colors";
 
   return (
-    <div className="border-t border-neutral-800 bg-[#0a0a0a] px-2 pb-2 pt-1.5 safe-area-pb">
+    <div
+      className="safe-area-pb border-t border-neutral-800 bg-[#0a0a0a] px-2 pb-2 pt-1.5"
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.5rem)" }}
+    >
       {/* Row 1: Modifiers and arrows */}
       <div className="mb-1 flex gap-1">
         <button

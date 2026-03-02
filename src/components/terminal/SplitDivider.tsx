@@ -7,7 +7,10 @@ interface SplitDividerProps {
   onRatioChange: (ratio: number) => void;
 }
 
-export default function SplitDivider({ direction, onRatioChange }: SplitDividerProps) {
+export default function SplitDivider({
+  direction,
+  onRatioChange,
+}: SplitDividerProps) {
   const dividerRef = useRef<HTMLDivElement>(null);
 
   const handleMouseDown = useCallback(
@@ -33,11 +36,13 @@ export default function SplitDivider({ direction, onRatioChange }: SplitDividerP
         document.removeEventListener("mouseup", onMouseUp);
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
+        document.documentElement.classList.remove("orbit-resizing");
       };
 
       document.body.style.cursor =
         direction === "horizontal" ? "col-resize" : "row-resize";
       document.body.style.userSelect = "none";
+      document.documentElement.classList.add("orbit-resizing");
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
     },
@@ -55,7 +60,7 @@ export default function SplitDivider({ direction, onRatioChange }: SplitDividerP
       ref={dividerRef}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
-      className={`flex-shrink-0 bg-neutral-800 hover:bg-blue-600 transition-colors ${
+      className={`flex-shrink-0 bg-neutral-800 transition-colors hover:bg-blue-600 ${
         isHorizontal ? "w-1 cursor-col-resize" : "h-1 cursor-row-resize"
       }`}
     />

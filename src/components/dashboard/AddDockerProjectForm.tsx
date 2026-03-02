@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   ApiError,
   ApiResponse,
@@ -19,7 +19,9 @@ export default function AddDockerProjectForm({
 }: AddDockerProjectFormProps) {
   const [name, setName] = useState("");
   const [color, setColor] = useState("#14b8a6");
-  const [connectionType, setConnectionType] = useState<"local" | "ssh">("local");
+  const [connectionType, setConnectionType] = useState<"local" | "ssh">(
+    "local",
+  );
   const [sshConfigs, setSshConfigs] = useState<SshConfigInfo[]>([]);
   const [sshConfigId, setSshConfigId] = useState("");
   const [dockerContainer, setDockerContainer] = useState("");
@@ -31,6 +33,23 @@ export default function AddDockerProjectForm({
   const [loadingContainers, setLoadingContainers] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const dockerStage = useMemo(() => {
+    if (loading) return 3;
+    if (loadingBrowse) return 2;
+    if (loadingContainers) return 1;
+    return 0;
+  }, [loading, loadingBrowse, loadingContainers]);
+
+  const dockerStageText = useMemo(() => {
+    if (loading) return "Creating Docker project";
+    if (loadingBrowse) return "Scanning directory in container";
+    if (loadingContainers)
+      return connectionType === "ssh"
+        ? "Loading remote containers"
+        : "Loading local containers";
+    return "Select source and container";
+  }, [loading, loadingBrowse, loadingContainers, connectionType]);
 
   useEffect(() => {
     let cancelled = false;
@@ -170,6 +189,22 @@ export default function AddDockerProjectForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2 p-3">
+      <div className="rounded border border-neutral-800 bg-neutral-900/70 px-2 py-2">
+        <div className="mb-1 flex items-center justify-between text-[11px] text-neutral-500">
+          <span>Connection Progress</span>
+          <span className="text-neutral-400">{dockerStageText}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2, 3].map((idx) => (
+            <span
+              key={`docker-stage-${idx}`}
+              className={`h-1.5 flex-1 rounded-full ${
+                idx <= dockerStage ? "bg-emerald-400/80" : "bg-neutral-800"
+              } ${idx === dockerStage && (loading || loadingBrowse || loadingContainers) ? "animate-pulse" : ""}`}
+            />
+          ))}
+        </div>
+      </div>
       <input
         type="text"
         placeholder="Project name"
@@ -312,11 +347,15 @@ export default function AddDockerProjectForm({
         ) : loadingBrowse ? (
           <option value="">Loading directories...</option>
         ) : !browse ? (
-          <option value="">No directories loaded (choose another container)</option>
+          <option value="">
+            No directories loaded (choose another container)
+          </option>
         ) : (
           <>
             <option value="">Current: {browse.current}</option>
-            {browse.parent && <option value={browse.parent}>.. (Parent)</option>}
+            {browse.parent && (
+              <option value={browse.parent}>.. (Parent)</option>
+            )}
             {browse.entries.map((entry) => (
               <option key={entry.path} value={entry.path}>
                 {entry.name}

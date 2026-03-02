@@ -2,25 +2,63 @@
 
 import { useState, useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import type { CreateSkillRequest, ApiResponse, SkillNodeInfo } from "@/lib/types";
+import type {
+  CreateSkillRequest,
+  ApiResponse,
+  SkillNodeInfo,
+} from "@/lib/types";
+import { SKILL_NODE_HEIGHT, SKILL_NODE_WIDTH } from "@/lib/constants";
 
 interface GraphToolbarProps {
   projectId: string;
+  nodes: SkillNodeInfo[];
+  readOnly: boolean;
   onSkillCreated: (skill: SkillNodeInfo) => void;
   onSavePositions: () => void;
 }
 
 export default function GraphToolbar({
   projectId,
+  nodes,
+  readOnly,
   onSkillCreated,
   onSavePositions,
 }: GraphToolbarProps) {
-  const { zoomIn, zoomOut, fitView } = useReactFlow();
+  const { zoomIn, zoomOut, fitView, getNode, getZoom, setCenter } =
+    useReactFlow();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [nodeType, setNodeType] = useState("default");
   const [mcpEndpoint, setMcpEndpoint] = useState("");
   const [creating, setCreating] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredNodes = nodes
+    .filter((node) => {
+      const needle = searchTerm.trim().toLowerCase();
+      if (!needle) return false;
+      return (
+        node.name.toLowerCase().includes(needle) ||
+        node.nodeType.toLowerCase().includes(needle) ||
+        node.id.toLowerCase().includes(needle)
+      );
+    })
+    .slice(0, 8);
+
+  const focusNode = useCallback(
+    (nodeId: string) => {
+      const flowNode = getNode(nodeId);
+      if (!flowNode) return;
+
+      const x = flowNode.position.x + SKILL_NODE_WIDTH / 2;
+      const y = flowNode.position.y + SKILL_NODE_HEIGHT / 2;
+      const zoom = Math.max(getZoom(), 1.1);
+
+      setCenter(x, y, { zoom, duration: 420 });
+      setSearchTerm("");
+    },
+    [getNode, getZoom, setCenter],
+  );
 
   const handleCreate = useCallback(async () => {
     if (!name.trim()) return;
@@ -54,28 +92,62 @@ export default function GraphToolbar({
     <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
       {/* Control buttons */}
       <div className="flex gap-1 rounded-lg border border-gray-700 bg-gray-800/90 p-1 backdrop-blur-sm">
-        <ToolbarButton
-          title="Add Node"
-          onClick={() => setShowForm(!showForm)}
-        >
-          <PlusIcon />
-        </ToolbarButton>
+        {!readOnly && (
+          <ToolbarButton
+            title="Add Node"
+            onClick={() => setShowForm(!showForm)}
+          >
+            <PlusIcon />
+          </ToolbarButton>
+        )}
         <ToolbarButton title="Zoom In" onClick={() => zoomIn()}>
           <ZoomInIcon />
         </ToolbarButton>
         <ToolbarButton title="Zoom Out" onClick={() => zoomOut()}>
           <ZoomOutIcon />
         </ToolbarButton>
-        <ToolbarButton title="Fit View" onClick={() => fitView({ padding: 0.2 })}>
+        <ToolbarButton
+          title="Fit View"
+          onClick={() => fitView({ padding: 0.2 })}
+        >
           <FitIcon />
         </ToolbarButton>
-        <ToolbarButton title="Save Positions" onClick={onSavePositions}>
-          <SaveIcon />
-        </ToolbarButton>
+        {!readOnly && (
+          <ToolbarButton title="Save Positions" onClick={onSavePositions}>
+            <SaveIcon />
+          </ToolbarButton>
+        )}
+      </div>
+
+      <div className="rounded-lg border border-gray-700 bg-gray-800/90 p-2 backdrop-blur-sm">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search node/type/id"
+          className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-gray-500"
+        />
+        {filteredNodes.length > 0 && (
+          <div className="mt-1 max-h-44 overflow-y-auto">
+            {filteredNodes.map((node) => (
+              <button
+                key={node.id}
+                type="button"
+                onClick={() => focusNode(node.id)}
+                className="flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs text-gray-200 transition-colors hover:bg-gray-700"
+              >
+                <span className="truncate pr-2">{node.name}</span>
+                <span className="rounded border border-gray-600 px-1 py-0.5 text-[10px] text-gray-400">
+                  {node.nodeType}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Add Node Form */}
-      {showForm && (
+      {!readOnly && showForm && (
         <div className="rounded-lg border border-gray-700 bg-gray-800/95 p-3 backdrop-blur-sm">
           <div className="mb-2 text-xs font-semibold text-gray-300">
             Add Skill Node
@@ -149,7 +221,14 @@ function ToolbarButton({
 
 function PlusIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <line x1="7" y1="2" x2="7" y2="12" />
       <line x1="2" y1="7" x2="12" y2="7" />
     </svg>
@@ -158,7 +237,14 @@ function PlusIcon() {
 
 function ZoomInIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="6" cy="6" r="4" />
       <line x1="9" y1="9" x2="13" y2="13" />
       <line x1="4" y1="6" x2="8" y2="6" />
@@ -169,7 +255,14 @@ function ZoomInIcon() {
 
 function ZoomOutIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <circle cx="6" cy="6" r="4" />
       <line x1="9" y1="9" x2="13" y2="13" />
       <line x1="4" y1="6" x2="8" y2="6" />
@@ -179,7 +272,14 @@ function ZoomOutIcon() {
 
 function FitIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <polyline points="1,5 1,1 5,1" />
       <polyline points="9,1 13,1 13,5" />
       <polyline points="13,9 13,13 9,13" />
@@ -190,7 +290,14 @@ function FitIcon() {
 
 function SaveIcon() {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
       <path d="M11 13H3a1 1 0 01-1-1V3a1 1 0 011-1h6l3 3v7a1 1 0 01-1 1z" />
       <polyline points="9,2 9,5 5,5" />
       <line x1="5" y1="8" x2="9" y2="8" />

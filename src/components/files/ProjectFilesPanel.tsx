@@ -34,6 +34,10 @@ type FileDoc = {
 
 interface ProjectFilesPanelProps {
   projectId: string;
+  initialOpenPath?: string | null;
+  initialOpenPathToken?: number | null;
+  focusedFileOnly?: boolean;
+  onCloseFocusedFile?: () => void;
 }
 
 function parentPath(value: string): string {
@@ -241,6 +245,10 @@ function FilePaneRenderer({
 
 export default function ProjectFilesPanel({
   projectId,
+  initialOpenPath = null,
+  initialOpenPathToken = null,
+  focusedFileOnly = false,
+  onCloseFocusedFile,
 }: ProjectFilesPanelProps) {
   const [currentPath, setCurrentPath] = useState("");
   const [entries, setEntries] = useState<ProjectFileEntryInfo[]>([]);
@@ -337,6 +345,11 @@ export default function ProjectFilesPanel({
     },
     [projectId],
   );
+
+  useEffect(() => {
+    if (!initialOpenPath || !initialOpenPathToken) return;
+    void openFile(initialOpenPath, activePaneIdRef.current);
+  }, [initialOpenPath, initialOpenPathToken, openFile]);
 
   const saveDoc = useCallback(
     async (filePath: string) => {
@@ -619,6 +632,99 @@ export default function ProjectFilesPanel({
   }, [closeEditorPane, saveDoc, splitActivePane, tree]);
 
   const docsMap = useMemo(() => docs, [docs]);
+  const activeLeaf = findLeaf(tree, activePaneId);
+  const focusedPath =
+    (initialOpenPath && docs[initialOpenPath] ? initialOpenPath : null) ??
+    activeLeaf?.sessionId ??
+    initialOpenPath ??
+    null;
+  const focusedDoc = focusedPath ? (docs[focusedPath] ?? null) : null;
+  const focusedDirty = Boolean(
+    focusedDoc && focusedDoc.content !== focusedDoc.originalContent,
+  );
+
+  if (focusedFileOnly) {
+    return (
+      <div className="flex h-full min-h-[380px] flex-col overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950">
+        <div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900 px-3 py-2">
+          <span
+            className="truncate text-sm text-neutral-200"
+            title={focusedPath ?? ""}
+          >
+            {focusedPath ?? "Opening file..."}
+          </span>
+          {focusedDoc ? (
+            <span
+              className={`rounded px-1.5 py-0.5 text-xs ${
+                focusedDirty
+                  ? "bg-amber-50 text-amber-700"
+                  : "bg-emerald-50 text-emerald-700"
+              }`}
+            >
+              {focusedDirty ? "Modified" : "Saved"}
+            </span>
+          ) : null}
+          <button
+            onClick={() => {
+              if (focusedPath) void saveDoc(focusedPath);
+            }}
+            disabled={!focusedPath || !focusedDirty || busyPath === focusedPath}
+            className="ml-auto rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-40"
+            type="button"
+          >
+            Save
+          </button>
+          <button
+            onClick={() => {
+              onCloseFocusedFile?.();
+            }}
+            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {!focusedDoc ? (
+            <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-600">
+              Opening file...
+            </div>
+          ) : focusedDoc.isBinary ? (
+            <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-600">
+              Binary file is not editable.
+            </div>
+          ) : focusedDoc.size > PROJECT_FILES_MAX_EDIT_BYTES ? (
+            <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-600">
+              File is larger than editor limit.
+            </div>
+          ) : (
+            <CodeEditor
+              value={focusedDoc.content}
+              onChange={(value) => {
+                setDocs((prev) => ({
+                  ...prev,
+                  [focusedDoc.path]: {
+                    ...prev[focusedDoc.path],
+                    content: value,
+                  },
+                }));
+              }}
+              languageId={languageFromPath(focusedDoc.path)}
+              readOnly={busyPath === focusedDoc.path}
+              height="100%"
+            />
+          )}
+        </div>
+
+        {error ? (
+          <div className="border-t border-red-900 bg-red-950/40 px-3 py-2 text-sm text-red-300">
+            {error}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="grid h-full min-h-[380px] grid-cols-1 gap-3 xl:grid-cols-[300px_minmax(0,1fr)]">

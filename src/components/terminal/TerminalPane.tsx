@@ -1,7 +1,15 @@
 "use client";
 
-import { useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import TerminalView from "./TerminalView";
+import VirtualKeyboard from "@/components/mobile/VirtualKeyboard";
+import { useMobile } from "@/lib/hooks/useMobile";
 import type { OrbitSocket } from "@/lib/socketClient";
 import type { SessionInfo } from "@/lib/types";
 
@@ -57,6 +65,9 @@ export default function TerminalPane({
   const [dropRegion, setDropRegion] = useState<
     "top" | "bottom" | "left" | "right" | "center" | null
   >(null);
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  const inputSenderRef = useRef<((data: string) => void) | null>(null);
+  const { isMobile } = useMobile();
   const projectColor = currentSession?.projectColor;
   const formatSessionLabel = (session: SessionInfo) => {
     const sessionName =
@@ -94,12 +105,15 @@ export default function TerminalPane({
     const height = rect.height || 1;
     const nx = x / width;
     const ny = y / height;
-    const edge = 0.28;
+    const shortestSide = Math.min(width, height);
+    const edgePx = Math.min(96, Math.max(44, shortestSide * 0.2));
+    const edgeX = edgePx / width;
+    const edgeY = edgePx / height;
 
-    if (ny <= edge) return "top";
-    if (ny >= 1 - edge) return "bottom";
-    if (nx <= edge) return "left";
-    if (nx >= 1 - edge) return "right";
+    if (ny <= edgeY) return "top";
+    if (ny >= 1 - edgeY) return "bottom";
+    if (nx <= edgeX) return "left";
+    if (nx >= 1 - edgeX) return "right";
     return "center";
   };
 
@@ -118,6 +132,44 @@ export default function TerminalPane({
       e.dataTransfer.getData("text/plain").startsWith("pane:")
     );
   };
+
+  const keyboardEnabled = isMobile && Boolean(sessionId && socket);
+
+  useEffect(() => {
+    if (!keyboardEnabled || typeof window === "undefined") {
+      setKeyboardInset(0);
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      setKeyboardInset(0);
+      return;
+    }
+
+    const updateInset = () => {
+      const occupied = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      setKeyboardInset(Math.round(occupied));
+    };
+
+    updateInset();
+    viewport.addEventListener("resize", updateInset);
+    viewport.addEventListener("scroll", updateInset);
+    window.addEventListener("resize", updateInset);
+
+    return () => {
+      viewport.removeEventListener("resize", updateInset);
+      viewport.removeEventListener("scroll", updateInset);
+      window.removeEventListener("resize", updateInset);
+    };
+  }, [keyboardEnabled]);
+
+  const handleQuickKey = useCallback((data: string) => {
+    inputSenderRef.current?.(data);
+  }, []);
 
   return (
     <div
@@ -204,9 +256,6 @@ export default function TerminalPane({
         className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
         style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
       >
-        <span className="hidden rounded-full border border-sky-200 bg-sky-50 px-1.5 py-0.5 text-xs text-sky-700 sm:inline">
-          Assistant
-        </span>
         {/* Project color + status indicator */}
         {sessionId ? (
           <span
@@ -317,21 +366,36 @@ export default function TerminalPane({
       </div>
 
       {/* Terminal or placeholder */}
-      <div className="flex-1 overflow-hidden">
-        {sessionId && socket ? (
-          <TerminalView
-            key={`${paneId}-${sessionId}`}
-            sessionId={sessionId}
-            socket={socket}
-            connected={connected}
-            onExit={onExit}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-slate-100">
-            <p className="text-base font-medium text-slate-600">
-              Select a session
-            </p>
-          </div>
+      <div
+        className="flex min-h-0 flex-1 flex-col"
+        style={
+          keyboardEnabled && keyboardInset > 0
+            ? { paddingBottom: keyboardInset }
+            : undefined
+        }
+      >
+        <div className="min-h-0 flex-1 overflow-hidden">
+          {sessionId && socket ? (
+            <TerminalView
+              key={`${paneId}-${sessionId}`}
+              sessionId={sessionId}
+              socket={socket}
+              connected={connected}
+              onExit={onExit}
+              onInputReady={(sender) => {
+                inputSenderRef.current = sender;
+              }}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-slate-100">
+              <p className="text-base font-medium text-slate-600">
+                Select a session
+              </p>
+            </div>
+          )}
+        </div>
+        {keyboardEnabled && (
+          <VirtualKeyboard visible={true} onKey={handleQuickKey} />
         )}
       </div>
     </div>

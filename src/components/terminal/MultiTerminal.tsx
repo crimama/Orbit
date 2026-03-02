@@ -25,6 +25,7 @@ interface MultiTerminalProps {
   initialSessionId: string | null;
   initialWorkspaceId?: string | null;
   autoRestoreWorkspace?: boolean;
+  runtimeStorageKey?: string;
   onKillSession?: (sessionId: string) => Promise<void> | void;
 }
 
@@ -159,7 +160,7 @@ function placeNewSessionByEdge(
     (first.id === paneId || second.id === paneId);
 
   if (isTargetSplit) {
-    const targetFirst = position === "left" || position === "top";
+    const targetFirst = position === "right" || position === "bottom";
     const paneOnFirst = first.type === "leaf" && first.id === paneId;
     if (targetFirst === paneOnFirst) {
       return { node, changed: true };
@@ -193,6 +194,7 @@ export default function MultiTerminal({
   initialSessionId,
   initialWorkspaceId,
   autoRestoreWorkspace = true,
+  runtimeStorageKey,
   onKillSession,
 }: MultiTerminalProps) {
   // Pane tree state
@@ -217,6 +219,7 @@ export default function MultiTerminal({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
+  const runtimeStateLoadedRef = useRef(false);
 
   // Fetch sessions
   useEffect(() => {
@@ -265,6 +268,59 @@ export default function MultiTerminal({
   useEffect(() => {
     void fetchWorkspaces();
   }, [fetchWorkspaces]);
+
+  useEffect(() => {
+    if (!runtimeStorageKey) {
+      runtimeStateLoadedRef.current = true;
+      return;
+    }
+    if (runtimeStateLoadedRef.current) return;
+
+    try {
+      const raw = sessionStorage.getItem(
+        `orbit:runtime-workspace:${runtimeStorageKey}`,
+      );
+      if (!raw) {
+        runtimeStateLoadedRef.current = true;
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as {
+        tree?: unknown;
+        activePaneId?: string;
+      };
+
+      if (!isPaneNode(parsed.tree)) {
+        runtimeStateLoadedRef.current = true;
+        return;
+      }
+
+      const leafIds = collectLeafIds(parsed.tree);
+      setTree(parsed.tree);
+      if (parsed.activePaneId && leafIds.includes(parsed.activePaneId)) {
+        setActivePaneId(parsed.activePaneId);
+      } else if (leafIds.length > 0) {
+        setActivePaneId(leafIds[0]);
+      }
+    } catch (error) {
+      void error;
+    } finally {
+      runtimeStateLoadedRef.current = true;
+    }
+  }, [runtimeStorageKey]);
+
+  useEffect(() => {
+    if (!runtimeStorageKey || !runtimeStateLoadedRef.current) return;
+
+    try {
+      sessionStorage.setItem(
+        `orbit:runtime-workspace:${runtimeStorageKey}`,
+        JSON.stringify({ tree, activePaneId }),
+      );
+    } catch (error) {
+      void error;
+    }
+  }, [runtimeStorageKey, tree, activePaneId]);
 
   const applyWorkspace = useCallback(
     (workspace: WorkspaceLayoutInfo) => {

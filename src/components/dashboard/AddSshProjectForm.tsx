@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import RemoteDirectoryPicker from "./RemoteDirectoryPicker";
 import type {
   ProjectInfo,
@@ -56,9 +56,9 @@ export default function AddSshProjectForm({
   const [dockerContainer, setDockerContainer] = useState("");
   const [defaultPath, setDefaultPath] = useState("");
   const [defaultDockerContainer, setDefaultDockerContainer] = useState("");
-  const [dockerContainers, setDockerContainers] = useState<DockerContainerInfo[]>(
-    [],
-  );
+  const [dockerContainers, setDockerContainers] = useState<
+    DockerContainerInfo[]
+  >([]);
   const [loadingDockerContainers, setLoadingDockerContainers] = useState(false);
   const [remotePath, setRemotePath] = useState("");
   const [loading, setLoading] = useState(false);
@@ -115,38 +115,41 @@ export default function AddSshProjectForm({
     fetchSshConfigs();
   }, []);
 
-  const applyProfile = useCallback((configId: string) => {
-    setProfileId(configId);
-    const config = sshConfigs.find((c) => c.id === configId);
-    if (!config) return;
+  const applyProfile = useCallback(
+    (configId: string) => {
+      setProfileId(configId);
+      const config = sshConfigs.find((c) => c.id === configId);
+      if (!config) return;
 
-    setLabel(config.label ?? "");
-    setTags(config.tags ?? "");
-    setHost(config.host);
-    setPort(String(config.port));
-    setUsername(config.username);
-    setAuthMethod(config.authMethod);
-    setKeyPath(config.keyPath ?? "~/.ssh/id_rsa");
-    setPassword("");
-    setDefaultPath(config.defaultPath ?? "");
-    setDefaultDockerContainer(config.defaultDockerContainer ?? "");
-    setRemotePath(config.defaultPath ?? "");
-    if (config.proxyConfigId) {
-      setJumpMode("existing");
-      setExistingProxyConfigId(config.proxyConfigId);
-    } else {
-      setJumpMode("none");
-      setExistingProxyConfigId("");
-    }
-    if (config.defaultDockerContainer) {
-      setTarget("docker");
-      setDockerContainer(config.defaultDockerContainer);
-    } else {
-      setTarget("host");
-      setDockerContainer("");
-    }
-    invalidateTest();
-  }, [sshConfigs]);
+      setLabel(config.label ?? "");
+      setTags(config.tags ?? "");
+      setHost(config.host);
+      setPort(String(config.port));
+      setUsername(config.username);
+      setAuthMethod(config.authMethod);
+      setKeyPath(config.keyPath ?? "~/.ssh/id_rsa");
+      setPassword("");
+      setDefaultPath(config.defaultPath ?? "");
+      setDefaultDockerContainer(config.defaultDockerContainer ?? "");
+      setRemotePath(config.defaultPath ?? "");
+      if (config.proxyConfigId) {
+        setJumpMode("existing");
+        setExistingProxyConfigId(config.proxyConfigId);
+      } else {
+        setJumpMode("none");
+        setExistingProxyConfigId("");
+      }
+      if (config.defaultDockerContainer) {
+        setTarget("docker");
+        setDockerContainer(config.defaultDockerContainer);
+      } else {
+        setTarget("host");
+        setDockerContainer("");
+      }
+      invalidateTest();
+    },
+    [sshConfigs],
+  );
 
   useEffect(() => {
     if (!initialProfileId || sshConfigs.length === 0) return;
@@ -183,10 +186,19 @@ export default function AddSshProjectForm({
 
   // Auto-load containers when Docker target is selected
   useEffect(() => {
-    if (target === "docker" && testedConfigId && dockerContainers.length === 0) {
+    if (
+      target === "docker" &&
+      testedConfigId &&
+      dockerContainers.length === 0
+    ) {
       loadRemoteDockerContainers();
     }
-  }, [target, testedConfigId, dockerContainers.length, loadRemoteDockerContainers]);
+  }, [
+    target,
+    testedConfigId,
+    dockerContainers.length,
+    loadRemoteDockerContainers,
+  ]);
 
   useEffect(() => {
     testedConfigIdRef.current = testedConfigId;
@@ -199,9 +211,10 @@ export default function AddSshProjectForm({
   useEffect(() => {
     return () => {
       if (keepTestedConfigRef.current) return;
-      const ids = [testedConfigIdRef.current, testedProxyConfigIdRef.current].filter(
-        (v): v is string => !!v,
-      );
+      const ids = [
+        testedConfigIdRef.current,
+        testedProxyConfigIdRef.current,
+      ].filter((v): v is string => !!v);
       ids.forEach((id) => {
         void fetch(`/api/ssh-configs/${id}`, {
           method: "DELETE",
@@ -275,7 +288,9 @@ export default function AddSshProjectForm({
       if (!testJson.ok) {
         await fetch(`/api/ssh-configs/${configId}`, { method: "DELETE" });
         if (jumpMode === "manual" && effectiveProxyId) {
-          await fetch(`/api/ssh-configs/${effectiveProxyId}`, { method: "DELETE" });
+          await fetch(`/api/ssh-configs/${effectiveProxyId}`, {
+            method: "DELETE",
+          });
           setTestedProxyConfigId(null);
         }
       }
@@ -308,7 +323,7 @@ export default function AddSshProjectForm({
         jumpMode === "existing"
           ? existingProxyConfigId || null
           : jumpMode === "manual"
-            ? testedProxyConfigId ?? null
+            ? (testedProxyConfigId ?? null)
             : null;
       const profilePayload: CreateSshConfigRequest = {
         label: label.trim() || undefined,
@@ -323,9 +338,8 @@ export default function AddSshProjectForm({
         defaultDockerContainer: defaultDockerContainer.trim() || undefined,
         proxyConfigId: resolvedProxyConfigId,
       };
-      const configIdToSave = isVaultMode && editingProfileId
-        ? editingProfileId
-        : testedConfigId;
+      const configIdToSave =
+        isVaultMode && editingProfileId ? editingProfileId : testedConfigId;
       const profileRes = await fetch(`/api/ssh-configs/${configIdToSave}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -341,7 +355,9 @@ export default function AddSshProjectForm({
 
       if (isVaultMode) {
         if (editingProfileId && testedConfigId !== editingProfileId) {
-          await fetch(`/api/ssh-configs/${testedConfigId}`, { method: "DELETE" });
+          await fetch(`/api/ssh-configs/${testedConfigId}`, {
+            method: "DELETE",
+          });
         }
         keepTestedConfigRef.current = true;
         onSaved?.(profileJson.data.id);
@@ -360,7 +376,8 @@ export default function AddSshProjectForm({
             color,
             path: remotePath.trim(),
             sshConfigId: testedConfigId,
-            dockerContainer: target === "docker" ? dockerContainer.trim() : undefined,
+            dockerContainer:
+              target === "docker" ? dockerContainer.trim() : undefined,
           }),
         });
         const projectJson = (await projectRes.json()) as
@@ -423,8 +440,40 @@ export default function AddSshProjectForm({
   const inputClass =
     "rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none";
 
+  const sshStage = useMemo(() => {
+    if (loading) return 3;
+    if (testing) return 1;
+    if (loadingDockerContainers) return 2;
+    if (sshTestPassed) return 2;
+    return 0;
+  }, [loading, testing, loadingDockerContainers, sshTestPassed]);
+
+  const sshStageText = useMemo(() => {
+    if (loading) return "Saving project profile";
+    if (testing) return "Verifying SSH connectivity";
+    if (loadingDockerContainers) return "Scanning remote Docker containers";
+    if (sshTestPassed) return "Connection verified";
+    return "Ready for connection test";
+  }, [loading, testing, loadingDockerContainers, sshTestPassed]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-2 p-3">
+      <div className="rounded border border-neutral-800 bg-neutral-900/70 px-2 py-2">
+        <div className="mb-1 flex items-center justify-between text-[11px] text-neutral-500">
+          <span>Connection Progress</span>
+          <span className="text-neutral-400">{sshStageText}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2, 3].map((idx) => (
+            <span
+              key={`ssh-stage-${idx}`}
+              className={`h-1.5 flex-1 rounded-full ${
+                idx <= sshStage ? "bg-cyan-400/80" : "bg-neutral-800"
+              } ${idx === sshStage && (loading || testing || loadingDockerContainers) ? "animate-pulse" : ""}`}
+            />
+          ))}
+        </div>
+      </div>
       {!isVaultMode && (
         <input
           type="text"
@@ -438,7 +487,9 @@ export default function AddSshProjectForm({
         <input
           type="text"
           placeholder={
-            isVaultMode ? "Server name (e.g. prod-bastion)" : "Host alias (e.g. prod-bastion)"
+            isVaultMode
+              ? "Server name (e.g. prod-bastion)"
+              : "Host alias (e.g. prod-bastion)"
           }
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -466,7 +517,9 @@ export default function AddSshProjectForm({
       )}
 
       <div className="space-y-1">
-        <label className="text-xs font-medium text-neutral-300">Server IP</label>
+        <label className="text-xs font-medium text-neutral-300">
+          Server IP
+        </label>
         <div className="flex gap-1">
           <input
             type="text"
@@ -476,7 +529,7 @@ export default function AddSshProjectForm({
               setHost(e.target.value);
               invalidateTest();
             }}
-            className={`flex-1 min-w-0 ${inputClass}`}
+            className={`min-w-0 flex-1 ${inputClass}`}
           />
           <input
             type="text"
@@ -534,7 +587,9 @@ export default function AddSshProjectForm({
       </div>
 
       <div className="space-y-1">
-        <label className="text-xs text-neutral-400">Jump Server (Optional)</label>
+        <label className="text-xs text-neutral-400">
+          Jump Server (Optional)
+        </label>
         <select
           value={jumpMode}
           onChange={(e) => {
@@ -579,7 +634,7 @@ export default function AddSshProjectForm({
                 setJumpHost(e.target.value);
                 invalidateTest();
               }}
-              className={`flex-1 min-w-0 ${inputClass}`}
+              className={`min-w-0 flex-1 ${inputClass}`}
             />
             <input
               type="text"
@@ -841,7 +896,7 @@ export default function AddSshProjectForm({
                 placeholder="/remote/path/to/project"
                 value={remotePath}
                 onChange={(e) => setRemotePath(e.target.value)}
-                className={`flex-1 min-w-0 ${inputClass}`}
+                className={`min-w-0 flex-1 ${inputClass}`}
                 disabled={target === "docker" && !dockerContainer.trim()}
               />
               <button

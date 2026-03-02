@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import {
   ReactFlow,
   useNodesState,
@@ -35,7 +29,11 @@ import type {
   SkillNodeStatus,
   ApiResponse,
 } from "@/lib/types";
-import { GRAPH_AUTOSAVE_DEBOUNCE_MS, SKILL_NODE_WIDTH, SKILL_NODE_HEIGHT } from "@/lib/constants";
+import {
+  GRAPH_AUTOSAVE_DEBOUNCE_MS,
+  SKILL_NODE_WIDTH,
+  SKILL_NODE_HEIGHT,
+} from "@/lib/constants";
 
 const nodeTypes = { skill: SkillNode };
 
@@ -111,7 +109,12 @@ function SkillGraphInner({ projectId }: SkillGraphInnerProps) {
       if (!connection.source || !connection.target) return;
 
       // Optimistic add
-      setEdges((eds) => addEdge({ ...connection, animated: false, style: { stroke: "#4b5563" } }, eds));
+      setEdges((eds) =>
+        addEdge(
+          { ...connection, animated: false, style: { stroke: "#4b5563" } },
+          eds,
+        ),
+      );
 
       // Persist via API
       try {
@@ -143,7 +146,9 @@ function SkillGraphInner({ projectId }: SkillGraphInnerProps) {
         setEdges((eds) =>
           eds.filter(
             (e) =>
-              !(e.source === connection.source && e.target === connection.target),
+              !(
+                e.source === connection.source && e.target === connection.target
+              ),
           ),
         );
       }
@@ -256,9 +261,7 @@ function SkillGraphInner({ projectId }: SkillGraphInnerProps) {
     (skillId: string, status: SkillNodeStatus) => {
       setNodes((nds) =>
         nds.map((n) =>
-          n.id === skillId
-            ? { ...n, data: { ...n.data, status } }
-            : n,
+          n.id === skillId ? { ...n, data: { ...n.data, status } } : n,
         ),
       );
     },
@@ -307,22 +310,23 @@ function SkillGraphInner({ projectId }: SkillGraphInnerProps) {
         <Background color="#374151" gap={20} size={1} />
         <Controls
           showInteractive={false}
-          className="!border-gray-700 !bg-gray-800/90 [&>button]:!border-gray-700 [&>button]:!bg-gray-800 [&>button]:!fill-gray-400 [&>button:hover]:!bg-gray-700"
+          className="!border-gray-700 !bg-gray-800/90 [&>button:hover]:!bg-gray-700 [&>button]:!border-gray-700 [&>button]:!bg-gray-800 [&>button]:!fill-gray-400"
         />
         <MiniMap
           nodeColor="#4b5563"
           maskColor="rgba(0,0,0,0.7)"
           className="!border-gray-700 !bg-gray-900"
+          style={{ inset: "auto 0.75rem 0.75rem auto" }}
         />
       </ReactFlow>
 
-      {!readOnly && (
-        <GraphToolbar
-          projectId={projectId}
-          onSkillCreated={handleSkillCreated}
-          onSavePositions={savePositions}
-        />
-      )}
+      <GraphToolbar
+        projectId={projectId}
+        nodes={skillNodes}
+        readOnly={readOnly}
+        onSkillCreated={handleSkillCreated}
+        onSavePositions={savePositions}
+      />
 
       <ConnectionPanel
         edges={skillEdges}

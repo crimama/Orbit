@@ -10,6 +10,7 @@ interface TerminalViewProps {
   socket?: OrbitSocket;
   connected?: boolean;
   onExit?: (exitCode: number) => void;
+  onInputReady?: (sendInput: ((data: string) => void) | null) => void;
 }
 
 export default function TerminalView({
@@ -17,6 +18,7 @@ export default function TerminalView({
   socket,
   connected,
   onExit,
+  onInputReady,
 }: TerminalViewProps) {
   const { socket: fallbackSocket, connected: fallbackConnected } = useSocket();
   const activeSocket = socket ?? fallbackSocket;
@@ -120,6 +122,10 @@ export default function TerminalView({
         socket.emit("terminal-data", data);
       });
 
+      onInputReady?.((data: string) => {
+        socket.emit("terminal-data", data);
+      });
+
       // Session exit
       socket.on("session-exit", onSessionExit);
 
@@ -142,12 +148,13 @@ export default function TerminalView({
       socket.off("terminal-data-compressed", onCompressedData);
       socket.off("session-exit", onSessionExit);
       socket.emit("session-detach");
+      onInputReady?.(null);
 
       termRef.current?.dispose();
       termRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [sessionId, activeSocket, activeConnected, handleResize]);
+  }, [sessionId, activeSocket, activeConnected, handleResize, onInputReady]);
 
   return (
     <div
