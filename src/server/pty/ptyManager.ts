@@ -1,5 +1,5 @@
 import * as pty from "node-pty";
-import type { PtySession } from "@/lib/types";
+import type { IPty } from "node-pty";
 import type { PtyBackend } from "@/server/pty/ptyBackend";
 import { registerPtyBackend } from "@/server/pty/ptyBackend";
 import {
@@ -8,6 +8,15 @@ import {
   DEFAULT_SHELL,
   SCROLLBACK_LIMIT,
 } from "@/lib/constants";
+
+interface PtySession {
+  id: string;
+  process: IPty;
+  cols: number;
+  rows: number;
+  lastActivity: number;
+  cwd: string;
+}
 
 type DataCallback = (data: string) => void;
 type ExitCallback = (exitCode: number) => void;
@@ -168,6 +177,15 @@ class PtyManager implements PtyBackend {
 
   has(sessionId: string): boolean {
     return this.sessions.has(sessionId);
+  }
+
+  isReady(): boolean {
+    return true;
+  }
+
+  onReady(_id: string, cb: () => void): () => void {
+    cb();
+    return () => {};
   }
 
   private cleanup(sessionId: string): void {

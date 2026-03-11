@@ -1,5 +1,5 @@
 import { Client } from "ssh2";
-import type { ClientChannel } from "ssh2";
+import type { ClientChannel, ConnectConfig } from "ssh2";
 import type { SFTPWrapper } from "ssh2";
 import { readFileSync } from "fs";
 import { prisma } from "@/lib/prisma";
@@ -29,7 +29,7 @@ class SshManager {
   private statusListeners = new Set<StatusCallback>();
 
   private applyAuthConfig(
-    connectConfig: Record<string, unknown>,
+    connectConfig: Partial<ConnectConfig>,
     config: {
       authMethod: string;
       keyPath: string | null;
@@ -174,7 +174,7 @@ class SshManager {
       });
 
       // Build auth config
-      const connectConfig: Record<string, unknown> = {
+      const connectConfig: Partial<ConnectConfig> = {
         host: config.host,
         port: config.port,
         username: config.username,
@@ -301,7 +301,7 @@ class SshManager {
         }
       });
 
-      const connectConfig: Record<string, unknown> = {
+      const connectConfig: Partial<ConnectConfig> = {
         host: config.host,
         port: config.port,
         username: config.username,

@@ -14,6 +14,8 @@ const AGENT_TYPES = {
   OPENCODE: "opencode",
 } as const;
 
+const READY_MARKER_CMD = "printf '\\033]777;orbit-ready\\007'";
+
 function dockerInnerCommand(
   workdir: string,
   agentType: string,
@@ -21,13 +23,13 @@ function dockerInnerCommand(
 ): string {
   const qPath = shellQuote(workdir);
   if (agentType === AGENT_TYPES.TERMINAL) {
-    return `cd ${qPath} 2>/dev/null || cd /; exec /bin/bash -il`;
+    return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; exec /bin/bash -il`;
   }
   if (agentType === AGENT_TYPES.CODEX) {
-    return `cd ${qPath} 2>/dev/null || cd /; if command -v codex >/dev/null 2>&1; then exec codex; else echo "[Agent Orbit] codex not found in container PATH."; exec /bin/bash -il; fi`;
+    return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; if command -v codex >/dev/null 2>&1; then exec codex; else echo "[Agent Orbit] codex not found in container PATH."; exec /bin/bash -il; fi`;
   }
   if (agentType === AGENT_TYPES.OPENCODE) {
-    return `cd ${qPath} 2>/dev/null || cd /; if command -v opencode >/dev/null 2>&1; then exec opencode; else echo "[Agent Orbit] opencode not found in container PATH."; exec /bin/bash -il; fi`;
+    return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; if command -v opencode >/dev/null 2>&1; then exec opencode; else echo "[Agent Orbit] opencode not found in container PATH."; exec /bin/bash -il; fi`;
   }
   const resumeArgs = resumeSessionRef?.trim()
     ? ` --resume ${shellQuote(resumeSessionRef.trim())} --fork-session`
@@ -36,7 +38,7 @@ function dockerInnerCommand(
     `if command -v claude >/dev/null 2>&1; then exec claude${resumeArgs}; ` +
     `elif command -v claude-code >/dev/null 2>&1; then exec claude-code${resumeArgs}; ` +
     `else echo "[Agent Orbit] claude/claude-code not found in container PATH."; exec /bin/sh; fi`;
-  return `cd ${qPath} 2>/dev/null || cd /; ${claudeCmd}`;
+  return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; ${claudeCmd}`;
 }
 
 function toSessionInfo(row: {
@@ -486,18 +488,18 @@ class SessionManager {
   ): string {
     const qPath = shellQuote(path);
     if (agentType === AGENT_TYPES.TERMINAL) {
-      return `cd ${qPath}\r`;
+      return `cd ${qPath} && ${READY_MARKER_CMD}\r`;
     }
     if (agentType === AGENT_TYPES.CODEX) {
-      return `cd ${qPath} && codex\r`;
+      return `cd ${qPath} && ${READY_MARKER_CMD} && codex\r`;
     }
     if (agentType === AGENT_TYPES.OPENCODE) {
-      return `cd ${qPath} && opencode\r`;
+      return `cd ${qPath} && ${READY_MARKER_CMD} && opencode\r`;
     }
     if (resumeSessionRef?.trim()) {
-      return `cd ${qPath} && claude --resume ${shellQuote(resumeSessionRef.trim())} --fork-session\r`;
+      return `cd ${qPath} && ${READY_MARKER_CMD} && claude --resume ${shellQuote(resumeSessionRef.trim())} --fork-session\r`;
     }
-    return `cd ${qPath} && claude\r`;
+    return `cd ${qPath} && ${READY_MARKER_CMD} && claude\r`;
   }
 
   private getRemoteDockerBootstrapCommand(

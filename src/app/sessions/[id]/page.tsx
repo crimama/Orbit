@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import TerminalPage from "@/components/terminal/TerminalPage";
-import type { SessionInfo, ApiResponse } from "@/lib/types";
+import type { SessionInfo, ApiResponse, ApiError } from "@/lib/types";
 
 export default function SessionPage() {
   const params = useParams<{ id: string }>();
@@ -14,9 +14,9 @@ export default function SessionPage() {
   useEffect(() => {
     fetch(`/api/sessions/${params.id}`)
       .then((res) => res.json())
-      .then((json: ApiResponse<SessionInfo>) => {
+      .then((json: ApiResponse<SessionInfo> | ApiError) => {
         if ("error" in json) {
-          setError((json as unknown as { error: string }).error);
+          setError(json.error);
         } else {
           setSession(json.data);
         }

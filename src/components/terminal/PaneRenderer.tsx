@@ -2,9 +2,20 @@
 
 import type { PaneNode } from "@/lib/paneTree";
 import type { OrbitSocket } from "@/lib/socketClient";
-import type { SessionInfo } from "@/lib/types";
+import type { SessionInfo, WorkspaceLayoutInfo } from "@/lib/types";
 import SplitDivider from "./SplitDivider";
 import TerminalPane from "./TerminalPane";
+
+interface WorkspaceControls {
+  workspaces: WorkspaceLayoutInfo[];
+  selectedWorkspaceId: string;
+  workspaceName: string;
+  savingWorkspace: boolean;
+  onSaveWorkspace: () => void;
+  onApplyWorkspace: (workspace: WorkspaceLayoutInfo) => void;
+  onDeleteWorkspace: () => void;
+  onSelectWorkspace: (id: string) => void;
+}
 
 interface PaneRendererProps {
   node: PaneNode;
@@ -32,6 +43,7 @@ interface PaneRendererProps {
   onRatioChange: (splitId: string, ratio: number) => void;
   onPaneExit: (paneId: string) => void;
   onKillSession: (paneId: string, sessionId: string) => Promise<void> | void;
+  workspace?: WorkspaceControls;
 }
 
 export default function PaneRenderer({
@@ -52,6 +64,7 @@ export default function PaneRenderer({
   onRatioChange,
   onPaneExit,
   onKillSession,
+  workspace,
 }: PaneRendererProps) {
   if (node.type === "leaf") {
     const leafSessionId = node.sessionId;
@@ -80,6 +93,7 @@ export default function PaneRenderer({
             ? () => onKillSession(node.id, leafSessionId)
             : undefined
         }
+        workspace={workspace}
       />
     );
   }
@@ -106,6 +120,7 @@ export default function PaneRenderer({
     onRatioChange,
     onPaneExit,
     onKillSession,
+    workspace,
   };
 
   return (

@@ -17,7 +17,11 @@ export function usePendingApprovals() {
       setPendingApprovals((prev) => [...prev, approval]);
     }
 
-    function onResolved(approvalId: string) {
+    function onResolved(
+      approvalId: string,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      approved: boolean,
+    ) {
       setPendingApprovals((prev) => prev.filter((a) => a.id !== approvalId));
     }
 

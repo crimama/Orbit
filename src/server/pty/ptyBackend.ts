@@ -8,6 +8,8 @@ export interface PtyBackend {
   onExit(id: string, cb: (code: number) => void): () => void;
   destroy(id: string): void;
   getIdleSessions(maxIdleMs: number): { id: string }[];
+  isReady(id: string): boolean;
+  onReady(id: string, cb: () => void): () => void;
 }
 
 // Registry of backends for unified lookup

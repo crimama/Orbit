@@ -24,6 +24,11 @@ import { sshManager } from "@/server/ssh/sshManager";
 
 const execFileAsync = promisify(execFile);
 
+function isNodeErrCode(error: unknown, ...codes: string[]): boolean {
+  if (typeof error !== "object" || !error || !("code" in error)) return false;
+  return codes.includes(String((error as { code?: unknown }).code));
+}
+
 type ProjectRecord = {
   id: string;
   type: ProjectType;
@@ -945,35 +950,16 @@ export async function writeProjectFile(
       await fs.writeFile(tmpPath, content, "utf8");
       await fs.rename(tmpPath, targetAbs);
     } catch (error) {
-      const code =
-        typeof error === "object" && error && "code" in error
-          ? String((error as { code?: unknown }).code)
-          : "";
-
       await fs.unlink(tmpPath).catch(() => undefined);
-
-      const isPermissionError = code === "EACCES" || code === "EPERM";
-      if (isPermissionError) {
-        if (existingLst && existingLst.isFile()) {
-          await fs
-            .writeFile(targetAbs, content, "utf8")
-            .catch((directError) => {
-              const directCode =
-                typeof directError === "object" &&
-                directError &&
-                "code" in directError
-                  ? String((directError as { code?: unknown }).code)
-                  : "";
-              if (directCode === "EACCES" || directCode === "EPERM") {
-                fail("Permission denied while writing file", 403);
-              }
-              throw directError;
-            });
-        } else {
-          fail("Permission denied while creating file", 403);
+      if (!isNodeErrCode(error, "EACCES", "EPERM")) throw error;
+      if (!existingLst?.isFile()) fail("Permission denied while creating file", 403);
+      try {
+        await fs.writeFile(targetAbs, content, "utf8");
+      } catch (directError) {
+        if (isNodeErrCode(directError, "EACCES", "EPERM")) {
+          fail("Permission denied while writing file", 403);
         }
-      } else {
-        throw error;
+        throw directError;
       }
     }
     const nextStat = await fs.stat(targetAbs);

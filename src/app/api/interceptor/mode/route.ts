@@ -6,7 +6,7 @@ import {
 import { commandInterceptor } from "@/server/pty/interceptor";
 import type { InterceptorMode } from "@/lib/types";
 
-const VALID_MODES: InterceptorMode[] = ["blacklist", "allowlist", "hybrid"];
+const VALID_MODES: InterceptorMode[] = ["blacklist", "allowlist", "hybrid", "yolo"];
 
 export async function GET() {
   const mode = await getInterceptorMode();
@@ -14,8 +14,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const body = await request.json();
-  const mode = body.mode as string | undefined;
+  const body = (await request.json()) as { mode?: string };
+  const mode = body.mode;
 
   if (!mode || !VALID_MODES.includes(mode as InterceptorMode)) {
     return NextResponse.json(

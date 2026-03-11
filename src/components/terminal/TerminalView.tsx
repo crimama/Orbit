@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import pako from "pako";
 import type { OrbitSocket } from "@/lib/socketClient";
 import { useSocket } from "@/lib/useSocket";
@@ -23,6 +23,7 @@ export default function TerminalView({
   const { socket: fallbackSocket, connected: fallbackConnected } = useSocket();
   const activeSocket = socket ?? fallbackSocket;
   const activeConnected = connected ?? fallbackConnected;
+  const [ready, setReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<import("@xterm/xterm").Terminal | null>(null);
   const fitAddonRef = useRef<import("@xterm/addon-fit").FitAddon | null>(null);
@@ -51,6 +52,16 @@ export default function TerminalView({
     let disposed = false;
     let resizeObserver: ResizeObserver | null = null;
     let termDataDisposable: { dispose(): void } | null = null;
+
+    setReady(false);
+
+    const onSessionReady = (sid: string) => {
+      if (sid === sessionId) setReady(true);
+    };
+    socket.on("session-ready", onSessionReady);
+
+    // Fallback: force ready after 5s
+    const readyFallback = setTimeout(() => setReady(true), 5_000);
 
     const onTerminalData = (data: string) => {
       termRef.current?.write(data);
@@ -142,12 +153,14 @@ export default function TerminalView({
     return () => {
       disposed = true;
       attachedRef.current = false;
+      clearTimeout(readyFallback);
       resizeObserver?.disconnect();
       termDataDisposable?.dispose();
 
       socket.off("terminal-data", onTerminalData);
       socket.off("terminal-data-compressed", onCompressedData);
       socket.off("session-exit", onSessionExit);
+      socket.off("session-ready", onSessionReady);
       socket.emit("session-detach");
       onInputReady?.(null);
 
@@ -158,10 +171,19 @@ export default function TerminalView({
   }, [sessionId, activeSocket, activeConnected, handleResize, onInputReady]);
 
   return (
-    <div
-      ref={containerRef}
-      className="h-full w-full"
-      style={{ backgroundColor: "#0b1220" }}
-    />
+    <div className="relative h-full w-full" style={{ backgroundColor: "#0b1220" }}>
+      <div ref={containerRef} className="h-full w-full" />
+      {!ready && (
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center"
+          style={{ backgroundColor: "#0b1220" }}
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-slate-600 border-t-sky-400" />
+            <span className="text-xs text-slate-500">Preparing session…</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

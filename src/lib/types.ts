@@ -1,5 +1,3 @@
-import type { IPty } from "node-pty";
-
 // --- Socket.io Event Contracts ---
 
 export interface ServerToClientEvents {
@@ -13,6 +11,8 @@ export interface ServerToClientEvents {
   // Phase 3: Skill Graph
   "graph-state": (state: GraphState) => void;
   "skill-trace": (trace: SkillTrace) => void;
+  // Bootstrap ready signal
+  "session-ready": (sessionId: string) => void;
   // Phase 4: Interceptor
   "interceptor-pending": (approval: PendingApproval) => void;
   "interceptor-resolved": (approvalId: string, approved: boolean) => void;
@@ -69,17 +69,6 @@ export interface SocketData {
   attachedSessionId: string | null;
   subscribedGraphProjectId?: string | null;
   subscribedMetricsSessionId?: string | null;
-}
-
-// --- PTY Session (in-memory) ---
-
-export interface PtySession {
-  id: string;
-  process: IPty;
-  cols: number;
-  rows: number;
-  lastActivity: number;
-  cwd: string;
 }
 
 // --- Session Info (API response) ---
@@ -438,7 +427,7 @@ export interface CreateSkillEdgeRequest {
 
 export type InterceptorSeverity = "warn" | "block" | "allow";
 
-export type InterceptorMode = "blacklist" | "allowlist" | "hybrid";
+export type InterceptorMode = "blacklist" | "allowlist" | "hybrid" | "yolo";
 
 export interface InterceptorRuleInfo {
   id: string;

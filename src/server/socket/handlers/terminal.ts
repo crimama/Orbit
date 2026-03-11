@@ -11,6 +11,7 @@ export function registerTerminalHandlers(
 ): void {
   let unsubData: (() => void) | null = null;
   let unsubExit: (() => void) | null = null;
+  let unsubReady: (() => void) | null = null;
   let batcher: DeltaBatcher | null = null;
   let sessionRoom: string | null = null;
 
@@ -21,6 +22,10 @@ export function registerTerminalHandlers(
     }
     batcher?.destroy();
     batcher = null;
+    if (unsubReady) {
+      unsubReady();
+      unsubReady = null;
+    }
     if (unsubData) {
       unsubData();
       unsubData = null;
@@ -53,34 +58,47 @@ export function registerTerminalHandlers(
     // Re-lookup backend after ensureSessionRunning may have created it
     const backend = getPtyBackend(sessionId) ?? ptyManager;
 
-    // Scrollback recovery — always attempt compression (can be up to 50KB)
-    const scrollback = backend.getScrollback(sessionId);
-    if (scrollback) {
-      const result = compressIfNeeded(scrollback);
-      if (result.compressed) {
-        socket.emit("terminal-data-compressed", result.payload as Buffer);
-      } else {
-        socket.emit("terminal-data", result.payload as string);
+    // Helper: start streaming scrollback + live data once ready
+    function startStreaming() {
+      const scrollback = backend.getScrollback(sessionId);
+      if (scrollback) {
+        const result = compressIfNeeded(scrollback);
+        if (result.compressed) {
+          socket.emit("terminal-data-compressed", result.payload as Buffer);
+        } else {
+          socket.emit("terminal-data", result.payload as string);
+        }
       }
+
+      batcher = new DeltaBatcher((payload, compressed) => {
+        if (compressed) {
+          socket.emit("terminal-data-compressed", payload as Buffer);
+        } else {
+          socket.emit("terminal-data", payload as string);
+        }
+      });
+
+      unsubData = backend.onData(sessionId, (data) => {
+        batcher!.push(data);
+      });
+
+      socket.emit("session-ready", sessionId);
     }
-
-    // Streaming data — batch small chunks + compress when beneficial
-    batcher = new DeltaBatcher((payload, compressed) => {
-      if (compressed) {
-        socket.emit("terminal-data-compressed", payload as Buffer);
-      } else {
-        socket.emit("terminal-data", payload as string);
-      }
-    });
-
-    unsubData = backend.onData(sessionId, (data) => {
-      batcher!.push(data);
-    });
 
     unsubExit = backend.onExit(sessionId, (exitCode) => {
       socket.emit("session-exit", sessionId, exitCode);
       detach();
     });
+
+    // Gate streaming on backend ready state
+    if (backend.isReady(sessionId)) {
+      startStreaming();
+    } else {
+      unsubReady = backend.onReady(sessionId, () => {
+        unsubReady = null;
+        startStreaming();
+      });
+    }
 
     callback({ ok: true });
   });

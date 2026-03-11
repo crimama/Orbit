@@ -61,7 +61,7 @@ function LoginPageContent() {
     const isSetup = configured === false;
     const token = password.trim();
     if (!token) {
-      setError(isSetup ? "Password is required" : "Password is required");
+      setError("Password is required");
       return;
     }
     if (isSetup && token.length < 8) {

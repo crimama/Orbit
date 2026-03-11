@@ -71,7 +71,13 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const body = await request.json();
+  const body = (await request.json()) as {
+    id?: string;
+    pattern?: string;
+    description?: string;
+    severity?: string;
+    enabled?: boolean;
+  };
 
   if (!body.id) {
     return NextResponse.json({ error: "id is required" }, { status: 400 });

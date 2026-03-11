@@ -96,6 +96,11 @@ class CommandInterceptor {
     const rules = await this.getActiveRulesCached();
     const mode = await this.getModeCached();
 
+    // --- Mode: yolo — bypass all interception, approve everything ---
+    if (mode === "yolo") {
+      return true;
+    }
+
     // Classify rules
     const allowRules = rules.filter((r) => r.severity === "allow");
     const blockWarnRules = rules.filter(

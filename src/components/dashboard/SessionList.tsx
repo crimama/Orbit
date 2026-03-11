@@ -7,7 +7,7 @@ import type { SessionInfo } from "@/lib/types";
 interface SessionListProps {
   sessions: SessionInfo[];
   onTerminate: (id: string) => void;
-  onResume: (sessionRef: string) => void;
+  onResume: (sessionRef: string, agentType?: string) => void;
   onRename?: (id: string, newName: string) => void;
   onOpenSession?: (sessionId: string) => void;
 }
@@ -92,12 +92,10 @@ export default function SessionList({
             <div
               className="min-w-0 flex-1 cursor-pointer"
               onClick={() => {
-                if (s.status === "active") {
-                  if (onOpenSession) {
-                    onOpenSession(s.id);
-                  } else {
-                    router.push(`/sessions/${s.id}`);
-                  }
+                if (onOpenSession) {
+                  onOpenSession(s.id);
+                } else {
+                  router.push(`/sessions/${s.id}`);
                 }
               }}
             >
@@ -198,9 +196,9 @@ export default function SessionList({
                   Kill
                 </button>
               )}
-              {s.source === "claude-history" && (
+              {s.status !== "active" && (
                 <button
-                  onClick={() => onResume(s.sessionRef)}
+                  onClick={() => onResume(s.sessionRef, s.agentType)}
                   className="hidden rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200 group-hover:block"
                 >
                   Resume

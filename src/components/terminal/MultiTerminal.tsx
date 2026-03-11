@@ -277,7 +277,7 @@ export default function MultiTerminal({
     if (runtimeStateLoadedRef.current) return;
 
     try {
-      const raw = sessionStorage.getItem(
+      const raw = localStorage.getItem(
         `orbit:runtime-workspace:${runtimeStorageKey}`,
       );
       if (!raw) {
@@ -313,7 +313,7 @@ export default function MultiTerminal({
     if (!runtimeStorageKey || !runtimeStateLoadedRef.current) return;
 
     try {
-      sessionStorage.setItem(
+      localStorage.setItem(
         `orbit:runtime-workspace:${runtimeStorageKey}`,
         JSON.stringify({ tree, activePaneId }),
       );
@@ -585,8 +585,11 @@ export default function MultiTerminal({
   const saveWorkspace = useCallback(async () => {
     setSavingWorkspace(true);
     try {
+      const defaultName = `Workspace ${new Date().toLocaleString()}`;
       const name =
-        workspaceName.trim() || `Workspace ${new Date().toLocaleString()}`;
+        workspaceName.trim() ||
+        window.prompt("Workspace name:", defaultName)?.trim() ||
+        defaultName;
       const method = "POST";
       const url = "/api/workspaces";
 
@@ -629,62 +632,6 @@ export default function MultiTerminal({
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-2.5 py-1.5">
-        <select
-          value={selectedWorkspaceId}
-          onChange={(e) => {
-            const id = e.target.value;
-            setSelectedWorkspaceId(id);
-            const found = workspaces.find((w) => w.id === id);
-            if (found) {
-              applyWorkspace(found);
-            }
-          }}
-          className="min-w-40 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
-        >
-          <option value="">Unsaved workspace</option>
-          {workspaces.map((workspace) => (
-            <option key={workspace.id} value={workspace.id}>
-              {workspace.name}
-            </option>
-          ))}
-        </select>
-        <input
-          value={workspaceName}
-          onChange={(e) => setWorkspaceName(e.target.value)}
-          placeholder="Workspace name"
-          className="min-w-40 flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-800"
-        />
-        <button
-          type="button"
-          onClick={() => void saveWorkspace()}
-          disabled={savingWorkspace}
-          className="rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
-        >
-          {savingWorkspace ? "Saving..." : "Save Workspace"}
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const found = workspaces.find((w) => w.id === selectedWorkspaceId);
-            if (found) {
-              applyWorkspace(found);
-            }
-          }}
-          disabled={!selectedWorkspaceId}
-          className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-700 disabled:opacity-50"
-        >
-          Reopen
-        </button>
-        <button
-          type="button"
-          onClick={() => void deleteWorkspace()}
-          disabled={!selectedWorkspaceId}
-          className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-medium text-rose-700 disabled:opacity-50"
-        >
-          Delete
-        </button>
-      </div>
       <div className="min-h-0 flex-1">
         <PaneRenderer
           node={tree}
@@ -704,6 +651,16 @@ export default function MultiTerminal({
           onRatioChange={handleRatioChange}
           onPaneExit={handlePaneExit}
           onKillSession={handleKillSession}
+          workspace={{
+            workspaces,
+            selectedWorkspaceId,
+            workspaceName,
+            savingWorkspace,
+            onSaveWorkspace: () => void saveWorkspace(),
+            onApplyWorkspace: applyWorkspace,
+            onDeleteWorkspace: () => void deleteWorkspace(),
+            onSelectWorkspace: setSelectedWorkspaceId,
+          }}
         />
       </div>
     </div>

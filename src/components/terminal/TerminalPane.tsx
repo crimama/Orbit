@@ -4,7 +4,18 @@ import { useEffect, useState, type DragEvent } from "react";
 import TerminalView from "./TerminalView";
 import { useMobile } from "@/lib/hooks/useMobile";
 import type { OrbitSocket } from "@/lib/socketClient";
-import type { SessionInfo } from "@/lib/types";
+import type { SessionInfo, WorkspaceLayoutInfo } from "@/lib/types";
+
+interface WorkspaceControls {
+  workspaces: WorkspaceLayoutInfo[];
+  selectedWorkspaceId: string;
+  workspaceName: string;
+  savingWorkspace: boolean;
+  onSaveWorkspace: () => void;
+  onApplyWorkspace: (workspace: WorkspaceLayoutInfo) => void;
+  onDeleteWorkspace: () => void;
+  onSelectWorkspace: (id: string) => void;
+}
 
 interface TerminalPaneProps {
   paneId: string;
@@ -30,6 +41,7 @@ interface TerminalPaneProps {
   onExit: () => void;
   canClose: boolean;
   onKillSession?: () => Promise<void> | void;
+  workspace?: WorkspaceControls;
 }
 
 export default function TerminalPane({
@@ -50,6 +62,7 @@ export default function TerminalPane({
   onExit,
   canClose,
   onKillSession,
+  workspace,
 }: TerminalPaneProps) {
   const currentSession = sessionId
     ? sessions.find((s) => s.id === sessionId)
@@ -161,7 +174,7 @@ export default function TerminalPane({
 
   return (
     <div
-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
+      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
         isActive || isDropTarget ? "ring-1 ring-inset" : ""
       }`}
       style={
@@ -241,8 +254,7 @@ export default function TerminalPane({
           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
           e.dataTransfer.effectAllowed = "move";
         }}
-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
+        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b border-neutral-800 bg-neutral-900 px-2.5 py-1.5"
       >
         {/* Project color + status indicator */}
         {sessionId ? (
@@ -267,7 +279,7 @@ export default function TerminalPane({
           onChange={(e) => {
             if (e.target.value) onSelectSession(e.target.value);
           }}
-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
+          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
         >
           <option value="">Select session...</option>
           {sessions
@@ -281,8 +293,8 @@ export default function TerminalPane({
 
         {currentSession && (
           <span
-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
+            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+            style={{ borderColor: projectColor ?? "#404040" }}
             title={currentSession.projectName}
           >
             {currentSession.projectName}
@@ -291,16 +303,78 @@ export default function TerminalPane({
 
         {sessionId && (
           <span
-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
+            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
           >
             {exited ? "Exited" : "Active"}
           </span>
         )}
 
+        {workspace && (
+          <div className="ml-1 hidden items-center gap-1 border-l border-neutral-700 pl-2 sm:flex">
+            <select
+              value={workspace.selectedWorkspaceId}
+              onChange={(e) => {
+                const id = e.target.value;
+                workspace.onSelectWorkspace(id);
+                const found = workspace.workspaces.find((w) => w.id === id);
+                if (found) workspace.onApplyWorkspace(found);
+              }}
+              className="max-w-32 truncate rounded border border-neutral-700 bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-300"
+              title="Workspace"
+            >
+              <option value="">WS: unsaved</option>
+              {workspace.workspaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                workspace.onSaveWorkspace();
+              }}
+              disabled={workspace.savingWorkspace}
+              title="Save Workspace"
+              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 disabled:opacity-50"
+            >
+              {workspace.savingWorkspace ? "..." : "\uD83D\uDCBE"}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                const found = workspace.workspaces.find(
+                  (w) => w.id === workspace.selectedWorkspaceId,
+                );
+                if (found) workspace.onApplyWorkspace(found);
+              }}
+              disabled={!workspace.selectedWorkspaceId}
+              title="Reopen Workspace"
+              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 disabled:opacity-50"
+            >
+              {"\uD83D\uDD04"}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                workspace.onDeleteWorkspace();
+              }}
+              disabled={!workspace.selectedWorkspaceId}
+              title="Delete Workspace"
+              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-rose-900/30 hover:text-rose-400 disabled:opacity-50"
+            >
+              {"\uD83D\uDDD1\uFE0F"}
+            </button>
+          </div>
+        )}
+
         <div className="ml-auto flex items-center gap-1">
           <span
             title="Drag pane from header"
-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
+            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
           >
             ⠿
           </span>
@@ -310,7 +384,7 @@ export default function TerminalPane({
               onSplit("horizontal");
             }}
             title="Split Horizontal"
-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ⎸
           </button>
@@ -320,7 +394,7 @@ export default function TerminalPane({
               onSplit("vertical");
             }}
             title="Split Vertical"
-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ⎯
           </button>
@@ -331,7 +405,7 @@ export default function TerminalPane({
                 onClose();
               }}
               title="Close Pane"
-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
+              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
             >
               ✕
             </button>
@@ -345,7 +419,7 @@ export default function TerminalPane({
                   void onKillSession();
                 }}
                 title="Kill Session"
-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
+                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
               >
                 Kill
               </button>
@@ -372,8 +446,8 @@ export default function TerminalPane({
               onExit={onExit}
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-slate-100">
-              <p className="text-base font-medium text-slate-600">
+            <div className="flex h-full items-center justify-center bg-neutral-950">
+              <p className="text-base font-medium text-neutral-500">
                 Select a session
               </p>
             </div>

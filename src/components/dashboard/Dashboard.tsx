@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import ProjectList from "./ProjectList";
 import SessionList from "./SessionList";
+import SidebarFileTree from "./SidebarFileTree";
 import AddProjectForm from "./AddProjectForm";
 import AddSshProjectForm from "./AddSshProjectForm";
 import AddDockerProjectForm from "./AddDockerProjectForm";
@@ -20,6 +21,7 @@ import type {
   ApiError,
   CreateSessionRequest,
   ProjectFileListResponse,
+  InterceptorMode,
 } from "@/lib/types";
 
 type AddProjectMode = null | "local" | "ssh" | "docker";
@@ -84,18 +86,15 @@ export default function Dashboard() {
   const [globalFileIndex, setGlobalFileIndex] = useState<
     GlobalFileIndexEntry[]
   >([]);
+  const [viewedFile, setViewedFile] = useState<{
+    projectId: string;
+    path: string;
+    content: string;
+  } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState("");
   const [paletteCursor, setPaletteCursor] = useState(0);
   const layoutSplitRef = useRef<HTMLDivElement>(null);
-  const [fileJumpRequest, setFileJumpRequest] = useState<{
-    path: string;
-    token: number;
-  } | null>(null);
-  const [directoryJumpRequest, setDirectoryJumpRequest] = useState<{
-    path: string;
-    token: number;
-  } | null>(null);
   const paletteInputRef = useRef<HTMLInputElement>(null);
   const [skillCount, setSkillCount] = useState(0);
   const [globalWorkspaces, setGlobalWorkspaces] = useState<
@@ -107,6 +106,30 @@ export default function Dashboard() {
   const [showInterceptorModal, setShowInterceptorModal] = useState(false);
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
+  const [yoloMode, setYoloMode] = useState(false);
+
+  // Fetch interceptor mode on mount
+  useEffect(() => {
+    fetch("/api/interceptor/mode")
+      .then((r) => r.json())
+      .then((json: ApiResponse<{ mode: InterceptorMode }>) => {
+        if ("data" in json) setYoloMode(json.data.mode === "yolo");
+      })
+      .catch(() => {});
+  }, []);
+
+  const toggleYoloMode = useCallback(async () => {
+    const nextMode = yoloMode ? "hybrid" : "yolo";
+    try {
+      const res = await fetch("/api/interceptor/mode", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: nextMode }),
+      });
+      const json = (await res.json()) as ApiResponse<{ mode: InterceptorMode }>;
+      if ("data" in json) setYoloMode(json.data.mode === "yolo");
+    } catch {}
+  }, [yoloMode]);
 
   // Fetch projects
   const fetchProjects = useCallback(async () => {
@@ -153,15 +176,16 @@ export default function Dashboard() {
     }
   }, [projects, quickSessionProjectId]);
 
-  // When project selected, fetch its sessions
+  // When project selected, fetch its sessions — preserve sidebar tab, reset right pane file view
   const handleSelectProject = useCallback(
     (project: ProjectInfo) => {
       setSelectedProject(project);
-      setSessionViewMode("active");
-      setProjectFocusTab("sessions");
+      if (projectPaneMode === "files") {
+        setProjectPaneMode("terminal");
+      }
       fetchSessions();
     },
-    [fetchSessions],
+    [fetchSessions, projectPaneMode],
   );
 
   const fetchSkillCount = useCallback(async (projectId: string) => {
@@ -273,12 +297,12 @@ export default function Dashboard() {
     [fetchSessions],
   );
 
-  const handleResumeClaudeSession = useCallback(
-    async (sessionRef: string) => {
+  const handleResumeSession = useCallback(
+    async (sessionRef: string, agentType?: string) => {
       if (!selectedProject) return;
       await createSession({
         projectId: selectedProject!.id,
-        agentType: "claude-code",
+        agentType: (agentType as NewSessionAgent) || "claude-code",
         resumeSessionRef: sessionRef,
       });
     },
@@ -503,91 +527,17 @@ export default function Dashboard() {
   );
 
   const openFileInProject = useCallback(
-    (projectId: string, filePath: string) => {
+    (projectId: string) => {
       const project = projects.find((p) => p.id === projectId);
       if (!project) return;
-
-      const currentInlineSession = inlineSessionId
-        ? (sessions.find((session) => session.id === inlineSessionId) ?? null)
-        : null;
-      const activeProjectSession = sessions.find(
-        (session) =>
-          session.projectId === projectId && session.status === "active",
-      );
-
-      const nextInlineSessionId =
-        currentInlineSession?.projectId === projectId
-          ? currentInlineSession.id
-          : (activeProjectSession?.id ?? null);
-
       setSelectedProject(project);
-      setSessionViewMode("active");
       setProjectFocusTab("files");
-      setShowHarnessManager(false);
-      setProjectPaneMode("terminal");
-      setInlineSessionId(nextInlineSessionId);
-      setInlineWorkspaceId(null);
-      setFileJumpRequest({ path: filePath, token: Date.now() });
-      setDirectoryJumpRequest(null);
       setPaletteOpen(false);
     },
-    [projects, inlineSessionId, sessions],
+    [projects],
   );
 
-  const openDirectoryInProject = useCallback(
-    (projectId: string, directoryPath: string) => {
-      const project = projects.find((p) => p.id === projectId);
-      if (!project) return;
 
-      const currentInlineSession = inlineSessionId
-        ? (sessions.find((session) => session.id === inlineSessionId) ?? null)
-        : null;
-      const activeProjectSession = sessions.find(
-        (session) =>
-          session.projectId === projectId && session.status === "active",
-      );
-
-      const nextInlineSessionId =
-        currentInlineSession?.projectId === projectId
-          ? currentInlineSession.id
-          : (activeProjectSession?.id ?? null);
-
-      setSelectedProject(project);
-      setSessionViewMode("active");
-      setProjectFocusTab("files");
-      setShowHarnessManager(false);
-      setProjectPaneMode("files");
-      setInlineSessionId(nextInlineSessionId);
-      setInlineWorkspaceId(null);
-      setFileJumpRequest(null);
-      setDirectoryJumpRequest({ path: directoryPath, token: Date.now() });
-      setPaletteOpen(false);
-    },
-    [projects, inlineSessionId, sessions],
-  );
-
-  const handleCloseFocusedFileView = useCallback(() => {
-    if (!selectedProject) return;
-
-    const currentInlineSession =
-      inlineSessionId != null
-        ? (sessions.find((session) => session.id === inlineSessionId) ?? null)
-        : null;
-    const activeProjectSession = sessions.find(
-      (session) =>
-        session.projectId === selectedProject.id && session.status === "active",
-    );
-
-    const nextInlineSessionId =
-      currentInlineSession?.projectId === selectedProject.id
-        ? currentInlineSession.id
-        : (activeProjectSession?.id ?? null);
-
-    setProjectFocusTab("sessions");
-    setProjectPaneMode("terminal");
-    setInlineSessionId(nextInlineSessionId);
-    setFileJumpRequest(null);
-  }, [selectedProject, inlineSessionId, sessions]);
 
   useEffect(() => {
     let cancelled = false;
@@ -667,7 +617,7 @@ export default function Dashboard() {
         label: file.name,
         description: `${file.projectName} · ${file.path}`,
         keywords: `${file.projectName} ${file.path}`,
-        action: () => openFileInProject(file.projectId, file.path),
+        action: () => openFileInProject(file.projectId),
       });
     }
 
@@ -823,20 +773,34 @@ export default function Dashboard() {
           >
             Home
           </button>
-          {selectedProject && (
+          {/* Hidden: Skill Graph nav link */}
+          {false && selectedProject && (
             <Link
-              href={`/graph?projectId=${selectedProject.id}`}
+              href={`/graph?projectId=${selectedProject!.id}`}
               className="rounded px-3 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
             >
               Skill Graph
             </Link>
           )}
+          {false && (
           <Link
             href="/compare"
             className="rounded px-3 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
           >
             A/B Compare
           </Link>
+          )}
+          <button
+            onClick={() => void toggleYoloMode()}
+            className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+              yoloMode
+                ? "bg-red-600/80 text-red-100 hover:bg-red-600"
+                : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+            }`}
+            title={yoloMode ? "YOLO mode ON — all commands auto-approved" : "Enable YOLO mode (auto-approve all)"}
+          >
+            {yoloMode ? "YOLO ON" : "YOLO"}
+          </button>
         </div>
       </div>
 
@@ -1001,6 +965,7 @@ export default function Dashboard() {
                       >
                         Files
                       </button>
+                      {false && (
                       <button
                         onClick={() => {
                           setProjectFocusTab("harness");
@@ -1015,95 +980,91 @@ export default function Dashboard() {
                       >
                         Harness
                       </button>
+                      )}
                     </div>
 
                     {projectFocusTab === "sessions" ? (
                       <div className="max-h-72 overflow-y-auto rounded border border-neutral-800 bg-neutral-900/40">
-                        <div className="grid grid-cols-1 gap-2 border-b border-neutral-800 p-2 sm:grid-cols-[minmax(0,1fr)_150px_auto]">
+                        <div className="flex items-center gap-1 border-b border-neutral-800 px-2 py-1">
+                          <button
+                            onClick={() => setSessionViewMode("active")}
+                            className={`rounded px-2 py-0.5 text-xs ${
+                              sessionViewMode === "active"
+                                ? "bg-neutral-700 text-neutral-100"
+                                : "text-neutral-500 hover:text-neutral-300"
+                            }`}
+                          >
+                            Active
+                          </button>
+                          <button
+                            onClick={() => setSessionViewMode("all")}
+                            className={`rounded px-2 py-0.5 text-xs ${
+                              sessionViewMode === "all"
+                                ? "bg-neutral-700 text-neutral-100"
+                                : "text-neutral-500 hover:text-neutral-300"
+                            }`}
+                          >
+                            All
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-1.5 border-b border-neutral-800 p-2">
                           <input
                             value={projectSessionName}
                             onChange={(e) =>
                               setProjectSessionName(e.target.value)
                             }
-                            placeholder="Session name (recommended)"
-                            className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                            placeholder="Session name"
+                            className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
                           />
-                          <select
-                            value={quickSessionAgent}
-                            onChange={(e) =>
-                              setQuickSessionAgent(
-                                e.target.value as NewSessionAgent,
-                              )
-                            }
-                            className="min-w-0 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
-                          >
-                            <option value="terminal">Terminal</option>
-                            <option value="claude-code">Claude Code</option>
-                            <option value="codex">Codex</option>
-                            <option value="opencode">OpenCode</option>
-                          </select>
-                          <button
-                            onClick={() => {
-                              void handleCreateSelectedProjectSession();
-                            }}
-                            disabled={creatingSession}
-                            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            {creatingSession ? "Creating..." : "+ New"}
-                          </button>
+                          <div className="flex gap-1.5">
+                            <select
+                              value={quickSessionAgent}
+                              onChange={(e) =>
+                                setQuickSessionAgent(
+                                  e.target.value as NewSessionAgent,
+                                )
+                              }
+                              className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                            >
+                              <option value="terminal">Terminal</option>
+                              <option value="claude-code">Claude Code</option>
+                              <option value="codex">Codex</option>
+                              <option value="opencode">OpenCode</option>
+                            </select>
+                            <button
+                              onClick={() => {
+                                void handleCreateSelectedProjectSession();
+                              }}
+                              disabled={creatingSession}
+                              className="shrink-0 rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {creatingSession ? "..." : "+ New"}
+                            </button>
+                          </div>
                         </div>
                         <SessionList
                           sessions={selectedProjectSessions}
                           onTerminate={handleTerminateSession}
-                          onResume={handleResumeClaudeSession}
+                          onResume={handleResumeSession}
                           onRename={handleRenameSession}
                           onOpenSession={handleOpenSessionFromList}
                         />
                       </div>
                     ) : null}
 
-                    {projectFocusTab === "files" ? (
-                      <div className="max-h-72 overflow-y-auto rounded border border-neutral-800 bg-neutral-900/40 p-1">
-                        {selectedProjectFiles.length === 0 ? (
-                          <div className="px-2 py-6 text-center text-xs text-neutral-500">
-                            No indexed files.
-                          </div>
-                        ) : (
-                          selectedProjectFiles.slice(0, 80).map((row) => (
-                            <button
-                              key={`left-file-${row.projectId}:${row.path}`}
-                              onClick={() => {
-                                if (row.isDir) {
-                                  openDirectoryInProject(
-                                    row.projectId,
-                                    row.path,
-                                  );
-                                  return;
-                                }
-                                openFileInProject(row.projectId, row.path);
-                              }}
-                              className={`mb-1 flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs ${
-                                row.isDir
-                                  ? "text-amber-300/90 hover:bg-neutral-800"
-                                  : "text-neutral-300 hover:bg-neutral-800"
-                              }`}
-                              title={row.path}
-                              type="button"
-                            >
-                              <span className="w-3 text-center">
-                                {row.isDir ? "▸" : "•"}
-                              </span>
-                              <span className="flex-1 truncate">
-                                {row.name}
-                                {row.isDir ? "/" : ""}
-                              </span>
-                            </button>
-                          ))
-                        )}
-                      </div>
+                    {projectFocusTab === "files" && selectedProject ? (
+                      <SidebarFileTree
+                        key={selectedProject.id}
+                        projectId={selectedProject.id}
+                        files={selectedProjectFiles}
+                        activePath={viewedFile?.projectId === selectedProject.id ? viewedFile.path : null}
+                        onFileOpen={(path, content) =>
+                          setViewedFile({ projectId: selectedProject.id, path, content })
+                        }
+                      />
                     ) : null}
 
-                    {projectFocusTab === "harness" ? (
+                    {false && projectFocusTab === "harness" ? (
                       <div className="rounded border border-neutral-800 bg-neutral-900/40 p-3">
                         <div className="mb-2 text-xs text-neutral-400">
                           Skills linked to this project
@@ -1122,7 +1083,7 @@ export default function Dashboard() {
                             Open Harness
                           </button>
                           <Link
-                            href={`/graph?projectId=${selectedProject.id}`}
+                            href={`/graph?projectId=${selectedProject!.id}`}
                             className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
                           >
                             Manage Skills
@@ -1162,14 +1123,14 @@ export default function Dashboard() {
           <div className="min-h-0 flex-1 overflow-y-auto">
             {selectedProject ? (
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                {projectPaneMode === "harness" && (
+                {false && projectPaneMode === "harness" && (
                   <div className="border-b border-neutral-800 p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs text-neutral-500">
                         Skills: {skillCount}
                       </span>
                       <Link
-                        href={`/graph?projectId=${selectedProject.id}`}
+                        href={`/graph?projectId=${selectedProject!.id}`}
                         className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                       >
                         Manage Skills
@@ -1179,9 +1140,9 @@ export default function Dashboard() {
                 )}
 
                 <div className="min-h-0 flex-1 p-2 sm:p-3">
-                  {projectFocusTab === "sessions" && !inlineSessionId ? (
+                  {!inlineSessionId && !viewedFile ? (
                     <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
-                      Select a session from the left panel to open a terminal.
+                      Select a session or file from the left panel.
                     </div>
                   ) : (
                     <BorderlessWorkspace
@@ -1190,13 +1151,8 @@ export default function Dashboard() {
                       projectPaneMode={projectPaneMode}
                       inlineSessionId={inlineSessionId}
                       inlineWorkspaceId={inlineWorkspaceId}
-                      initialFilePath={fileJumpRequest?.path ?? null}
-                      initialFilePathToken={fileJumpRequest?.token ?? null}
-                      initialDirectoryPath={directoryJumpRequest?.path ?? null}
-                      initialDirectoryPathToken={
-                        directoryJumpRequest?.token ?? null
-                      }
-                      onCloseFileView={handleCloseFocusedFileView}
+                      viewedFile={viewedFile}
+                      onCloseFile={() => setViewedFile(null)}
                       onKillSession={handleTerminateSession}
                     />
                   )}

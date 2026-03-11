@@ -41,6 +41,21 @@
     └─────────┘        └────────────┘
 
   ┌─────────────────────────────────────────────────────┐
+  │              터미널 에코시스템 리서치                    │
+  │                                                     │
+  │  ┌────────────┐   ┌──────────────┐   ┌───────────┐ │
+  │  │ ghostty-web│   │   restty     │   │   zmx     │ │
+  │  │ xterm 대체 │   │  WebGPU 렌더 │   │ 세션지속  │ │
+  │  └─────┬──────┘   └──────┬───────┘   └─────┬─────┘ │
+  │        │                 │                  │       │
+  │  ┌─────▼──────┐   ┌──────▼───────┐   ┌─────▼─────┐ │
+  │  │libghostty  │   │    WASM      │   │   mux     │ │
+  │  │  vt-core   │   │  브라우저 VT │   │에이전트   │ │
+  │  └────────────┘   └──────────────┘   │병렬 격리  │ │
+  │                                      └───────────┘ │
+  └─────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────┐
   │                  하네스 레이어                        │
   │                                                     │
   │  ┌────────────┐   ┌──────────────┐   ┌───────────┐ │
@@ -97,6 +112,14 @@
 | **컨텍스트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
 | **GC에이전트**      | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
 | **세션포크**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+| **libghostty**      | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **ghostty-web**     | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **restty**          | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **WebGPU**          | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **WASM**            | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **zmx**             | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **mux**             | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **session-persist** | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
 
 ---
 
@@ -116,6 +139,7 @@
 | -------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------- |
 | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)              | 완료 | `skill` `phase` `link-notes` `dep-install` `워크플로우` `자동화`                                  |
 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 완료 | `harness` `에이전트` `observability` `guardrail` `golden-path` `컨텍스트` `GC에이전트` `세션포크` |
+| [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | 완료 | `libghostty` `ghostty-web` `restty` `WebGPU` `WASM` `zmx` `mux` `session-persist` |
 
 ### bugfix/
 
@@ -148,6 +172,12 @@ features/2026-02-28_phase2-4-parallel.md
         │
         ▼ (후속 예정)
 ??? E2E 테스트 / 성능 최적화 / 프로덕션 배포 / 하네스 패턴 구현
+
+decisions/2026-03-12_libghostty-terminal-ecosystem-research.md
+        │
+        ├──▶ features/2026-02-27_phase1-infra.md (xterm.js 대체재 평가)
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (SSH + RemotePty 세션 퍼시스턴스)
+        └──▶ decisions/2026-02-28_harness-engineering.md (인터셉터 플러그인 패턴)
 ```
 
 ---
@@ -162,3 +192,4 @@ features/2026-02-28_phase2-4-parallel.md
 | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
 | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
 | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
+| 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |

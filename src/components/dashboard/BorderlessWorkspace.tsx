@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SplitDivider from "@/components/terminal/SplitDivider";
 import MultiTerminal from "@/components/terminal/MultiTerminal";
-import ProjectFilesPanel from "@/components/files/ProjectFilesPanel";
 import ProjectHarnessPanel from "@/components/dashboard/ProjectHarnessPanel";
+import FileEditor from "@/components/dashboard/FileEditor";
 import type { ProjectInfo, SessionInfo } from "@/lib/types";
 
 type ProjectPaneMode = "terminal" | "files" | "harness";
@@ -28,7 +28,23 @@ type WorkspaceTab =
       projectId: string;
       projectName: string;
       projectColor: string;
+    }
+  | {
+      id: string;
+      kind: "file-view";
+      title: string;
+      projectId: string;
+      projectName: string;
+      projectColor: string;
+      filePath: string;
+      fileContent: string;
     };
+
+export interface ViewedFile {
+  projectId: string;
+  path: string;
+  content: string;
+}
 
 interface BorderlessWorkspaceProps {
   sessions: SessionInfo[];
@@ -36,11 +52,8 @@ interface BorderlessWorkspaceProps {
   projectPaneMode: ProjectPaneMode;
   inlineSessionId: string | null;
   inlineWorkspaceId: string | null;
-  initialFilePath?: string | null;
-  initialFilePathToken?: number | null;
-  initialDirectoryPath?: string | null;
-  initialDirectoryPathToken?: number | null;
-  onCloseFileView?: () => void;
+  viewedFile?: ViewedFile | null;
+  onCloseFile?: () => void;
   onKillSession: (sessionId: string) => Promise<void> | void;
 }
 
@@ -76,11 +89,8 @@ export default function BorderlessWorkspace({
   projectPaneMode,
   inlineSessionId,
   inlineWorkspaceId,
-  initialFilePath = null,
-  initialFilePathToken = null,
-  initialDirectoryPath = null,
-  initialDirectoryPathToken = null,
-  onCloseFileView,
+  viewedFile,
+  onCloseFile,
   onKillSession,
 }: BorderlessWorkspaceProps) {
   const [tabs, setTabs] = useState<WorkspaceTab[]>([]);
@@ -96,8 +106,6 @@ export default function BorderlessWorkspace({
   );
   const lastInlineSessionIdRef = useRef<string | null>(null);
   const lastProjectPaneKeyRef = useRef<string>("");
-  const lastFileJumpTokenRef = useRef<number | null>(null);
-  const lastDirectoryJumpTokenRef = useRef<number | null>(null);
 
   const upsertTab = useCallback(
     (nextTab: WorkspaceTab, targetPanel: PanelSide) => {
@@ -140,10 +148,11 @@ export default function BorderlessWorkspace({
 
     if (!selectedProject) return;
 
-    if (projectPaneMode === "files") {
-      upsertTab(buildProjectTab(selectedProject, "files"), activePanel);
-      return;
-    }
+    // Files panel hidden — left sidebar file browser is sufficient
+    // if (projectPaneMode === "files") {
+    //   upsertTab(buildProjectTab(selectedProject, "files"), activePanel);
+    //   return;
+    // }
 
     if (projectPaneMode === "harness") {
       upsertTab(buildProjectTab(selectedProject, "harness"), activePanel);
@@ -196,11 +205,17 @@ export default function BorderlessWorkspace({
     setActivePanel(panel);
   };
 
-  const closeWorkspaceTab = useCallback((tabId: string) => {
-    setTabs((prev) => prev.filter((tab) => tab.id !== tabId));
-    setLeftTabId((prev) => (prev === tabId ? null : prev));
-    setRightTabId((prev) => (prev === tabId ? null : prev));
-  }, []);
+  const closeTab = useCallback(
+    (tabId: string) => {
+      const closedTab = tabsById.get(tabId);
+      if (closedTab?.kind === "file-view") {
+        onCloseFile?.();
+      }
+      setTabs((prev) => prev.filter((t) => t.id !== tabId));
+    },
+    [tabsById, onCloseFile],
+  );
+
 
   const handleTabDrop = (
     panel: PanelSide,
@@ -215,40 +230,36 @@ export default function BorderlessWorkspace({
   const leftTab = leftTabId ? (tabsById.get(leftTabId) ?? null) : null;
   const rightTab = rightTabId ? (tabsById.get(rightTabId) ?? null) : null;
 
+  // Open file tab when viewedFile changes
+  const lastViewedFileRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!selectedProject || !initialFilePath || !initialFilePathToken) return;
-    if (lastFileJumpTokenRef.current === initialFilePathToken) return;
-    lastFileJumpTokenRef.current = initialFilePathToken;
+    if (!viewedFile || !selectedProject) return;
+    const key = `${viewedFile.projectId}:${viewedFile.path}`;
+    if (key === lastViewedFileRef.current) return;
+    lastViewedFileRef.current = key;
 
-    const fileTab = buildProjectTab(selectedProject, "files");
-    upsertTab(fileTab, "left");
-    setLeftTabId(fileTab.id);
-    setLayoutMode("left");
-    setActivePanel("left");
-  }, [selectedProject, initialFilePath, initialFilePathToken, upsertTab]);
+    const fileTab: WorkspaceTab = {
+      id: `file-view:${viewedFile.projectId}:${viewedFile.path}`,
+      kind: "file-view",
+      title: viewedFile.path.split("/").pop() ?? viewedFile.path,
+      projectId: viewedFile.projectId,
+      projectName: selectedProject.name,
+      projectColor: selectedProject.color,
+      filePath: viewedFile.path,
+      fileContent: viewedFile.content,
+    };
 
-  useEffect(() => {
-    if (
-      !selectedProject ||
-      !initialDirectoryPath ||
-      !initialDirectoryPathToken
-    ) {
-      return;
+    // If there's already a session tab on left, put file on right; otherwise left
+    const hasSessionOnLeft =
+      leftTabId && tabsById.get(leftTabId)?.kind === "session";
+    if (hasSessionOnLeft) {
+      upsertTab(fileTab, "right");
+      setLayoutMode("split");
+    } else {
+      upsertTab(fileTab, "left");
+      setLayoutMode("left");
     }
-    if (lastDirectoryJumpTokenRef.current === initialDirectoryPathToken) return;
-    lastDirectoryJumpTokenRef.current = initialDirectoryPathToken;
-
-    const fileTab = buildProjectTab(selectedProject, "files");
-    upsertTab(fileTab, "left");
-    setLeftTabId(fileTab.id);
-    setLayoutMode("left");
-    setActivePanel("left");
-  }, [
-    selectedProject,
-    initialDirectoryPath,
-    initialDirectoryPathToken,
-    upsertTab,
-  ]);
+  }, [viewedFile, selectedProject, leftTabId, tabsById, upsertTab]);
 
   const renderTabContent = (tab: WorkspaceTab | null) => {
     if (!tab) {
@@ -273,23 +284,17 @@ export default function BorderlessWorkspace({
     }
 
     if (tab.kind === "files") {
-      const hasFileFocus =
-        selectedProject?.id === tab.projectId &&
-        initialFilePath != null &&
-        initialFilePathToken != null;
+      return null;
+    }
+
+    if (tab.kind === "file-view") {
       return (
-        <ProjectFilesPanel
+        <FileEditor
           key={tab.id}
           projectId={tab.projectId}
-          focusedFileOnly={hasFileFocus}
-          onCloseFocusedFile={() => {
-            closeWorkspaceTab(tab.id);
-            onCloseFileView?.();
-          }}
-          initialOpenPath={hasFileFocus ? initialFilePath : null}
-          initialOpenPathToken={hasFileFocus ? initialFilePathToken : null}
-          initialDirectoryPath={initialDirectoryPath}
-          initialDirectoryPathToken={initialDirectoryPathToken}
+          filePath={tab.filePath}
+          initialContent={tab.fileContent}
+          onClose={onCloseFile}
         />
       );
     }
@@ -328,21 +333,36 @@ export default function BorderlessWorkspace({
                       </span>
                     ) : (
                       tabs.map((tab) => (
-                        <button
+                        <span
                           key={`left-ws-${tab.id}`}
-                          type="button"
-                          onClick={() => {
-                            assignTabToPanel(tab.id, "left");
-                            setLayoutMode("left");
-                          }}
-                          className={`shrink-0 rounded px-2 py-0.5 text-[11px] ${
+                          className={`group/tab flex shrink-0 items-center gap-0.5 rounded text-[11px] ${
                             leftTabId === tab.id
                               ? "bg-neutral-700 text-neutral-100"
                               : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                           }`}
                         >
-                          [{tab.projectName}] {tab.title}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              assignTabToPanel(tab.id, "left");
+                              setLayoutMode("left");
+                            }}
+                            className="py-0.5 pl-2"
+                          >
+                            [{tab.projectName}] {tab.title}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeTab(tab.id);
+                            }}
+                            className="rounded px-1 py-0.5 text-neutral-500 opacity-0 hover:text-neutral-200 group-hover/tab:opacity-100"
+                            title="Close tab"
+                          >
+                            ×
+                          </button>
+                        </span>
                       ))
                     )}
                   </div>
@@ -390,21 +410,36 @@ export default function BorderlessWorkspace({
                       </span>
                     ) : (
                       tabs.map((tab) => (
-                        <button
+                        <span
                           key={`right-ws-${tab.id}`}
-                          type="button"
-                          onClick={() => {
-                            assignTabToPanel(tab.id, "right");
-                            setLayoutMode("split");
-                          }}
-                          className={`shrink-0 rounded px-2 py-0.5 text-[11px] ${
+                          className={`group/tab flex shrink-0 items-center gap-0.5 rounded text-[11px] ${
                             rightTabId === tab.id
                               ? "bg-neutral-700 text-neutral-100"
                               : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                           }`}
                         >
-                          [{tab.projectName}] {tab.title}
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              assignTabToPanel(tab.id, "right");
+                              setLayoutMode("split");
+                            }}
+                            className="py-0.5 pl-2"
+                          >
+                            [{tab.projectName}] {tab.title}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              closeTab(tab.id);
+                            }}
+                            className="rounded px-1 py-0.5 text-neutral-500 opacity-0 hover:text-neutral-200 group-hover/tab:opacity-100"
+                            title="Close tab"
+                          >
+                            ×
+                          </button>
+                        </span>
                       ))
                     )}
                   </div>
