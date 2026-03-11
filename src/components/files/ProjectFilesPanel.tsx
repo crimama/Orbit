@@ -32,10 +32,14 @@ type FileDoc = {
   isBinary: boolean;
 };
 
+type DirectoryMap = Record<string, ProjectFileEntryInfo[]>;
+
 interface ProjectFilesPanelProps {
   projectId: string;
   initialOpenPath?: string | null;
   initialOpenPathToken?: number | null;
+  initialDirectoryPath?: string | null;
+  initialDirectoryPathToken?: number | null;
   focusedFileOnly?: boolean;
   onCloseFocusedFile?: () => void;
 }
@@ -247,11 +251,16 @@ export default function ProjectFilesPanel({
   projectId,
   initialOpenPath = null,
   initialOpenPathToken = null,
+  initialDirectoryPath = null,
+  initialDirectoryPathToken = null,
   focusedFileOnly = false,
   onCloseFocusedFile,
 }: ProjectFilesPanelProps) {
   const [currentPath, setCurrentPath] = useState("");
-  const [entries, setEntries] = useState<ProjectFileEntryInfo[]>([]);
+  const [directoryMap, setDirectoryMap] = useState<DirectoryMap>({});
+  const [expandedDirs, setExpandedDirs] = useState<Record<string, boolean>>({
+    "": true,
+  });
   const [loadingList, setLoadingList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [docs, setDocs] = useState<Record<string, FileDoc>>({});
@@ -284,10 +293,16 @@ export default function ProjectFilesPanel({
             "error" in json ? json.error : "Failed to list files",
           );
         }
-        setCurrentPath(json.data.current);
-        setEntries(json.data.entries);
+        const current = json.data.current;
+        setCurrentPath(current);
+        setDirectoryMap((prev) => ({
+          ...prev,
+          [current]: json.data.entries,
+        }));
+        return json.data;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to list files");
+        return null;
       } finally {
         setLoadingList(false);
       }
@@ -297,6 +312,8 @@ export default function ProjectFilesPanel({
 
   useEffect(() => {
     setDocs({});
+    setDirectoryMap({});
+    setExpandedDirs({ "": true });
     const root = createLeaf(null);
     setTree(root);
     setActivePaneId(root.id);
@@ -350,6 +367,34 @@ export default function ProjectFilesPanel({
     if (!initialOpenPath || !initialOpenPathToken) return;
     void openFile(initialOpenPath, activePaneIdRef.current);
   }, [initialOpenPath, initialOpenPathToken, openFile]);
+
+  useEffect(() => {
+    if (!initialDirectoryPath || !initialDirectoryPathToken) return;
+
+    const parts = initialDirectoryPath.split("/").filter(Boolean);
+    const ancestors = parts.map((_, index) =>
+      parts.slice(0, index + 1).join("/"),
+    );
+
+    let cancelled = false;
+    const jumpToDirectory = async () => {
+      setExpandedDirs((prev) => ({ ...prev, "": true }));
+      for (const ancestor of ancestors) {
+        if (cancelled) return;
+        await refreshList(ancestor);
+        if (cancelled) return;
+        setExpandedDirs((prev) => ({ ...prev, [ancestor]: true }));
+      }
+      if (!cancelled) {
+        setCurrentPath(initialDirectoryPath);
+      }
+    };
+
+    void jumpToDirectory();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialDirectoryPath, initialDirectoryPathToken, refreshList]);
 
   const saveDoc = useCallback(
     async (filePath: string) => {
@@ -442,6 +487,11 @@ export default function ProjectFilesPanel({
         );
       }
       await refreshList(currentPath);
+      setExpandedDirs((prev) => ({
+        ...prev,
+        [currentPath]: true,
+        [fullPath]: true,
+      }));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create folder");
     } finally {
@@ -469,6 +519,8 @@ export default function ProjectFilesPanel({
           throw new Error("error" in json ? json.error : "Failed to rename");
         }
 
+        const entryParentPath = parentPath(entry.path);
+
         setDocs((prev) => {
           if (!prev[entry.path]) return prev;
           const next = { ...prev };
@@ -488,7 +540,20 @@ export default function ProjectFilesPanel({
           }
           return nextTree;
         });
-        await refreshList(currentPath);
+        await refreshList(entryParentPath);
+        if (currentPath !== entryParentPath) {
+          await refreshList(currentPath);
+        }
+        setExpandedDirs((prev) => {
+          if (!entry.isDir) return prev;
+          const next = { ...prev };
+          const wasExpanded = Boolean(next[entry.path]);
+          delete next[entry.path];
+          if (wasExpanded) {
+            next[toPath] = true;
+          }
+          return next;
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to rename");
       } finally {
@@ -518,6 +583,8 @@ export default function ProjectFilesPanel({
         if (!res.ok || "error" in json) {
           throw new Error("error" in json ? json.error : "Failed to delete");
         }
+        const entryParentPath = parentPath(entry.path);
+
         setDocs((prev) => {
           const next = { ...prev };
           delete next[entry.path];
@@ -534,7 +601,16 @@ export default function ProjectFilesPanel({
           }
           return nextTree;
         });
-        await refreshList(currentPath);
+        await refreshList(entryParentPath);
+        if (currentPath !== entryParentPath) {
+          await refreshList(currentPath);
+        }
+        setExpandedDirs((prev) => {
+          if (!entry.isDir) return prev;
+          const next = { ...prev };
+          delete next[entry.path];
+          return next;
+        });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to delete");
       } finally {
@@ -632,6 +708,112 @@ export default function ProjectFilesPanel({
   }, [closeEditorPane, saveDoc, splitActivePane, tree]);
 
   const docsMap = useMemo(() => docs, [docs]);
+  const rootEntries = directoryMap[""] ?? [];
+
+  const toggleDirectory = useCallback(
+    async (dirPath: string) => {
+      setCurrentPath(dirPath);
+      const hasLoaded = Object.prototype.hasOwnProperty.call(
+        directoryMap,
+        dirPath,
+      );
+      const willExpand = !expandedDirs[dirPath];
+      setExpandedDirs((prev) => ({ ...prev, [dirPath]: willExpand }));
+      if (!hasLoaded) {
+        await refreshList(dirPath);
+      }
+    },
+    [directoryMap, expandedDirs, refreshList],
+  );
+
+  const renderDirectoryEntries = useCallback(
+    (dirPath: string, depth: number): JSX.Element[] => {
+      const dirEntries = directoryMap[dirPath] ?? [];
+      const rows: JSX.Element[] = [];
+
+      for (const entry of dirEntries) {
+        const isSelected = currentPath === entry.path;
+        const handleEntryActivate = () => {
+          if (entry.isDir) {
+            void toggleDirectory(entry.path);
+          } else {
+            void openFile(entry.path, activePaneIdRef.current);
+          }
+        };
+
+        rows.push(
+          <div
+            key={entry.path}
+            className={`group mb-1 flex items-center gap-2 rounded px-2 py-1 ${
+              isSelected ? "bg-neutral-800" : "hover:bg-neutral-800"
+            }`}
+            style={{ paddingLeft: `${depth * 12 + 8}px` }}
+          >
+            <button
+              onMouseDown={(event) => {
+                if (event.button !== 0) return;
+                event.preventDefault();
+                handleEntryActivate();
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  handleEntryActivate();
+                }
+              }}
+              className="min-w-0 flex-1 truncate text-left text-sm text-neutral-200"
+              title={entry.path}
+              type="button"
+            >
+              {entry.isDir ? (
+                <span className="mr-1 inline-block w-3 text-center text-[10px] text-neutral-400">
+                  {expandedDirs[entry.path] ? "▾" : "▸"}
+                </span>
+              ) : (
+                <span className="mr-1 inline-block w-3" />
+              )}
+              <span
+                className={`mr-2 inline-block h-2 w-2 rounded-full align-middle ${
+                  entry.isDir ? "bg-amber-400" : "bg-sky-400"
+                }`}
+              />
+              {entry.name}
+              {entry.isSymlink ? " (symlink)" : ""}
+            </button>
+            <button
+              onClick={() => void renameEntry(entry)}
+              className="hidden rounded border border-neutral-700 px-1.5 py-0.5 text-[11px] text-neutral-300 hover:bg-neutral-700 group-hover:block"
+              type="button"
+            >
+              Rename
+            </button>
+            <button
+              onClick={() => void deleteEntry(entry)}
+              className="hidden rounded border border-neutral-700 px-1.5 py-0.5 text-[11px] text-red-300 hover:bg-neutral-700 group-hover:block"
+              type="button"
+            >
+              Delete
+            </button>
+          </div>,
+        );
+
+        if (entry.isDir && expandedDirs[entry.path]) {
+          rows.push(...renderDirectoryEntries(entry.path, depth + 1));
+        }
+      }
+
+      return rows;
+    },
+    [
+      currentPath,
+      deleteEntry,
+      directoryMap,
+      expandedDirs,
+      openFile,
+      renameEntry,
+      toggleDirectory,
+    ],
+  );
   const activeLeaf = findLeaf(tree, activePaneId);
   const focusedPath =
     (initialOpenPath && docs[initialOpenPath] ? initialOpenPath : null) ??
@@ -759,7 +941,12 @@ export default function ProjectFilesPanel({
           </button>
           {currentPath ? (
             <button
-              onClick={() => void refreshList(parentPath(currentPath))}
+              onClick={() => {
+                const nextPath = parentPath(currentPath);
+                setCurrentPath(nextPath);
+                setExpandedDirs((prev) => ({ ...prev, [nextPath]: true }));
+                void refreshList(nextPath);
+              }}
               className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
             >
               Up
@@ -770,47 +957,10 @@ export default function ProjectFilesPanel({
         <div className="max-h-[60vh] overflow-y-auto p-2">
           {loadingList ? (
             <p className="px-2 py-4 text-sm text-neutral-500">Loading...</p>
-          ) : entries.length === 0 ? (
+          ) : rootEntries.length === 0 ? (
             <p className="px-2 py-4 text-sm text-neutral-500">No files</p>
           ) : (
-            entries.map((entry) => (
-              <div
-                key={entry.path}
-                className="group mb-1 flex items-center gap-2 rounded px-2 py-1 hover:bg-neutral-800"
-              >
-                <button
-                  onClick={() => {
-                    if (entry.isDir) {
-                      void refreshList(entry.path);
-                    } else {
-                      void openFile(entry.path, activePaneIdRef.current);
-                    }
-                  }}
-                  className="min-w-0 flex-1 truncate text-left text-sm text-neutral-200"
-                  title={entry.path}
-                >
-                  <span
-                    className={`mr-2 inline-block h-2 w-2 rounded-full align-middle ${
-                      entry.isDir ? "bg-amber-400" : "bg-sky-400"
-                    }`}
-                  />
-                  {entry.name}
-                  {entry.isSymlink ? " (symlink)" : ""}
-                </button>
-                <button
-                  onClick={() => void renameEntry(entry)}
-                  className="hidden rounded border border-neutral-700 px-1.5 py-0.5 text-[11px] text-neutral-300 hover:bg-neutral-700 group-hover:block"
-                >
-                  Rename
-                </button>
-                <button
-                  onClick={() => void deleteEntry(entry)}
-                  className="hidden rounded border border-neutral-700 px-1.5 py-0.5 text-[11px] text-red-300 hover:bg-neutral-700 group-hover:block"
-                >
-                  Delete
-                </button>
-              </div>
-            ))
+            renderDirectoryEntries("", 0)
           )}
         </div>
       </section>

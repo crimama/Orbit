@@ -92,6 +92,10 @@ export default function Dashboard() {
     path: string;
     token: number;
   } | null>(null);
+  const [directoryJumpRequest, setDirectoryJumpRequest] = useState<{
+    path: string;
+    token: number;
+  } | null>(null);
   const paletteInputRef = useRef<HTMLInputElement>(null);
   const [skillCount, setSkillCount] = useState(0);
   const [globalWorkspaces, setGlobalWorkspaces] = useState<
@@ -524,6 +528,39 @@ export default function Dashboard() {
       setInlineSessionId(nextInlineSessionId);
       setInlineWorkspaceId(null);
       setFileJumpRequest({ path: filePath, token: Date.now() });
+      setDirectoryJumpRequest(null);
+      setPaletteOpen(false);
+    },
+    [projects, inlineSessionId, sessions],
+  );
+
+  const openDirectoryInProject = useCallback(
+    (projectId: string, directoryPath: string) => {
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) return;
+
+      const currentInlineSession = inlineSessionId
+        ? (sessions.find((session) => session.id === inlineSessionId) ?? null)
+        : null;
+      const activeProjectSession = sessions.find(
+        (session) =>
+          session.projectId === projectId && session.status === "active",
+      );
+
+      const nextInlineSessionId =
+        currentInlineSession?.projectId === projectId
+          ? currentInlineSession.id
+          : (activeProjectSession?.id ?? null);
+
+      setSelectedProject(project);
+      setSessionViewMode("active");
+      setProjectFocusTab("files");
+      setShowHarnessManager(false);
+      setProjectPaneMode("files");
+      setInlineSessionId(nextInlineSessionId);
+      setInlineWorkspaceId(null);
+      setFileJumpRequest(null);
+      setDirectoryJumpRequest({ path: directoryPath, token: Date.now() });
       setPaletteOpen(false);
     },
     [projects, inlineSessionId, sessions],
@@ -1036,12 +1073,18 @@ export default function Dashboard() {
                             <button
                               key={`left-file-${row.projectId}:${row.path}`}
                               onClick={() => {
-                                if (row.isDir) return;
+                                if (row.isDir) {
+                                  openDirectoryInProject(
+                                    row.projectId,
+                                    row.path,
+                                  );
+                                  return;
+                                }
                                 openFileInProject(row.projectId, row.path);
                               }}
                               className={`mb-1 flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs ${
                                 row.isDir
-                                  ? "cursor-default text-amber-300/90"
+                                  ? "text-amber-300/90 hover:bg-neutral-800"
                                   : "text-neutral-300 hover:bg-neutral-800"
                               }`}
                               title={row.path}
@@ -1149,6 +1192,10 @@ export default function Dashboard() {
                       inlineWorkspaceId={inlineWorkspaceId}
                       initialFilePath={fileJumpRequest?.path ?? null}
                       initialFilePathToken={fileJumpRequest?.token ?? null}
+                      initialDirectoryPath={directoryJumpRequest?.path ?? null}
+                      initialDirectoryPathToken={
+                        directoryJumpRequest?.token ?? null
+                      }
                       onCloseFileView={handleCloseFocusedFileView}
                       onKillSession={handleTerminateSession}
                     />

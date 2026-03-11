@@ -79,6 +79,7 @@ export default function TerminalView({
 
       const term = new Terminal({
         cursorBlink: true,
+        scrollback: 50_000,
         fontSize: 15,
         lineHeight: 1.45,
         fontWeight: "500",

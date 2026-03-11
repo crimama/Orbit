@@ -1,14 +1,7 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type DragEvent,
-} from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import TerminalView from "./TerminalView";
-import VirtualKeyboard from "@/components/mobile/VirtualKeyboard";
 import { useMobile } from "@/lib/hooks/useMobile";
 import type { OrbitSocket } from "@/lib/socketClient";
 import type { SessionInfo } from "@/lib/types";
@@ -66,7 +59,6 @@ export default function TerminalPane({
     "top" | "bottom" | "left" | "right" | "center" | null
   >(null);
   const [keyboardInset, setKeyboardInset] = useState(0);
-  const inputSenderRef = useRef<((data: string) => void) | null>(null);
   const { isMobile } = useMobile();
   const projectColor = currentSession?.projectColor;
   const formatSessionLabel = (session: SessionInfo) => {
@@ -166,10 +158,6 @@ export default function TerminalPane({
       window.removeEventListener("resize", updateInset);
     };
   }, [keyboardEnabled]);
-
-  const handleQuickKey = useCallback((data: string) => {
-    inputSenderRef.current?.(data);
-  }, []);
 
   return (
     <div
@@ -382,9 +370,6 @@ export default function TerminalPane({
               socket={socket}
               connected={connected}
               onExit={onExit}
-              onInputReady={(sender) => {
-                inputSenderRef.current = sender;
-              }}
             />
           ) : (
             <div className="flex h-full items-center justify-center bg-slate-100">
@@ -394,9 +379,6 @@ export default function TerminalPane({
             </div>
           )}
         </div>
-        {keyboardEnabled && (
-          <VirtualKeyboard visible={true} onKey={handleQuickKey} />
-        )}
       </div>
     </div>
   );

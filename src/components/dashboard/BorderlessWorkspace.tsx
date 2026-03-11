@@ -38,6 +38,8 @@ interface BorderlessWorkspaceProps {
   inlineWorkspaceId: string | null;
   initialFilePath?: string | null;
   initialFilePathToken?: number | null;
+  initialDirectoryPath?: string | null;
+  initialDirectoryPathToken?: number | null;
   onCloseFileView?: () => void;
   onKillSession: (sessionId: string) => Promise<void> | void;
 }
@@ -76,6 +78,8 @@ export default function BorderlessWorkspace({
   inlineWorkspaceId,
   initialFilePath = null,
   initialFilePathToken = null,
+  initialDirectoryPath = null,
+  initialDirectoryPathToken = null,
   onCloseFileView,
   onKillSession,
 }: BorderlessWorkspaceProps) {
@@ -93,6 +97,7 @@ export default function BorderlessWorkspace({
   const lastInlineSessionIdRef = useRef<string | null>(null);
   const lastProjectPaneKeyRef = useRef<string>("");
   const lastFileJumpTokenRef = useRef<number | null>(null);
+  const lastDirectoryJumpTokenRef = useRef<number | null>(null);
 
   const upsertTab = useCallback(
     (nextTab: WorkspaceTab, targetPanel: PanelSide) => {
@@ -222,6 +227,29 @@ export default function BorderlessWorkspace({
     setActivePanel("left");
   }, [selectedProject, initialFilePath, initialFilePathToken, upsertTab]);
 
+  useEffect(() => {
+    if (
+      !selectedProject ||
+      !initialDirectoryPath ||
+      !initialDirectoryPathToken
+    ) {
+      return;
+    }
+    if (lastDirectoryJumpTokenRef.current === initialDirectoryPathToken) return;
+    lastDirectoryJumpTokenRef.current = initialDirectoryPathToken;
+
+    const fileTab = buildProjectTab(selectedProject, "files");
+    upsertTab(fileTab, "left");
+    setLeftTabId(fileTab.id);
+    setLayoutMode("left");
+    setActivePanel("left");
+  }, [
+    selectedProject,
+    initialDirectoryPath,
+    initialDirectoryPathToken,
+    upsertTab,
+  ]);
+
   const renderTabContent = (tab: WorkspaceTab | null) => {
     if (!tab) {
       return (
@@ -245,21 +273,23 @@ export default function BorderlessWorkspace({
     }
 
     if (tab.kind === "files") {
+      const hasFileFocus =
+        selectedProject?.id === tab.projectId &&
+        initialFilePath != null &&
+        initialFilePathToken != null;
       return (
         <ProjectFilesPanel
           key={tab.id}
           projectId={tab.projectId}
-          focusedFileOnly
+          focusedFileOnly={hasFileFocus}
           onCloseFocusedFile={() => {
             closeWorkspaceTab(tab.id);
             onCloseFileView?.();
           }}
-          initialOpenPath={
-            selectedProject?.id === tab.projectId ? initialFilePath : null
-          }
-          initialOpenPathToken={
-            selectedProject?.id === tab.projectId ? initialFilePathToken : null
-          }
+          initialOpenPath={hasFileFocus ? initialFilePath : null}
+          initialOpenPathToken={hasFileFocus ? initialFilePathToken : null}
+          initialDirectoryPath={initialDirectoryPath}
+          initialDirectoryPathToken={initialDirectoryPathToken}
         />
       );
     }

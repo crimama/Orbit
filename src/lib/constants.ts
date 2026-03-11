@@ -13,7 +13,7 @@ export const DEFAULT_SHELL =
   (process.platform === "win32" ? "powershell.exe" : "bash");
 
 /** Scrollback buffer max characters per session */
-export const SCROLLBACK_LIMIT = 50_000;
+export const SCROLLBACK_LIMIT = 2_000_000;
 
 /** GC interval: check every 1 hour */
 export const GC_INTERVAL_MS = 60 * 60 * 1000;
