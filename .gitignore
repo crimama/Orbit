@@ -45,3 +45,6 @@ prisma/*.db-journal
 
 # agent lock files
 .locks/
+
+# python
+__pycache__/
