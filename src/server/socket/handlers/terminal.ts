@@ -4,6 +4,7 @@ import { getPtyBackend } from "@/server/pty/ptyBackend";
 import { commandInterceptor } from "@/server/pty/interceptor";
 import { sessionManager } from "@/server/session/sessionManager";
 import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
+import type { SessionInfo } from "@/lib/types";
 
 export function registerTerminalHandlers(
   io: OrbitServer,
@@ -85,8 +86,18 @@ export function registerTerminalHandlers(
       socket.emit("session-ready", sessionId);
     }
 
-    unsubExit = backend.onExit(sessionId, (exitCode) => {
+    unsubExit = backend.onExit(sessionId, async (exitCode) => {
+      const preview = backend.getScreenPreview(sessionId);
       socket.emit("session-exit", sessionId, exitCode);
+      const session = await sessionManager.getSession(sessionId);
+      if (session) {
+        const sessionUpdate: SessionInfo = {
+          ...session,
+          status: "terminated",
+          lastContext: preview || session.lastContext,
+        };
+        io.to("dashboard").emit("session-update", sessionUpdate);
+      }
       detach();
     });
 
@@ -140,7 +151,24 @@ export function registerTerminalHandlers(
     const sessions = await sessionManager.listSessions(
       projectId ?? undefined,
     );
-    callback(sessions);
+    callback(
+      sessions.map((session) => {
+        const backend = getPtyBackend(session.id);
+        if (!backend) {
+          return session;
+        }
+
+        const preview = backend.getScreenPreview(session.id);
+        return {
+          ...session,
+          lastContext: preview || session.lastContext,
+        };
+      }),
+    );
+  });
+
+  socket.on("dashboard-join", () => {
+    void socket.join("dashboard");
   });
 
   socket.on("disconnect", () => {

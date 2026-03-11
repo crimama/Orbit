@@ -1,6 +1,9 @@
 import type { ClientChannel } from "ssh2";
 import type { PtyBackend } from "@/server/pty/ptyBackend";
-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+import {
+  getScreenPreviewFromScrollback,
+  registerPtyBackend,
+} from "@/server/pty/ptyBackend";
 import { sshManager } from "@/server/ssh/sshManager";
 import {
   DEFAULT_COLS,
@@ -208,6 +211,13 @@ class RemotePtyManager implements PtyBackend {
 
   getScrollback(sessionId: string): string {
     return this.outputBuffers.get(sessionId) ?? "";
+  }
+
+  getScreenPreview(sessionId: string, lines = 5): string {
+    return getScreenPreviewFromScrollback(
+      this.outputBuffers.get(sessionId) ?? "",
+      lines,
+    );
   }
 
   onData(sessionId: string, cb: DataCallback): () => void {

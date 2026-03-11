@@ -23,6 +23,7 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
+  "dashboard-join": () => void;
   "terminal-data": (data: string) => void;
   "terminal-resize": (size: { cols: number; rows: number }) => void;
   "session-attach": (

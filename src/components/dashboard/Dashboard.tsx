@@ -12,6 +12,7 @@ import InterceptorBanner from "./InterceptorBanner";
 import InterceptorModal from "./InterceptorModal";
 import BorderlessWorkspace from "./BorderlessWorkspace";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
+import { useSocket } from "@/lib/useSocket";
 import type {
   ProjectInfo,
   SessionInfo,
@@ -104,6 +105,7 @@ export default function Dashboard() {
     null,
   );
   const [showInterceptorModal, setShowInterceptorModal] = useState(false);
+  const { socket } = useSocket();
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
   const [yoloMode, setYoloMode] = useState(false);
@@ -159,6 +161,54 @@ export default function Dashboard() {
     fetchSessions();
     fetchGlobalWorkspaces();
   }, [fetchProjects, fetchSessions, fetchGlobalWorkspaces]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission !== "default") return;
+    void Notification.requestPermission().catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleSessionUpdate = (session: SessionInfo) => {
+      setSessions((prev) => {
+        const existingIndex = prev.findIndex((item) => item.id === session.id);
+        const previous =
+          existingIndex >= 0 ? prev[existingIndex] : null;
+
+        if (
+          previous?.status !== "terminated" &&
+          session.status === "terminated" &&
+          typeof document !== "undefined" &&
+          document.hidden &&
+          typeof window !== "undefined" &&
+          "Notification" in window &&
+          Notification.permission === "granted"
+        ) {
+          new Notification("Session Ended", {
+            body: `${session.name ?? session.id.slice(0, 8)} exited`,
+            icon: "/icon-192x192.png",
+          });
+        }
+
+        if (existingIndex === -1) {
+          return [session, ...prev];
+        }
+
+        const next = [...prev];
+        next[existingIndex] = session;
+        return next;
+      });
+    };
+
+    socket.emit("dashboard-join");
+    socket.on("session-update", handleSessionUpdate);
+
+    return () => {
+      socket.off("session-update", handleSessionUpdate);
+    };
+  }, [socket]);
 
   useEffect(() => {
     if (projects.length === 0) {

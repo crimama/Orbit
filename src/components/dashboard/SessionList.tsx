@@ -157,7 +157,7 @@ export default function SessionList({
                 )}
               </div>
               {s.lastContext && (
-                <div className="truncate text-xs text-neutral-600">
+                <div className="mt-2 line-clamp-2 rounded-md bg-neutral-900/50 px-2 py-1.5 font-mono text-xs leading-5 text-neutral-500">
                   {s.lastContext}
                 </div>
               )}

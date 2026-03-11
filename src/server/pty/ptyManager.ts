@@ -1,7 +1,10 @@
 import * as pty from "node-pty";
 import type { IPty } from "node-pty";
 import type { PtyBackend } from "@/server/pty/ptyBackend";
-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+import {
+  getScreenPreviewFromScrollback,
+  registerPtyBackend,
+} from "@/server/pty/ptyBackend";
 import {
   DEFAULT_COLS,
   DEFAULT_ROWS,
@@ -146,6 +149,13 @@ class PtyManager implements PtyBackend {
 
   getScrollback(sessionId: string): string {
     return this.outputBuffers.get(sessionId) ?? "";
+  }
+
+  getScreenPreview(sessionId: string, lines = 5): string {
+    return getScreenPreviewFromScrollback(
+      this.outputBuffers.get(sessionId) ?? "",
+      lines,
+    );
   }
 
   onData(sessionId: string, callback: DataCallback): () => void {
