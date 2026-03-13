@@ -16,12 +16,6 @@ interface SidebarFileTreeProps {
   onDirChange?: (dir: string) => void;
 }
 
-interface DirNode {
-  loaded: boolean;
-  expanded: boolean;
-  children: { name: string; path: string; isDir: boolean }[];
-}
-
 export default function SidebarFileTree({
   projectId,
   files,
@@ -30,66 +24,56 @@ export default function SidebarFileTree({
   onFileOpen,
   onDirChange,
 }: SidebarFileTreeProps) {
-  const [dirs, setDirs] = useState<Record<string, DirNode>>({});
-  const [loadingPath, setLoadingPath] = useState<string | null>(null);
+  const [currentDir, setCurrentDir] = useState(initialDir ?? "");
+  const [entries, setEntries] = useState<
+    { name: string; path: string; isDir: boolean }[]
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [loadingFile, setLoadingFile] = useState<string | null>(null);
 
-  // Auto-expand initialDir on mount
-  useEffect(() => {
-    if (!initialDir) return;
-    const parts = initialDir.split("/").filter(Boolean);
-    let current = "";
-    for (const part of parts) {
-      current = current ? `${current}/${part}` : part;
-      // trigger expansion for each segment
-      void toggleDir(current);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId]);
-
-  const toggleDir = useCallback(
+  const navigateTo = useCallback(
     async (dirPath: string) => {
-      const existing = dirs[dirPath];
-      if (existing?.loaded) {
-        const willExpand = !existing.expanded;
-        setDirs((prev) => ({
-          ...prev,
-          [dirPath]: { ...prev[dirPath], expanded: willExpand },
-        }));
-        if (willExpand) onDirChange?.(dirPath);
-        return;
-      }
-
-      setLoadingPath(dirPath);
+      setLoading(true);
       try {
-        const query = new URLSearchParams({ path: dirPath }).toString();
-        const res = await fetch(
-          `/api/projects/${projectId}/files/list?${query}`,
-          { cache: "no-store" },
-        );
+        const query = dirPath
+          ? new URLSearchParams({ path: dirPath }).toString()
+          : "";
+        const url = `/api/projects/${projectId}/files/list${query ? `?${query}` : ""}`;
+        const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) return;
         const json = (await res.json()) as ApiResponse<ProjectFileListResponse>;
         if (!("data" in json)) return;
-        const children = json.data.entries.map((e) => ({
+        const items = json.data.entries.map((e) => ({
           name: e.name,
           path: e.path,
           isDir: e.isDir,
         }));
-        setDirs((prev) => ({
-          ...prev,
-          [dirPath]: { loaded: true, expanded: true, children },
-        }));
+        setEntries(items);
+        setCurrentDir(dirPath);
         onDirChange?.(dirPath);
       } finally {
-        setLoadingPath(null);
+        setLoading(false);
       }
     },
-    [projectId, dirs],
+    [projectId, onDirChange],
   );
+
+  // Load initial directory on mount or when project changes
+  useEffect(() => {
+    if (initialDir) {
+      void navigateTo(initialDir);
+    } else {
+      // Use root files passed as props
+      setEntries(files);
+      setCurrentDir("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   const openFile = useCallback(
     async (filePath: string) => {
       if (!onFileOpen) return;
-      setLoadingPath(filePath);
+      setLoadingFile(filePath);
       try {
         const query = new URLSearchParams({ path: filePath }).toString();
         const res = await fetch(
@@ -101,75 +85,94 @@ export default function SidebarFileTree({
         if (!("data" in json) || json.data.isBinary) return;
         onFileOpen(filePath, json.data.content ?? "");
       } finally {
-        setLoadingPath(null);
+        setLoadingFile(null);
       }
     },
     [projectId, onFileOpen],
   );
 
-  const renderEntries = (
-    entries: { name: string; path: string; isDir: boolean }[],
-    depth: number,
-  ) => {
-    const sorted = [...entries].sort((a, b) => {
-      if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
+  const goUp = useCallback(() => {
+    if (!currentDir) return;
+    const parts = currentDir.split("/").filter(Boolean);
+    parts.pop();
+    void navigateTo(parts.join("/"));
+  }, [currentDir, navigateTo]);
 
-    return sorted.map((entry) => {
-      const isLoading = loadingPath === entry.path;
-      const dirNode = entry.isDir ? dirs[entry.path] : null;
-      const isExpanded = dirNode?.expanded ?? false;
+  const sorted = [...entries].sort((a, b) => {
+    if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
 
-      return (
-        <div key={entry.path}>
-          <button
-            type="button"
-            onClick={() => {
-              if (entry.isDir) {
-                void toggleDir(entry.path);
-              } else {
-                void openFile(entry.path);
-              }
-            }}
-            className={`flex w-full items-center gap-1 rounded px-1.5 py-0.5 text-left text-xs hover:bg-neutral-800 ${
-              activePath === entry.path
-                ? "bg-neutral-800 text-neutral-100"
-                : entry.isDir
-                  ? "text-amber-300/90"
-                  : "text-neutral-300"
-            }`}
-            style={{ paddingLeft: `${depth * 12 + 4}px` }}
-            title={entry.path}
-          >
-            <span className="w-3 shrink-0 text-center text-[10px] text-neutral-500">
-              {entry.isDir
-                ? isLoading
-                  ? "…"
-                  : isExpanded
-                    ? "▾"
-                    : "▸"
-                : ""}
-            </span>
-            <span className="min-w-0 flex-1 truncate">{entry.name}</span>
-          </button>
-          {entry.isDir && isExpanded && dirNode?.children && (
-            <div>{renderEntries(dirNode.children, depth + 1)}</div>
-          )}
-        </div>
-      );
-    });
-  };
+  const dirLabel = currentDir
+    ? currentDir.split("/").filter(Boolean).pop() ?? currentDir
+    : "/";
 
   return (
-    <div className="max-h-72 overflow-y-auto rounded border border-neutral-800 bg-neutral-900/40 p-1">
-      {files.length === 0 ? (
-        <div className="px-2 py-6 text-center text-xs text-neutral-500">
-          No indexed files.
-        </div>
-      ) : (
-        renderEntries(files, 0)
-      )}
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-neutral-800 bg-neutral-900/40">
+      {/* Current directory header */}
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-neutral-800 px-2 py-1.5">
+        <span className="text-[10px] text-amber-400">📁</span>
+        <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-300">
+          {dirLabel}
+        </span>
+        {loading && (
+          <span className="text-[10px] text-neutral-500">…</span>
+        )}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto p-1">
+        {/* Go up entry */}
+        {currentDir && (
+          <button
+            type="button"
+            onClick={goUp}
+            className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+          >
+            <span className="w-4 shrink-0 text-center text-neutral-500">↩</span>
+            <span>..</span>
+          </button>
+        )}
+
+        {sorted.length === 0 && !loading ? (
+          <div className="px-2 py-4 text-center text-xs text-neutral-500">
+            Empty directory
+          </div>
+        ) : (
+          sorted.map((entry) => (
+            <button
+              key={entry.path}
+              type="button"
+              onClick={() => {
+                if (entry.isDir) {
+                  void navigateTo(entry.path);
+                } else {
+                  void openFile(entry.path);
+                }
+              }}
+              className={`flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs hover:bg-neutral-800 ${
+                activePath === entry.path
+                  ? "bg-neutral-800 text-neutral-100"
+                  : entry.isDir
+                    ? "text-amber-300/90"
+                    : "text-neutral-300"
+              }`}
+              title={entry.path}
+            >
+              <span className="w-4 shrink-0 text-center text-[11px] text-neutral-500">
+                {entry.isDir
+                  ? "📂"
+                  : loadingFile === entry.path
+                    ? "…"
+                    : "📄"}
+              </span>
+              <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+              {entry.isDir && (
+                <span className="text-[10px] text-neutral-600">›</span>
+              )}
+            </button>
+          ))
+        )}
+      </div>
     </div>
   );
 }

@@ -136,10 +136,15 @@ export default function BorderlessWorkspace({
       : null;
     if (!session) return;
 
-    upsertTab(buildSessionTab(session), "left");
-    setLayoutMode("left");
-    setActivePanel("left");
-  }, [inlineSessionId, sessions, upsertTab]);
+    if (layoutMode === "split") {
+      // Preserve split — place in active panel
+      upsertTab(buildSessionTab(session), activePanel);
+    } else {
+      upsertTab(buildSessionTab(session), "left");
+      setLayoutMode("left");
+      setActivePanel("left");
+    }
+  }, [inlineSessionId, sessions, upsertTab, layoutMode, activePanel]);
 
   useEffect(() => {
     const paneKey = `${selectedProject?.id ?? "none"}:${projectPaneMode}:${inlineSessionId ?? "none"}`;
@@ -167,9 +172,13 @@ export default function BorderlessWorkspace({
     );
 
     if (projectActiveSession) {
-      upsertTab(buildSessionTab(projectActiveSession), "left");
-      setLayoutMode("left");
-      setActivePanel("left");
+      if (layoutMode === "split") {
+        upsertTab(buildSessionTab(projectActiveSession), activePanel);
+      } else {
+        upsertTab(buildSessionTab(projectActiveSession), "left");
+        setLayoutMode("left");
+        setActivePanel("left");
+      }
     }
   }, [
     selectedProject,
@@ -217,14 +226,46 @@ export default function BorderlessWorkspace({
   );
 
 
+  const [dropTarget, setDropTarget] = useState<PanelSide | null>(null);
+  const [isDraggingTab, setIsDraggingTab] = useState(false);
+
+  const handleTabDragStart = (tabId: string, e: React.DragEvent) => {
+    e.dataTransfer.setData("text/x-orbit-tab-id", tabId);
+    e.dataTransfer.effectAllowed = "move";
+    setIsDraggingTab(true);
+  };
+
+  const handleTabDragEnd = () => {
+    setIsDraggingTab(false);
+    setDropTarget(null);
+  };
+
   const handleTabDrop = (
     panel: PanelSide,
     event: React.DragEvent<HTMLElement>,
   ) => {
     event.preventDefault();
+    setDropTarget(null);
+    setIsDraggingTab(false);
     const tabId = event.dataTransfer.getData("text/x-orbit-tab-id");
     if (!tabId) return;
     assignTabToPanel(tabId, panel);
+    setLayoutMode("split");
+  };
+
+  const handlePanelDragOver = (
+    panel: PanelSide,
+    event: React.DragEvent<HTMLElement>,
+  ) => {
+    if (event.dataTransfer.types.includes("text/x-orbit-tab-id")) {
+      event.preventDefault();
+      event.dataTransfer.dropEffect = "move";
+      setDropTarget(panel);
+    }
+  };
+
+  const handlePanelDragLeave = () => {
+    setDropTarget(null);
   };
 
   const leftTab = leftTabId ? (tabsById.get(leftTabId) ?? null) : null;
@@ -249,12 +290,9 @@ export default function BorderlessWorkspace({
       fileContent: viewedFile.content,
     };
 
-    // If there's already a session tab on left, put file on right; otherwise left
-    const hasSessionOnLeft =
-      leftTabId && tabsById.get(leftTabId)?.kind === "session";
-    if (hasSessionOnLeft) {
-      upsertTab(fileTab, "right");
-      setLayoutMode("split");
+    // In split mode, open in active panel to preserve layout; otherwise standalone
+    if (layoutMode === "split") {
+      upsertTab(fileTab, activePanel);
     } else {
       upsertTab(fileTab, "left");
       setLayoutMode("left");
@@ -304,8 +342,8 @@ export default function BorderlessWorkspace({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
-      <div className="min-h-0 flex-1">
-        <div className="flex h-full w-full">
+      <div className="min-h-0 flex-1 overflow-hidden">
+        <div className="flex h-full w-full overflow-hidden">
           {layoutMode !== "right" ? (
             <section
               className={`min-h-0 min-w-0 overflow-hidden border ${
@@ -314,11 +352,11 @@ export default function BorderlessWorkspace({
                   : "border-neutral-800"
               }`}
               style={{
-                flexBasis:
-                  layoutMode === "split" ? `${splitRatio * 100}%` : "100%",
+                flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
               }}
               onMouseDown={() => setActivePanel("left")}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => handlePanelDragOver("left", event)}
+              onDragLeave={handlePanelDragLeave}
               onDrop={(event) => handleTabDrop("left", event)}
             >
               <div className="flex h-full min-h-0 flex-col">
@@ -347,11 +385,13 @@ export default function BorderlessWorkspace({
                           />
                           <button
                             type="button"
+                            draggable
+                            onDragStart={(e) => handleTabDragStart(tab.id, e)}
+                            onDragEnd={handleTabDragEnd}
                             onClick={() => {
                               assignTabToPanel(tab.id, "left");
-                              setLayoutMode("left");
                             }}
-                            className="py-1 pr-0.5"
+                            className="cursor-grab py-1 pr-0.5 active:cursor-grabbing"
                           >
                             <span className="font-medium">{tab.projectName}</span>
                             <span className="ml-1 text-neutral-500">{tab.title}</span>
@@ -372,8 +412,11 @@ export default function BorderlessWorkspace({
                     )}
                   </div>
                 </div>
-                <div className="min-h-0 flex-1">
+                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
                   {renderTabContent(leftTab)}
+                  {dropTarget === "left" && (
+                    <div className="pointer-events-none absolute inset-0 z-10 rounded bg-cyan-400/10 ring-2 ring-inset ring-cyan-400/40" />
+                  )}
                 </div>
               </div>
             </section>
@@ -386,6 +429,25 @@ export default function BorderlessWorkspace({
             />
           ) : null}
 
+          {/* Drop zone when in single-panel mode — drag a tab here to split */}
+          {layoutMode === "left" && isDraggingTab && (
+            <section
+              className={`flex min-h-0 min-w-0 items-center justify-center border-2 border-dashed transition-colors ${
+                dropTarget === "right"
+                  ? "border-fuchsia-400/60 bg-fuchsia-400/10"
+                  : "border-neutral-700/50 bg-neutral-900/30"
+              }`}
+              style={{ flexBasis: "40%" }}
+              onDragOver={(event) => handlePanelDragOver("right", event)}
+              onDragLeave={handlePanelDragLeave}
+              onDrop={(event) => handleTabDrop("right", event)}
+            >
+              <span className={`text-xs ${dropTarget === "right" ? "text-fuchsia-300/80" : "text-neutral-500"}`}>
+                Drop here to split
+              </span>
+            </section>
+          )}
+
           {layoutMode !== "left" ? (
             <section
               className={`min-h-0 min-w-0 overflow-hidden border ${
@@ -394,13 +456,13 @@ export default function BorderlessWorkspace({
                   : "border-neutral-800"
               }`}
               style={{
-                flexBasis:
-                  layoutMode === "split"
-                    ? `${(1 - splitRatio) * 100}%`
-                    : "100%",
+                flex: layoutMode === "split"
+                  ? `1 1 ${(1 - splitRatio) * 100}%`
+                  : "1 1 100%",
               }}
               onMouseDown={() => setActivePanel("right")}
-              onDragOver={(event) => event.preventDefault()}
+              onDragOver={(event) => handlePanelDragOver("right", event)}
+              onDragLeave={handlePanelDragLeave}
               onDrop={(event) => handleTabDrop("right", event)}
             >
               <div className="flex h-full min-h-0 flex-col">
@@ -429,11 +491,13 @@ export default function BorderlessWorkspace({
                           />
                           <button
                             type="button"
+                            draggable
+                            onDragStart={(e) => handleTabDragStart(tab.id, e)}
+                            onDragEnd={handleTabDragEnd}
                             onClick={() => {
                               assignTabToPanel(tab.id, "right");
-                              setLayoutMode("split");
                             }}
-                            className="py-1 pr-0.5"
+                            className="cursor-grab py-1 pr-0.5 active:cursor-grabbing"
                           >
                             <span className="font-medium">{tab.projectName}</span>
                             <span className="ml-1 text-neutral-500">{tab.title}</span>
@@ -454,8 +518,11 @@ export default function BorderlessWorkspace({
                     )}
                   </div>
                 </div>
-                <div className="min-h-0 flex-1">
+                <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
                   {renderTabContent(rightTab)}
+                  {dropTarget === "right" && (
+                    <div className="pointer-events-none absolute inset-0 z-10 rounded bg-fuchsia-400/10 ring-2 ring-inset ring-fuchsia-400/40" />
+                  )}
                 </div>
               </div>
             </section>

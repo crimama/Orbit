@@ -51,3 +51,17 @@ textarea {
 .orbit-resizing * {
   user-select: none !important;
 }
+
+/* CodeMirror responsive containment — prevent internal flex-basis overflow */
+.cm-editor {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.cm-editor .cm-scroller {
+  overflow: auto !important;
+}
+
+.cm-editor .cm-content {
+  max-width: 100% !important;
+}

@@ -791,7 +791,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-y-auto bg-[#0a0a0a] pb-12 text-neutral-200 md:h-[100dvh] md:overflow-hidden">
+    <div className="flex min-h-[100dvh] flex-col overflow-y-auto bg-[#0a0a0a] pb-12 text-neutral-200 md:h-[100dvh] md:overflow-hidden md:pb-0">
       {/* Interceptor Banner */}
       <InterceptorBanner
         pendingCount={pendingApprovals.length}
@@ -944,14 +944,14 @@ export default function Dashboard() {
             </div>
           ) : null}
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className={`flex min-h-0 flex-1 flex-col ${selectedProject ? "" : "overflow-y-auto"}`}>
             {isProjectsListCollapsed ? (
               <div className="px-2 py-4 text-center text-xs tracking-wide text-neutral-500">
                 Projects
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
+                <div className="flex shrink-0 items-center justify-between border-b border-neutral-800 px-3 py-2">
                   <span className="text-xs text-neutral-500">Projects</span>
                   <div className="inline-flex items-center gap-1">
                     <button
@@ -981,7 +981,7 @@ export default function Dashboard() {
                 </div>
 
                 {selectedProject ? (
-                  <div className="border-b border-neutral-800 px-3 py-2">
+                  <div className="flex min-h-0 basis-1/2 flex-col border-b border-neutral-800 px-3 py-2">
                     <div className="mb-2 flex items-center gap-2 text-xs text-neutral-400">
                       <span
                         className="inline-block h-2.5 w-2.5 rounded-full"
@@ -1073,7 +1073,7 @@ export default function Dashboard() {
                     </div>
 
                     {projectFocusTab === "sessions" ? (
-                      <div className="max-h-72 overflow-y-auto rounded border border-neutral-800 bg-neutral-900/40">
+                      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto rounded border border-neutral-800 bg-neutral-900/40">
                         <div className="flex items-center gap-1 border-b border-neutral-800 px-2 py-1">
                           <button
                             onClick={() => setSessionViewMode("active")}
@@ -1187,15 +1187,17 @@ export default function Dashboard() {
                   </div>
                 ) : null}
 
-                <ProjectList
-                  projects={projects}
-                  selectedId={selectedProject?.id ?? null}
-                  onSelect={handleSelectProject}
-                  onDelete={handleDeleteProject}
-                  onRename={handleRenameProject}
-                  onUpdateConfig={handleUpdateProjectConfig}
-                  onChangeColor={handleChangeProjectColor}
-                />
+                <div className={`shrink-0 ${selectedProject ? "min-h-0 basis-1/2 overflow-y-auto border-t border-neutral-800" : ""}`}>
+                  <ProjectList
+                    projects={projects}
+                    selectedId={selectedProject?.id ?? null}
+                    onSelect={handleSelectProject}
+                    onDelete={handleDeleteProject}
+                    onRename={handleRenameProject}
+                    onUpdateConfig={handleUpdateProjectConfig}
+                    onChangeColor={handleChangeProjectColor}
+                  />
+                </div>
               </>
             )}
           </div>
@@ -1212,8 +1214,8 @@ export default function Dashboard() {
         ) : null}
 
         {/* Right Panel — Sessions */}
-        <div className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-hidden">
             {selectedProject ? (
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
                 {false && projectPaneMode === "harness" && (
@@ -1232,7 +1234,7 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                <div className="min-h-0 flex-1 p-2 sm:p-3">
+                <div className="min-h-0 flex-1 overflow-hidden p-2 sm:p-3">
                   {!inlineSessionId && !viewedFile ? (
                     <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
                       Select a session or file from the left panel.

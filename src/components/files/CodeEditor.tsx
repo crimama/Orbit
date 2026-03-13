@@ -1,6 +1,7 @@
 "use client";
 
 import CodeMirror from "@uiw/react-codemirror";
+import { oneDark } from "@codemirror/theme-one-dark";
 import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 import { markdown } from "@codemirror/lang-markdown";
@@ -44,15 +45,15 @@ export default function CodeEditor({
   height = "100%",
 }: CodeEditorProps) {
   return (
-    <div className="h-full min-h-0 overflow-hidden">
+    <div className="h-full min-h-0 min-w-0 overflow-hidden">
       <CodeMirror
         value={value}
         onChange={onChange}
         readOnly={readOnly}
         height={height}
-        theme="dark"
+        theme={oneDark}
         extensions={toExtensions(languageId)}
-        className="h-full"
+        className="h-full max-w-full"
         basicSetup={{
           lineNumbers: true,
           foldGutter: true,
