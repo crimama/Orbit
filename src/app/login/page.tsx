@@ -101,7 +101,7 @@ function LoginPageContent() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
+    <main className="mx-auto flex min-h-[100dvh] w-full max-w-md items-center px-6">
       <form
         onSubmit={onSubmit}
         className="w-full space-y-4 rounded-xl border border-slate-700 bg-slate-900 p-6"
@@ -155,7 +155,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
+        <main className="mx-auto flex min-h-[100dvh] w-full max-w-md items-center px-6">
           <div className="w-full rounded-xl border border-slate-700 bg-slate-900 p-6 text-sm text-slate-300">
             Loading login...
           </div>

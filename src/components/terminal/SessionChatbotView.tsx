@@ -29,6 +29,21 @@ interface SessionChatbotViewProps {
   sessionId: string;
 }
 
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          className={`animate-pulse rounded-2xl bg-neutral-800 ${
+            index === 1 ? "w-[72%]" : index === 2 ? "w-[58%]" : "w-[84%]"
+          } h-12`}
+        />
+      ))}
+    </div>
+  );
+}
+
 const ansiRegex = new RegExp("\\u001b\\[[0-9;]*[A-Za-z]", "g");
 
 function makeId(): string {
@@ -284,7 +299,9 @@ export default function SessionChatbotView({
         ref={viewportRef}
         className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4"
       >
-        {messages.length === 0 && (
+        {!loaded && <LoadingSkeleton />}
+
+        {loaded && messages.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
             Ask in natural language. Orbit will send it to the session and
             stream the response here.

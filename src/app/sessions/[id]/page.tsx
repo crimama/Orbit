@@ -26,7 +26,7 @@ export default function SessionPage() {
 
   if (error) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-[100dvh] items-center justify-center bg-slate-50">
         <p className="text-red-400">{error}</p>
       </div>
     );
@@ -34,7 +34,7 @@ export default function SessionPage() {
 
   if (!session) {
     return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
+      <div className="flex h-[100dvh] items-center justify-center bg-slate-50">
         <p className="text-slate-500">Loading session...</p>
       </div>
     );

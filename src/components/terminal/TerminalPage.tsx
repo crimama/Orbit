@@ -107,7 +107,7 @@ export default function TerminalPage({
   }
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-b from-slate-100 to-slate-200 text-slate-900">
+    <div className="flex h-[100dvh] flex-col bg-gradient-to-b from-slate-100 to-slate-200 text-slate-900">
       <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-slate-300/90 bg-white/95 px-3 py-2.5 backdrop-blur sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <button

@@ -120,6 +120,21 @@ function MessageBubble({
   );
 }
 
+function LoadingSkeleton() {
+  return (
+    <div className="space-y-2.5">
+      {[0, 1, 2].map((index) => (
+        <div
+          key={index}
+          className={`h-11 animate-pulse rounded-2xl bg-neutral-800 ${
+            index === 1 ? "w-[70%]" : index === 2 ? "w-[56%]" : "w-[82%]"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
@@ -396,6 +411,8 @@ export default function MobileChatTerminal({
         ref={viewportRef}
         className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3"
       >
+        {!loaded && <LoadingSkeleton />}
+
         {messages.length === 0 && loaded && (
           <div className="rounded-xl bg-neutral-900 px-3 py-2.5 text-[12px] text-neutral-500">
             Type a command below. Output appears here as chat bubbles.

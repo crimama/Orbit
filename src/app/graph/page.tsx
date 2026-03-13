@@ -48,7 +48,7 @@ function GraphPageContent() {
   // If projectId exists, render the graph
   if (projectId) {
     return (
-      <div className="flex h-screen flex-col bg-gray-900">
+      <div className="flex h-[100dvh] flex-col bg-gray-900">
         {/* Header */}
         <div className="flex items-center gap-3 border-b border-gray-800 px-4 py-2">
           <button
@@ -72,7 +72,7 @@ function GraphPageContent() {
 
   // No projectId — show project selector
   return (
-    <div className="flex h-screen flex-col bg-gray-900">
+    <div className="flex h-[100dvh] flex-col bg-gray-900">
       <div className="flex items-center gap-3 border-b border-gray-800 px-4 py-2">
         <button
           onClick={() => router.push("/")}
@@ -123,7 +123,7 @@ export default function GraphPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center bg-gray-900">
+        <div className="flex h-[100dvh] items-center justify-center bg-gray-900">
           <div className="text-sm text-gray-500">Loading...</div>
         </div>
       }

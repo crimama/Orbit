@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
 import { getSocket, type OrbitSocket } from "@/lib/socketClient";
 
 export function useSocket() {
   const socketRef = useRef<OrbitSocket | null>(null);
   const [connected, setConnected] = useState(false);
+  const { backgrounded } = usePageVisibility();
 
   useEffect(() => {
     const socket = getSocket();
@@ -23,8 +25,6 @@ export function useSocket() {
 
     if (socket.connected) {
       setConnected(true);
-    } else {
-      socket.connect();
     }
 
     return () => {
@@ -33,5 +33,20 @@ export function useSocket() {
     };
   }, []);
 
-  return { socket: socketRef.current, connected };
+  useEffect(() => {
+    const socket = getSocket();
+    socketRef.current = socket;
+
+    if (backgrounded) {
+      socket.disconnect();
+      setConnected(false);
+      return;
+    }
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+  }, [backgrounded]);
+
+  return { socket: socketRef.current, connected, backgrounded };
 }

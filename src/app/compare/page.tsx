@@ -12,7 +12,7 @@ function CompareContent() {
   const right = searchParams.get("right");
 
   return (
-    <div className="flex h-screen flex-col bg-[#0a0a0a] text-neutral-200">
+    <div className="flex h-[100dvh] flex-col bg-[#0a0a0a] text-neutral-200">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-800 px-4 py-2">
         <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export default function ComparePage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="flex h-[100dvh] items-center justify-center bg-[#0a0a0a]">
           <p className="text-sm text-neutral-500">Loading...</p>
         </div>
       }

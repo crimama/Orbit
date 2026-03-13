@@ -25,7 +25,6 @@ export default function SessionComposerDock({
   const [mode, setMode] = useState<DockMode>("prompt");
   const [prompt, setPrompt] = useState("");
   const [question, setQuestion] = useState("");
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [todoInput, setTodoInput] = useState("");
   const [todos, setTodos] = useState<TodoItem[]>([]);
@@ -55,25 +54,26 @@ export default function SessionComposerDock({
 
   async function submitPrompt(e: FormEvent) {
     e.preventDefault();
-    if (!prompt.trim()) return;
+    const nextPrompt = prompt.trim();
+    if (!nextPrompt) return;
 
-    setSending(true);
     setError(null);
+    setPrompt("");
     try {
       const res = await fetch(`/api/sessions/${sessionId}/command`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: prompt, appendNewline: true }),
+        body: JSON.stringify({ input: nextPrompt, appendNewline: true }),
       });
       const json = (await res.json()) as { error?: string };
       if (!res.ok) {
         throw new Error(json.error ?? "Failed to send command");
       }
-      setPrompt("");
     } catch (err) {
+      setPrompt((current) =>
+        current.trim() ? `${nextPrompt}\n${current}` : nextPrompt,
+      );
       setError(err instanceof Error ? err.message : "Failed to send command");
-    } finally {
-      setSending(false);
     }
   }
 
@@ -145,7 +145,12 @@ export default function SessionComposerDock({
             value={prompt}
             onFocus={() => onFocusChange?.(true)}
             onBlur={() => onFocusChange?.(false)}
-            onChange={(e) => setPrompt(e.target.value)}
+            onChange={(e) => {
+              setPrompt(e.target.value);
+              if (error) {
+                setError(null);
+              }
+            }}
             rows={3}
             placeholder="Type command or prompt for this session..."
             className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-400"
@@ -154,10 +159,10 @@ export default function SessionComposerDock({
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={sending || !prompt.trim()}
+              disabled={!prompt.trim()}
               className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-60"
             >
-              {sending ? "Sending..." : "Send"}
+              Send
             </button>
           </div>
         </form>
