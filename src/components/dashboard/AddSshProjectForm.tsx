@@ -438,7 +438,7 @@ export default function AddSshProjectForm({
   const sshTestPassed = testResult?.ok && testedConfigId;
 
   const inputClass =
-    "rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none";
+    "rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-border-focus focus:outline-none";
 
   const sshStage = useMemo(() => {
     if (loading) return 3;

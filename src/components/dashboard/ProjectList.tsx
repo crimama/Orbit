@@ -226,19 +226,16 @@ export default function ProjectList({
           <div
             key={p.id}
             onClick={() => onSelect(p)}
-            className={`group relative cursor-pointer rounded-lg py-2 pl-5 pr-3 transition-colors ${
+            className={`project-item group relative cursor-pointer rounded-lg py-2 pl-5 pr-3 transition-colors ${
               isSelected ? "text-neutral-100" : "text-neutral-300"
             }`}
-            style={{
-              backgroundColor: isSelected ? `${p.color}20` : undefined,
-              borderLeft: `3px solid ${p.color}`,
-            }}
-            onMouseEnter={(e) => {
-              if (!isSelected) e.currentTarget.style.backgroundColor = `${p.color}10`;
-            }}
-            onMouseLeave={(e) => {
-              if (!isSelected) e.currentTarget.style.backgroundColor = "";
-            }}
+            style={
+              {
+                "--project-color": p.color,
+                borderLeft: `3px solid ${p.color}`,
+              } as React.CSSProperties
+            }
+            data-selected={isSelected ? "true" : undefined}
           >
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
@@ -290,7 +287,7 @@ export default function ProjectList({
                         if (e.key === "Escape") cancelEdit();
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="w-full rounded border border-neutral-600 bg-neutral-900 px-1.5 py-0.5 text-sm font-medium text-neutral-100 outline-none focus:border-blue-500"
+                      className="w-full rounded border border-neutral-600 bg-neutral-900 px-1.5 py-0.5 text-sm font-medium text-neutral-100 outline-none focus:border-border-focus"
                     />
                   ) : (
                     <div
@@ -439,7 +436,7 @@ export default function ProjectList({
                         setConfigBrowse(null);
                         setDirNavValue("");
                       }}
-                      className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                      className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
                       disabled={loadingConfigContainers || configContainers.length === 0}
                     >
                       <option value="">
@@ -462,7 +459,7 @@ export default function ProjectList({
                         setDirNavValue("");
                         if (value) void fetchConfigBrowse(p, value);
                       }}
-                      className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none disabled:opacity-50"
+                      className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-border-focus focus:outline-none disabled:opacity-50"
                       disabled={!editContainerValue.trim() || loadingConfigBrowse || !configBrowse}
                     >
                       {!editContainerValue.trim() ? (

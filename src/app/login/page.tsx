@@ -122,7 +122,7 @@ function LoginPageContent() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           placeholder="Password"
-          className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-slate-400"
+          className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-border-focus"
           autoFocus
         />
         {configured === false ? (
@@ -131,7 +131,7 @@ function LoginPageContent() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="Confirm password"
-            className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-slate-400"
+            className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-border-focus"
           />
         ) : null}
         {error ? <p className="text-sm text-rose-400">{error}</p> : null}

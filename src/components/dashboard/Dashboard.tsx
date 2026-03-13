@@ -1010,7 +1010,7 @@ export default function Dashboard() {
                             }
                             setEditingProjectName(false);
                           }}
-                          className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-1 py-0.5 text-xs text-neutral-200 outline-none focus:border-blue-500"
+                          className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-1 py-0.5 text-xs text-neutral-200 outline-none focus:border-border-focus"
                         />
                       ) : (
                         <span
@@ -1103,7 +1103,7 @@ export default function Dashboard() {
                               setProjectSessionName(e.target.value)
                             }
                             placeholder="Session name"
-                            className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                            className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
                           />
                           <div className="flex gap-1.5">
                             <select
@@ -1113,7 +1113,7 @@ export default function Dashboard() {
                                   e.target.value as NewSessionAgent,
                                 )
                               }
-                              className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                              className="min-w-0 flex-1 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
                             >
                               <option value="terminal">Terminal</option>
                               <option value="claude-code">Claude Code</option>
@@ -1294,14 +1294,14 @@ export default function Dashboard() {
                         value={quickSessionName}
                         onChange={(e) => setQuickSessionName(e.target.value)}
                         placeholder="Session name (recommended)"
-                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
                       />
                       <select
                         value={quickSessionProjectId}
                         onChange={(e) =>
                           setQuickSessionProjectId(e.target.value)
                         }
-                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
                       >
                         {projects.map((project) => (
                           <option key={project.id} value={project.id}>
@@ -1316,7 +1316,7 @@ export default function Dashboard() {
                             e.target.value as NewSessionAgent,
                           )
                         }
-                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-neutral-500 focus:outline-none"
+                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
                       >
                         <option value="terminal">Terminal</option>
                         <option value="claude-code">Claude Code</option>
@@ -1422,7 +1422,7 @@ export default function Dashboard() {
                 value={paletteQuery}
                 onChange={(event) => setPaletteQuery(event.target.value)}
                 placeholder="Search projects, files, sessions (running/error/completed)..."
-                className="w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
+                className="w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-border-focus"
               />
             </div>
             <div className="max-h-[58vh] overflow-y-auto p-2">

@@ -99,7 +99,7 @@ function FilePaneRenderer({
             onChange={(e) => {
               if (e.target.value) onSelectDoc(node.id, e.target.value);
             }}
-            className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400"
+            className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-border-focus"
           >
             <option value="">Select file...</option>
             {Object.keys(docs)

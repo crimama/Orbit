@@ -70,7 +70,7 @@ export default function ABCompare({
           <select
             value={leftId ?? ""}
             onChange={(e) => setLeftId(e.target.value || null)}
-            className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-200 outline-none focus:border-neutral-500"
+            className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-200 outline-none focus:border-border-focus"
           >
             <option value="">Select session...</option>
             {sessions.map((s) => (
@@ -89,7 +89,7 @@ export default function ABCompare({
           <select
             value={rightId ?? ""}
             onChange={(e) => setRightId(e.target.value || null)}
-            className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-200 outline-none focus:border-neutral-500"
+            className="rounded border border-neutral-700 bg-neutral-800 px-2 py-1 text-sm text-neutral-200 outline-none focus:border-border-focus"
           >
             <option value="">Select session...</option>
             {sessions.map((s) => (

@@ -12,6 +12,24 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         terminalBg: "var(--terminal-bg)",
+        surface: {
+          DEFAULT: "var(--surface)",
+          elevated: "var(--surface-elevated)",
+          overlay: "var(--surface-overlay)",
+        },
+        border: {
+          DEFAULT: "var(--border)",
+          focus: "var(--border-focus)",
+        },
+        status: {
+          active: "var(--status-active)",
+          paused: "var(--status-paused)",
+          exited: "var(--status-exited)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          hover: "var(--accent-hover)",
+        },
       },
     },
   },

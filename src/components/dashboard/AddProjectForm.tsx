@@ -70,7 +70,7 @@ export default function AddProjectForm({ onCreated }: AddProjectFormProps) {
         placeholder="Project name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none"
+        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-border-focus focus:outline-none"
       />
       <div className="flex items-center gap-2">
         <span className="text-xs text-neutral-500">Color</span>
@@ -89,7 +89,7 @@ export default function AddProjectForm({ onCreated }: AddProjectFormProps) {
           placeholder="/path/to/project"
           value={path}
           onChange={(e) => setPath(e.target.value)}
-          className="flex-1 rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none"
+          className="flex-1 rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-border-focus focus:outline-none"
         />
         <button
           type="button"

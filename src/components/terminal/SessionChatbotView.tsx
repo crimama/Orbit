@@ -333,7 +333,7 @@ export default function SessionChatbotView({
             onKeyDown={handleInputKeyDown}
             rows={2}
             placeholder="Type your request..."
-            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-400"
+            className="max-h-40 min-h-[44px] flex-1 resize-y rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           <button
             type="submit"

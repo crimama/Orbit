@@ -125,7 +125,7 @@ export default function GraphToolbar({
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Search node/type/id"
-          className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-gray-500"
+          className="w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-border-focus"
         />
         {filteredNodes.length > 0 && (
           <div className="mt-1 max-h-44 overflow-y-auto">
@@ -157,12 +157,12 @@ export default function GraphToolbar({
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mb-2 w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-gray-500"
+            className="mb-2 w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-border-focus"
           />
           <select
             value={nodeType}
             onChange={(e) => setNodeType(e.target.value)}
-            className="mb-2 w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 outline-none focus:border-gray-500"
+            className="mb-2 w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 outline-none focus:border-border-focus"
           >
             <option value="default">default</option>
             <option value="tool">tool</option>
@@ -174,7 +174,7 @@ export default function GraphToolbar({
             placeholder="MCP Endpoint (optional)"
             value={mcpEndpoint}
             onChange={(e) => setMcpEndpoint(e.target.value)}
-            className="mb-2 w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-gray-500"
+            className="mb-2 w-full rounded border border-gray-600 bg-gray-700 px-2 py-1 text-xs text-gray-100 placeholder-gray-500 outline-none focus:border-border-focus"
           />
           <div className="flex gap-1">
             <button

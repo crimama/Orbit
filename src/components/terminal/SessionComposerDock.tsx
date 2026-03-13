@@ -153,7 +153,7 @@ export default function SessionComposerDock({
             }}
             rows={3}
             placeholder="Type command or prompt for this session..."
-            className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-400"
+            className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex justify-end">
@@ -174,7 +174,7 @@ export default function SessionComposerDock({
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Capture a question to include in prompt"
-            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-400"
+            className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           <div className="flex justify-end">
             <button
@@ -230,7 +230,7 @@ export default function SessionComposerDock({
               value={todoInput}
               onChange={(e) => setTodoInput(e.target.value)}
               placeholder="Add session todo"
-              className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-sky-400"
+              className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
             />
             <button
               type="submit"

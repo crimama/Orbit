@@ -84,14 +84,13 @@ export default function SessionList({
               e.dataTransfer.setData("text/plain", `session:${s.id}`);
               e.dataTransfer.effectAllowed = "move";
             }}
-            className="group relative overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950/70 p-3 text-neutral-300 transition-colors"
-            style={{ borderLeft: `4px solid ${s.projectColor}` }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = `${s.projectColor}12`;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "";
-            }}
+            className="session-item group relative overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950/70 p-3 text-neutral-300 transition-colors"
+            style={
+              {
+                "--project-color": s.projectColor,
+                borderLeft: `4px solid ${s.projectColor}`,
+              } as React.CSSProperties
+            }
           >
             <div className="absolute right-3 top-3 flex items-center gap-1.5">
               {isYoloSession ? (
@@ -128,7 +127,7 @@ export default function SessionList({
                     }}
                     onClick={(e) => e.stopPropagation()}
                     placeholder={s.id.slice(0, 8)}
-                    className="w-40 rounded border border-neutral-600 bg-neutral-900 px-1.5 py-0.5 font-mono text-xs text-neutral-100 outline-none focus:border-blue-500"
+                    className="w-40 rounded border border-neutral-600 bg-neutral-900 px-1.5 py-0.5 font-mono text-xs text-neutral-100 outline-none focus:border-border-focus"
                   />
                 ) : (
                   <div className="min-w-0">

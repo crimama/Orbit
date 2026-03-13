@@ -261,7 +261,7 @@ export default function TerminalPane({
           <span
             className="mr-1.5 inline-block h-2 w-2 flex-shrink-0 rounded-full"
             style={{
-              backgroundColor: exited ? "#ef4444" : (projectColor ?? "#22c55e"),
+              backgroundColor: exited ? "var(--status-exited)" : (projectColor ?? "var(--status-active)"),
             }}
             title={
               exited ? "Exited" : (currentSession?.projectName ?? "Active")
@@ -279,7 +279,7 @@ export default function TerminalPane({
           onChange={(e) => {
             if (e.target.value) onSelectSession(e.target.value);
           }}
-          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500"
+          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-border-focus"
         >
           <option value="">Select session...</option>
           {sessions
@@ -294,7 +294,7 @@ export default function TerminalPane({
         {currentSession && (
           <span
             className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
-            style={{ borderColor: projectColor ?? "#404040" }}
+            style={{ borderColor: projectColor ?? "var(--border)" }}
             title={currentSession.projectName}
           >
             {currentSession.projectName}

@@ -68,7 +68,7 @@ export default function DirectoryPicker({
           value={pathInput}
           onChange={(e) => setPathInput(e.target.value)}
           onKeyDown={handleGoTo}
-          className="flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-xs text-neutral-200 focus:border-neutral-500 focus:outline-none"
+          className="flex-1 rounded border border-neutral-700 bg-neutral-950 px-2 py-1 font-mono text-xs text-neutral-200 focus:border-border-focus focus:outline-none"
           placeholder="Enter path and press Enter"
         />
       </div>

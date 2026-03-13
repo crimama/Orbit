@@ -182,7 +182,7 @@ export default function TerminalPage({
                   router.push(`/sessions/${next}`);
                 }
               }}
-              className="min-w-0 flex-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-sky-300 focus:outline-none sm:max-w-56 sm:flex-none"
+              className="min-w-0 flex-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 shadow-sm focus:border-border-focus focus:outline-none sm:max-w-56 sm:flex-none"
             >
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>

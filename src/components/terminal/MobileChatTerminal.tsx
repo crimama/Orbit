@@ -493,7 +493,7 @@ export default function MobileChatTerminal({
             }
           }}
           placeholder={attached ? "Type command..." : "Connecting..."}
-          className="min-h-[40px] min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 text-base text-neutral-100 placeholder-neutral-500 outline-none focus:border-sky-500"
+          className="min-h-[40px] min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 text-base text-neutral-100 placeholder-neutral-500 outline-none focus:border-border-focus"
         />
         <button
           type="button"

@@ -147,6 +147,15 @@
 | **offline-first**   | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
 | **viewport-dvh**    | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
 | **OLED**            | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **visual-ui**       | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **design-system**   | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **dark-mode-palette** | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **status-indicators** | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **animation-patterns** | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **code-blocks**     | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
 
 ---
 
@@ -170,6 +179,7 @@
 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | 완료 | `libghostty` `ghostty-web` `restty` `WebGPU` `WASM` `zmx` `mux` `session-persist` |
 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | 완료 | `happy-coder` `yolo` `E2E암호화` `device-switch` `push-notification` `permission` `Expo` `RPC` |
 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 완료 | `mobile-ux` `chat-ui` `chatbot` `thumb-zone` `streaming-markdown` `skeleton-screen` `xterm-mobile` `terminal-gesture` `offline-first` `viewport-dvh` `OLED` |
+| [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | 완료 | `visual-ui` `design-system` `dark-mode-palette` `status-indicators` `animation-patterns` `code-blocks` `streaming-ui` `bottom-sheet` `empty-states` |
 
 ### bugfix/
 
@@ -234,6 +244,13 @@ decisions/2026-03-13_mobile-chat-terminal-ux-research.md
         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
+
+decisions/2026-03-14_visual-ui-references.md
+        │
+        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (모바일 UX 패턴 통합)
+        ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (xterm.js 테마 설정)
+        ├──▶ decisions/2026-03-12_happy-mobile-yolo-research.md (OLED 최적화)
+        └──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 Gap Analysis)
 ```
 
 ---
@@ -253,3 +270,4 @@ decisions/2026-03-13_mobile-chat-terminal-ux-research.md
 | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
 | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
 | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
+| 2026-03-14 | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | Terminal UI(Warp/Wave/Catppuccin) + Dashboard UI(Vercel/Grafana/LangSmith/Linear) + Orbit Gap Analysis 통합. Design Token 권장사항, 컴포넌트 패턴(StatusDot/EmptyState/Skeleton/Toast), 애니메이션 패턴, 우선순위 매트릭스 |

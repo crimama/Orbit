@@ -292,7 +292,7 @@ export default function TerminalView({
           '"JetBrains Mono", "Cascadia Mono", "SF Mono", "Consolas", "Menlo", ui-monospace, monospace',
         minimumContrastRatio: 4.5,
         theme: {
-          background: "#0b1220",
+          background: "var(--terminal-bg)",
           foreground: "#e6edf3",
           cursor: "#93c5fd",
           selectionBackground: "#334155",
@@ -378,12 +378,12 @@ export default function TerminalView({
   }, [fontSize, handleResize]);
 
   return (
-    <div className="relative h-full w-full" style={{ backgroundColor: "#0b1220" }}>
+    <div className="relative h-full w-full" style={{ backgroundColor: "var(--terminal-bg)" }}>
       <div ref={containerRef} className="h-full w-full" />
       {!ready && (
         <div
           className="absolute inset-0 z-10 flex items-center justify-center"
-          style={{ backgroundColor: "#0b1220" }}
+          style={{ backgroundColor: "var(--terminal-bg)" }}
         >
           <div className="flex w-full max-w-sm flex-col gap-4 px-6">
             <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-4 shadow-[0_0_0_1px_rgba(15,23,42,0.3)]">

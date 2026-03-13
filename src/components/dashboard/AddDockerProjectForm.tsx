@@ -210,7 +210,7 @@ export default function AddDockerProjectForm({
         placeholder="Project name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none"
+        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-border-focus focus:outline-none"
       />
       <div className="flex items-center gap-2">
         <span className="text-xs text-neutral-500">Color</span>
@@ -272,7 +272,7 @@ export default function AddDockerProjectForm({
             setPath("/");
             setDirNavValue("");
           }}
-          className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300 focus:border-neutral-500 focus:outline-none"
+          className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300 focus:border-border-focus focus:outline-none"
         >
           {sshConfigs.length === 0 ? (
             <option value="">No registered SSH hosts</option>
@@ -299,7 +299,7 @@ export default function AddDockerProjectForm({
           setBrowse(null);
           setDirNavValue("");
         }}
-        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none"
+        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-border-focus focus:outline-none"
       />
 
       <select
@@ -311,7 +311,7 @@ export default function AddDockerProjectForm({
             setDirNavValue("");
           }
         }}
-        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300 focus:border-neutral-500 focus:outline-none"
+        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300 focus:border-border-focus focus:outline-none"
         disabled={loadingContainers || containers.length === 0}
       >
         <option value="">
@@ -339,7 +339,7 @@ export default function AddDockerProjectForm({
           setDirNavValue("");
           if (value) void handlePathSelect(value);
         }}
-        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300 focus:border-neutral-500 focus:outline-none disabled:opacity-50"
+        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-300 focus:border-border-focus focus:outline-none disabled:opacity-50"
         disabled={!dockerContainer.trim() || loadingBrowse || !browse}
       >
         {!dockerContainer.trim() ? (
@@ -376,7 +376,7 @@ export default function AddDockerProjectForm({
             void fetchBrowseDirectories(path.trim() || "/");
           }
         }}
-        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-neutral-500 focus:outline-none"
+        className="w-full rounded border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder-neutral-600 focus:border-border-focus focus:outline-none"
       />
       <button
         type="button"
