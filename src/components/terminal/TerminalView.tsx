@@ -292,7 +292,7 @@ export default function TerminalView({
           '"JetBrains Mono", "Cascadia Mono", "SF Mono", "Consolas", "Menlo", ui-monospace, monospace',
         minimumContrastRatio: 4.5,
         theme: {
-          background: "var(--terminal-bg)",
+          background: "#0b1220",
           foreground: "#e6edf3",
           cursor: "#93c5fd",
           selectionBackground: "#334155",
