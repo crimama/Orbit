@@ -2,19 +2,32 @@
 
 ## 현재 작업
 
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
 - [x] Phase 1: 인프라 구축
 - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
 
-## 이번 세션 (2026-02-28)
+## 이번 세션 (2026-03-12)
 
-- [x] Prisma에 프로젝트 하네스 설정 모델 추가 (`ProjectHarnessConfig`)
-- [x] 프로젝트 단위 하네스 API 추가 (`GET/PUT /api/projects/[id]/harness`)
-- [x] Dashboard에 하네스 패널 추가 (provider/profile/maxParallel/config 편집)
-- [x] oh-my-opencode 프리셋 버튼 추가
-- [x] 세션 화면 UI를 터미널 중심에서 대화형 워크스페이스 톤으로 개선
-- [x] 타입체크/린트/빌드 검증
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+- [x] 6. 터미널/세션 UI에 세션별 YOLO 토글 추가
+- [x] 7. 타입체크/빌드 검증
 
 ## 계획
+
+### 모바일 command send 실행 버그 수정 (2026-03-12)
+
+- [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+- [x] 터미널 write/enter 처리 경로에서 모바일 전송 누락 원인 수정
+- [x] 타입체크 또는 관련 검증 수행 후 결과 기록
 
 ### Phase 1: 인프라 구축
 
@@ -60,6 +73,12 @@
 - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
 - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
 
+### 모바일 command send 실행 버그 수정 (2026-03-12)
+
+- 모바일 `Send`가 소켓의 현재 attach 상태에만 기대지 않도록 `/api/sessions/[id]/command` 경로로 통일
+- 모바일 chat terminal에 전송 중 상태와 실패 메시지 추가
+- `npx tsc --noEmit` 실행 시 오류 출력 없이 종료
+
 ### Phase 1 (2026-02-27)
 
 - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
@@ -75,3 +94,4 @@
 
 - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
 - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
+- `skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md` — Happy Coder YOLO 패턴 리서치

@@ -17,6 +17,8 @@ export interface ServerToClientEvents {
   "interceptor-pending": (approval: PendingApproval) => void;
   "interceptor-resolved": (approvalId: string, approved: boolean) => void;
   "interceptor-warn": (warning: InterceptorWarning) => void;
+  "interceptor-mode-changed": (mode: InterceptorMode) => void;
+  "session-mode-changed": (sessionId: string, mode: InterceptorMode | null) => void;
   // Observability
   "session-event": (event: SessionEvent) => void;
   "session-metrics": (snapshot: SessionMetricsSnapshot) => void;
@@ -54,6 +56,19 @@ export interface ClientToServerEvents {
   // Phase 4: Interceptor
   "interceptor-approve": (approvalId: string) => void;
   "interceptor-deny": (approvalId: string) => void;
+  "set-interceptor-mode": (
+    mode: InterceptorMode,
+    callback: (res: { ok: boolean; mode: InterceptorMode }) => void,
+  ) => void;
+  "set-session-mode": (
+    sessionId: string,
+    mode: InterceptorMode | null,
+    callback: (res: { ok: boolean }) => void,
+  ) => void;
+  "get-session-mode": (
+    sessionId: string,
+    callback: (mode: InterceptorMode | null) => void,
+  ) => void;
   // Observability
   "metrics-subscribe": (
     sessionId: string,

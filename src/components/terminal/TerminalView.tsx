@@ -11,6 +11,8 @@ interface TerminalViewProps {
   connected?: boolean;
   onExit?: (exitCode: number) => void;
   onInputReady?: (sendInput: ((data: string) => void) | null) => void;
+  fontSize?: number;
+  disableStdin?: boolean;
 }
 
 export default function TerminalView({
@@ -19,6 +21,8 @@ export default function TerminalView({
   connected,
   onExit,
   onInputReady,
+  fontSize = 14,
+  disableStdin = false,
 }: TerminalViewProps) {
   const { socket: fallbackSocket, connected: fallbackConnected } = useSocket();
   const activeSocket = socket ?? fallbackSocket;
@@ -29,10 +33,15 @@ export default function TerminalView({
   const fitAddonRef = useRef<import("@xterm/addon-fit").FitAddon | null>(null);
   const attachedRef = useRef(false);
   const onExitRef = useRef(onExit);
+  const fontSizeRef = useRef(fontSize);
 
   useEffect(() => {
     onExitRef.current = onExit;
   }, [onExit]);
+
+  useEffect(() => {
+    fontSizeRef.current = fontSize;
+  }, [fontSize]);
 
   const handleResize = useCallback(() => {
     if (!fitAddonRef.current || !termRef.current) return;
@@ -91,7 +100,7 @@ export default function TerminalView({
       const term = new Terminal({
         cursorBlink: true,
         scrollback: 50_000,
-        fontSize: 15,
+        fontSize: fontSizeRef.current,
         lineHeight: 1.45,
         fontWeight: "500",
         fontWeightBold: "700",
@@ -105,6 +114,7 @@ export default function TerminalView({
           selectionBackground: "#334155",
         },
         allowProposedApi: true,
+        disableStdin,
       });
 
       const fitAddon = new FitAddon();
@@ -168,7 +178,13 @@ export default function TerminalView({
       termRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [sessionId, activeSocket, activeConnected, handleResize, onInputReady]);
+  }, [sessionId, activeSocket, activeConnected, handleResize, onInputReady, disableStdin]);
+
+  useEffect(() => {
+    if (!termRef.current) return;
+    termRef.current.options.fontSize = fontSize;
+    handleResize();
+  }, [fontSize, handleResize]);
 
   return (
     <div className="relative h-full w-full" style={{ backgroundColor: "#0b1220" }}>

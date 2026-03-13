@@ -120,6 +120,22 @@
 | **zmx**             | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
 | **mux**             | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
 | **session-persist** | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **happy-coder**     | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **yolo**            | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **E2E암호화**       | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **device-switch**   | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **push-notification** | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                    | decision/research |
+| **permission**      | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **Expo**            | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **RPC**             | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **frontend**        | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **components**      | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+| **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+| **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
 
 ---
 
@@ -132,6 +148,7 @@
 | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
 | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+| [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
 
 ### decisions/
 
@@ -140,10 +157,13 @@
 | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)              | 완료 | `skill` `phase` `link-notes` `dep-install` `워크플로우` `자동화`                                  |
 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 완료 | `harness` `에이전트` `observability` `guardrail` `golden-path` `컨텍스트` `GC에이전트` `세션포크` |
 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | 완료 | `libghostty` `ghostty-web` `restty` `WebGPU` `WASM` `zmx` `mux` `session-persist` |
+| [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | 완료 | `happy-coder` `yolo` `E2E암호화` `device-switch` `push-notification` `permission` `Expo` `RPC` |
 
 ### bugfix/
 
-_(아직 없음)_
+| 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+| -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+| [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
 
 ### refactor/
 
@@ -178,6 +198,23 @@ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md
         ├──▶ features/2026-02-27_phase1-infra.md (xterm.js 대체재 평가)
         ├──▶ features/2026-02-28_phase2-4-parallel.md (SSH + RemotePty 세션 퍼시스턴스)
         └──▶ decisions/2026-02-28_harness-engineering.md (인터셉터 플러그인 패턴)
+
+decisions/2026-03-12_happy-mobile-yolo-research.md
+        │
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (모바일/PWA/인터셉터)
+        ├──▶ decisions/2026-02-28_harness-engineering.md (가드레일/퍼미션 패턴)
+        └──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (세션 퍼시스턴스)
+
+features/2026-03-12_frontend-component-specification.md
+        │
+        ├──▶ features/2026-02-27_phase1-infra.md (터미널/대시보드 기반)
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (SSH/그래프/인터셉터/모바일)
+        └──▶ decisions/2026-02-28_harness-engineering.md (하네스 패널)
+
+bugfix/2026-03-12_mobile-command-send-execution.md
+        │
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (모바일 터미널 경로 보정)
+        └──▶ decisions/2026-03-12_happy-mobile-yolo-research.md (모바일 UX 맥락)
 ```
 
 ---
@@ -191,5 +228,8 @@ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md
 | 2026-02-28 | [Phase 2-4](features/2026-02-28_phase2-4-parallel.md)                                 | SSH + PWA + 그래프 + 인터셉터 + A/B 비교 병렬 구현                                         |
 | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
 | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+| 2026-03-12 | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 모바일 chat terminal의 명령 전송을 서버 `/command` 경로로 통일해 실제 실행 누락 수정 |
 | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
 | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
+| 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+| 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |

@@ -1,7 +1,13 @@
 import type { OrbitServer, OrbitSocket } from "@/server/socket/types";
 import { commandInterceptor } from "@/server/pty/interceptor";
-import { seedInterceptorRules } from "@/server/pty/interceptorRules";
+import {
+  seedInterceptorRules,
+  setInterceptorMode,
+} from "@/server/pty/interceptorRules";
 import { getPtyBackend } from "@/server/pty/ptyBackend";
+import type { InterceptorMode } from "@/lib/types";
+
+const VALID_MODES: InterceptorMode[] = ["blacklist", "allowlist", "hybrid", "yolo"];
 
 let rulesSeeded = false;
 
@@ -46,5 +52,35 @@ export function registerInterceptorHandlers(
       return;
     }
     socket.emit("interceptor-resolved", approvalId, false);
+  });
+
+  // Global interceptor mode change (same process = correct instance)
+  socket.on("set-interceptor-mode", async (mode, callback) => {
+    if (!VALID_MODES.includes(mode)) {
+      callback({ ok: false, mode: "hybrid" });
+      return;
+    }
+    await setInterceptorMode(mode);
+    commandInterceptor.setGlobalModeDirect(mode);
+    io.emit("interceptor-mode-changed", mode);
+    callback({ ok: true, mode });
+  });
+
+  // Per-session mode change
+  socket.on("set-session-mode", (sessionId, mode, callback) => {
+    if (mode !== null && !VALID_MODES.includes(mode)) {
+      callback({ ok: false });
+      return;
+    }
+    commandInterceptor.setSessionMode(sessionId, mode);
+    io.to(`session:${sessionId}`).emit("session-mode-changed", sessionId, mode);
+    // Also notify dashboard watchers
+    io.to("dashboard").emit("session-mode-changed", sessionId, mode);
+    callback({ ok: true });
+  });
+
+  // Query per-session mode
+  socket.on("get-session-mode", (sessionId, callback) => {
+    callback(commandInterceptor.getSessionMode(sessionId));
   });
 }

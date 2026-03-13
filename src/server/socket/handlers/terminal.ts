@@ -96,7 +96,7 @@ export function registerTerminalHandlers(
           status: "terminated",
           lastContext: preview || session.lastContext,
         };
-        io.to("dashboard").emit("session-update", sessionUpdate);
+        sessionManager.queueSessionUpdate(sessionUpdate);
       }
       detach();
     });
@@ -121,14 +121,21 @@ export function registerTerminalHandlers(
     const backend = getPtyBackend(sid);
     if (!backend) return;
 
-    const forwarded = await commandInterceptor.intercept(
-      sid,
-      data,
-      (approval) => io.to(`session:${sid}`).emit("interceptor-pending", approval),
-      (warning) => io.to(`session:${sid}`).emit("interceptor-warn", warning),
-    );
+    let forwarded: boolean;
+    try {
+      forwarded = await commandInterceptor.intercept(
+        sid,
+        data,
+        (approval) => io.to(`session:${sid}`).emit("interceptor-pending", approval),
+        (warning) => io.to(`session:${sid}`).emit("interceptor-warn", warning),
+      );
+    } catch (err) {
+      console.error("[terminal-data] interceptor error, forwarding anyway:", err);
+      forwarded = true;
+    }
 
     if (forwarded) {
+      sessionManager.bufferActivity(sid);
       backend.write(sid, data);
     }
   });

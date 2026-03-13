@@ -48,6 +48,9 @@ class CommandInterceptor {
   /** Approvals waiting for user decision */
   private pendingApprovals = new Map<string, HeldApproval>();
 
+  /** Per-session interceptor mode override (takes priority over global) */
+  private sessionModes = new Map<string, InterceptorMode>();
+
   /** Cached active rules + mode (refreshed every CACHE_TTL_MS) */
   private cachedRules: InterceptorRuleInfo[] | null = null;
   private cachedMode: InterceptorMode | null = null;
@@ -92,9 +95,9 @@ class CommandInterceptor {
       return true; // Empty command — forward normally
     }
 
-    // Get active rules + mode
+    // Get active rules + effective mode (session override > global)
     const rules = await this.getActiveRulesCached();
-    const mode = await this.getModeCached();
+    const mode = this.sessionModes.get(sessionId) ?? await this.getModeCached();
 
     // --- Mode: yolo — bypass all interception, approve everything ---
     if (mode === "yolo") {
@@ -186,6 +189,26 @@ class CommandInterceptor {
    */
   clearBuffer(sessionId: string): void {
     this.inputBuffers.delete(sessionId);
+  }
+
+  // --- Per-session mode management ---
+
+  setSessionMode(sessionId: string, mode: InterceptorMode | null): void {
+    if (mode === null) {
+      this.sessionModes.delete(sessionId);
+    } else {
+      this.sessionModes.set(sessionId, mode);
+    }
+  }
+
+  getSessionMode(sessionId: string): InterceptorMode | null {
+    return this.sessionModes.get(sessionId) ?? null;
+  }
+
+  /** Set global mode directly (bypasses DB cache) */
+  setGlobalModeDirect(mode: InterceptorMode): void {
+    this.cachedMode = mode;
+    this.modeCacheTimestamp = Date.now();
   }
 
   // --- Private helpers ---

@@ -55,8 +55,8 @@ export default function InterceptorModal({
       : "bg-yellow-600 text-yellow-100";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-lg border border-neutral-700 bg-neutral-900 shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="w-full max-w-md rounded-t-2xl sm:rounded-lg border border-neutral-700 bg-neutral-900 shadow-2xl">
         {/* Header */}
         <div className="flex items-center gap-2 border-b border-neutral-700 px-5 py-4">
           <svg
@@ -84,7 +84,7 @@ export default function InterceptorModal({
             <span className="text-xs font-medium uppercase tracking-wider text-neutral-500">
               Command
             </span>
-            <div className="mt-1 rounded bg-neutral-800 px-3 py-2 font-mono text-sm text-red-300">
+            <div className="mt-1 rounded bg-neutral-800 px-3 py-2 font-mono text-sm text-red-300 break-all">
               {approval.command}
             </div>
           </div>
@@ -123,16 +123,19 @@ export default function InterceptorModal({
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 border-t border-neutral-700 px-5 py-3">
+        <div
+          className="grid grid-cols-2 gap-3 border-t border-neutral-700 px-5 py-4"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 1rem)" }}
+        >
           <button
             onClick={onDeny}
-            className="rounded bg-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition-colors hover:bg-neutral-600"
+            className="min-h-[48px] rounded-xl bg-neutral-700 px-4 py-3 text-sm font-semibold text-neutral-200 transition-colors hover:bg-neutral-600 active:bg-neutral-500"
           >
             Deny
           </button>
           <button
             onClick={onApprove}
-            className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-500"
+            className="min-h-[48px] rounded-xl bg-red-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-500 active:bg-red-400"
           >
             Approve
           </button>

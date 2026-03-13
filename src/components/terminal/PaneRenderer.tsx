@@ -125,10 +125,10 @@ export default function PaneRenderer({
 
   return (
     <div
-      className={`flex h-full w-full ${isHorizontal ? "flex-row" : "flex-col"}`}
+      className={`flex h-full w-full overflow-hidden ${isHorizontal ? "flex-row" : "flex-col"}`}
     >
       <div
-        style={{ flexBasis: firstPercent }}
+        style={{ flex: `0 1 ${firstPercent}` }}
         className="min-h-0 min-w-0 overflow-hidden"
       >
         <PaneRenderer node={node.children[0]} {...sharedProps} />
@@ -138,7 +138,7 @@ export default function PaneRenderer({
         onRatioChange={(ratio) => onRatioChange(node.id, ratio)}
       />
       <div
-        style={{ flexBasis: secondPercent }}
+        style={{ flex: `0 1 ${secondPercent}` }}
         className="min-h-0 min-w-0 overflow-hidden"
       >
         <PaneRenderer node={node.children[1]} {...sharedProps} />

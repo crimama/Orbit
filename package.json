@@ -2,6 +2,9 @@
   "name": "agent-orbit",
   "version": "0.1.0",
   "private": true,
+  "bin": {
+    "orbit": "./bin/orbit.ts"
+  },
   "scripts": {
     "dev": "rm -rf .next && tsx watch server.ts",
     "dev:tailnet": "bash scripts/run-tailscale.sh",

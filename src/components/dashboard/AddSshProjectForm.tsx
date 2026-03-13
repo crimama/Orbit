@@ -518,12 +518,12 @@ export default function AddSshProjectForm({
 
       <div className="space-y-1">
         <label className="text-xs font-medium text-neutral-300">
-          Server IP
+          Server Host
         </label>
         <div className="flex gap-1">
           <input
             type="text"
-            placeholder="192.168.0.10"
+            placeholder="hostname or IP"
             value={host}
             onChange={(e) => {
               setHost(e.target.value);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type {
   ApiResponse,
   ProjectFileListResponse,
@@ -11,7 +11,9 @@ interface SidebarFileTreeProps {
   projectId: string;
   files: { name: string; path: string; isDir: boolean }[];
   activePath?: string | null;
+  initialDir?: string;
   onFileOpen?: (path: string, content: string) => void;
+  onDirChange?: (dir: string) => void;
 }
 
 interface DirNode {
@@ -24,19 +26,36 @@ export default function SidebarFileTree({
   projectId,
   files,
   activePath,
+  initialDir,
   onFileOpen,
+  onDirChange,
 }: SidebarFileTreeProps) {
   const [dirs, setDirs] = useState<Record<string, DirNode>>({});
   const [loadingPath, setLoadingPath] = useState<string | null>(null);
+
+  // Auto-expand initialDir on mount
+  useEffect(() => {
+    if (!initialDir) return;
+    const parts = initialDir.split("/").filter(Boolean);
+    let current = "";
+    for (const part of parts) {
+      current = current ? `${current}/${part}` : part;
+      // trigger expansion for each segment
+      void toggleDir(current);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId]);
 
   const toggleDir = useCallback(
     async (dirPath: string) => {
       const existing = dirs[dirPath];
       if (existing?.loaded) {
+        const willExpand = !existing.expanded;
         setDirs((prev) => ({
           ...prev,
-          [dirPath]: { ...prev[dirPath], expanded: !prev[dirPath].expanded },
+          [dirPath]: { ...prev[dirPath], expanded: willExpand },
         }));
+        if (willExpand) onDirChange?.(dirPath);
         return;
       }
 
@@ -59,6 +78,7 @@ export default function SidebarFileTree({
           ...prev,
           [dirPath]: { loaded: true, expanded: true, children },
         }));
+        onDirChange?.(dirPath);
       } finally {
         setLoadingPath(null);
       }

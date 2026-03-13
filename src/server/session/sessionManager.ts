@@ -7,6 +7,7 @@ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
 import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
 import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
 import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+import type { OrbitServer } from "@/server/socket/types";
 
 const AGENT_TYPES = {
   TERMINAL: "terminal",
@@ -72,6 +73,69 @@ function toSessionInfo(row: {
 class SessionManager {
   private gcTimer: ReturnType<typeof setInterval> | null = null;
   private bootstrapTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private activityBuffer = new Map<string, number>();
+  private activityFlushTimer: ReturnType<typeof setInterval> | null = null;
+  private socketServer: OrbitServer | null = null;
+  private pendingSessionUpdates = new Map<string, SessionInfo>();
+  private sessionUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>();
+
+  bindSocketServer(io: OrbitServer): void {
+    this.socketServer = io;
+  }
+
+  startActivityFlusher(): void {
+    if (this.activityFlushTimer) return;
+    this.activityFlushTimer = setInterval(() => {
+      void this.flushActivityBuffer();
+    }, 5000);
+  }
+
+  stopActivityFlusher(): void {
+    if (!this.activityFlushTimer) return;
+    clearInterval(this.activityFlushTimer);
+    this.activityFlushTimer = null;
+    void this.flushActivityBuffer();
+  }
+
+  bufferActivity(sessionId: string): void {
+    this.startActivityFlusher();
+    this.activityBuffer.set(sessionId, Date.now());
+  }
+
+  async updateSessionActivity(sessionId: string): Promise<void> {
+    this.bufferActivity(sessionId);
+  }
+
+  queueSessionUpdate(session: SessionInfo): void {
+    this.pendingSessionUpdates.set(session.id, session);
+    if (this.sessionUpdateTimers.has(session.id)) return;
+
+    const timer = setTimeout(() => {
+      this.sessionUpdateTimers.delete(session.id);
+      const next = this.pendingSessionUpdates.get(session.id);
+      if (!next) return;
+      this.pendingSessionUpdates.delete(session.id);
+      this.socketServer?.to("dashboard").emit("session-update", next);
+    }, 2000);
+
+    this.sessionUpdateTimers.set(session.id, timer);
+  }
+
+  private async flushActivityBuffer(): Promise<void> {
+    if (this.activityBuffer.size === 0) return;
+
+    const entries = Array.from(this.activityBuffer.entries());
+    this.activityBuffer.clear();
+
+    await Promise.allSettled(
+      entries.map(([sessionId, timestamp]) =>
+        prisma.agentSession.update({
+          where: { id: sessionId },
+          data: { updatedAt: new Date(timestamp) },
+        }),
+      ),
+    );
+  }
 
   private registerExitHandler(
     sessionId: string,
@@ -525,6 +589,12 @@ class SessionManager {
       clearInterval(this.gcTimer);
       this.gcTimer = null;
     }
+    this.stopActivityFlusher();
+    this.sessionUpdateTimers.forEach((timer) => {
+      clearTimeout(timer);
+    });
+    this.sessionUpdateTimers.clear();
+    this.pendingSessionUpdates.clear();
   }
 
   private async runGC(): Promise<void> {

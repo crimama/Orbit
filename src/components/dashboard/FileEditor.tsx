@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import CodeEditor, { languageFromPath } from "@/components/files/CodeEditor";
 
 interface FileEditorProps {
   projectId: string;
@@ -21,7 +22,6 @@ export default function FileEditor({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">(
     "idle",
   );
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const dirty = content !== savedContent;
 
@@ -106,13 +106,14 @@ export default function FileEditor({
           </button>
         )}
       </div>
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        spellCheck={false}
-        className="min-h-0 flex-1 resize-none bg-neutral-950 p-3 font-mono text-xs leading-relaxed text-neutral-300 outline-none"
-      />
+      <div className="min-h-0 flex-1">
+        <CodeEditor
+          value={content}
+          onChange={setContent}
+          languageId={languageFromPath(filePath)}
+          readOnly={saving}
+        />
+      </div>
     </div>
   );
 }

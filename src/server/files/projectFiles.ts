@@ -999,7 +999,15 @@ export async function writeProjectFile(
     await sftpWriteFile(sftp, tmpPath, data).catch((error) => {
       fromSftpError(error, "Failed to write file");
     });
-    await sftpRename(sftp, tmpPath, targetAbsPath).catch((error) => {
+    // SFTP rename fails if target already exists — remove target first
+    if (existingAttrs) {
+      await sftpUnlink(sftp, targetAbsPath).catch(() => {
+        // Ignore: file may have been removed between check and unlink
+      });
+    }
+    await sftpRename(sftp, tmpPath, targetAbsPath).catch(async (error) => {
+      // Clean up temp file on rename failure
+      await sftpUnlink(sftp, tmpPath).catch(() => {});
       fromSftpError(error, "Failed to finalize file write");
     });
     const nextAttrs = await sftpStat(sftp, targetAbsPath).catch((error) => {

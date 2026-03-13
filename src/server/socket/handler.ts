@@ -4,6 +4,7 @@ import { registerSshHandlers } from "@/server/socket/handlers/ssh";
 import { registerGraphHandlers } from "@/server/socket/handlers/graph";
 import { registerInterceptorHandlers } from "@/server/socket/handlers/interceptor";
 import { registerObservabilityHandlers } from "@/server/socket/handlers/observability";
+import { sessionManager } from "@/server/session/sessionManager";
 
 const registrars: SocketHandlerRegistrar[] = [
   registerTerminalHandlers,
@@ -14,6 +15,7 @@ const registrars: SocketHandlerRegistrar[] = [
 ];
 
 export function registerSocketHandlers(io: OrbitServer): void {
+  sessionManager.bindSocketServer(io);
   io.on("connection", (socket) => {
     console.log(`[Socket] connected: ${socket.id}`);
     socket.data.attachedSessionId = null;

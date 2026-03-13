@@ -98,6 +98,9 @@ export default function Dashboard() {
   const layoutSplitRef = useRef<HTMLDivElement>(null);
   const paletteInputRef = useRef<HTMLInputElement>(null);
   const [skillCount, setSkillCount] = useState(0);
+  const [projectDirMap, setProjectDirMap] = useState<Record<string, string>>({});
+  const [editingProjectName, setEditingProjectName] = useState(false);
+  const [editingProjectNameValue, setEditingProjectNameValue] = useState("");
   const [globalWorkspaces, setGlobalWorkspaces] = useState<
     WorkspaceLayoutInfo[]
   >([]);
@@ -984,7 +987,43 @@ export default function Dashboard() {
                         className="inline-block h-2.5 w-2.5 rounded-full"
                         style={{ backgroundColor: selectedProject.color }}
                       />
-                      <span className="truncate">{selectedProject.name}</span>
+                      {editingProjectName ? (
+                        <input
+                          autoFocus
+                          value={editingProjectNameValue}
+                          onChange={(e) => setEditingProjectNameValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const trimmed = editingProjectNameValue.trim();
+                              if (trimmed && trimmed !== selectedProject.name) {
+                                handleRenameProject(selectedProject.id, trimmed);
+                              }
+                              setEditingProjectName(false);
+                            } else if (e.key === "Escape") {
+                              setEditingProjectName(false);
+                            }
+                          }}
+                          onBlur={() => {
+                            const trimmed = editingProjectNameValue.trim();
+                            if (trimmed && trimmed !== selectedProject.name) {
+                              handleRenameProject(selectedProject.id, trimmed);
+                            }
+                            setEditingProjectName(false);
+                          }}
+                          className="min-w-0 flex-1 rounded border border-neutral-600 bg-neutral-800 px-1 py-0.5 text-xs text-neutral-200 outline-none focus:border-blue-500"
+                        />
+                      ) : (
+                        <span
+                          className="cursor-pointer truncate hover:text-neutral-200"
+                          onDoubleClick={() => {
+                            setEditingProjectName(true);
+                            setEditingProjectNameValue(selectedProject.name);
+                          }}
+                          title="Double-click to rename"
+                        >
+                          {selectedProject.name}
+                        </span>
+                      )}
                     </div>
 
                     <div className="mb-2 inline-flex w-full rounded border border-neutral-700 bg-neutral-900 p-0.5 text-xs">
@@ -1108,8 +1147,12 @@ export default function Dashboard() {
                         projectId={selectedProject.id}
                         files={selectedProjectFiles}
                         activePath={viewedFile?.projectId === selectedProject.id ? viewedFile.path : null}
+                        initialDir={projectDirMap[selectedProject.id]}
                         onFileOpen={(path, content) =>
                           setViewedFile({ projectId: selectedProject.id, path, content })
+                        }
+                        onDirChange={(dir) =>
+                          setProjectDirMap((prev) => ({ ...prev, [selectedProject.id]: dir }))
                         }
                       />
                     ) : null}

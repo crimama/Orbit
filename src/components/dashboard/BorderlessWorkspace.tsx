@@ -335,21 +335,26 @@ export default function BorderlessWorkspace({
                       tabs.map((tab) => (
                         <span
                           key={`left-ws-${tab.id}`}
-                          className={`group/tab flex shrink-0 items-center gap-0.5 rounded text-[11px] ${
+                          className={`group/tab flex shrink-0 items-center gap-1 rounded px-0.5 text-xs ${
                             leftTabId === tab.id
                               ? "bg-neutral-700 text-neutral-100"
                               : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                           }`}
                         >
+                          <span
+                            className="inline-block h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: tab.projectColor }}
+                          />
                           <button
                             type="button"
                             onClick={() => {
                               assignTabToPanel(tab.id, "left");
                               setLayoutMode("left");
                             }}
-                            className="py-0.5 pl-2"
+                            className="py-1 pr-0.5"
                           >
-                            [{tab.projectName}] {tab.title}
+                            <span className="font-medium">{tab.projectName}</span>
+                            <span className="ml-1 text-neutral-500">{tab.title}</span>
                           </button>
                           <button
                             type="button"
@@ -412,21 +417,26 @@ export default function BorderlessWorkspace({
                       tabs.map((tab) => (
                         <span
                           key={`right-ws-${tab.id}`}
-                          className={`group/tab flex shrink-0 items-center gap-0.5 rounded text-[11px] ${
+                          className={`group/tab flex shrink-0 items-center gap-1 rounded px-0.5 text-xs ${
                             rightTabId === tab.id
                               ? "bg-neutral-700 text-neutral-100"
                               : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                           }`}
                         >
+                          <span
+                            className="inline-block h-2 w-2 shrink-0 rounded-full"
+                            style={{ backgroundColor: tab.projectColor }}
+                          />
                           <button
                             type="button"
                             onClick={() => {
                               assignTabToPanel(tab.id, "right");
                               setLayoutMode("split");
                             }}
-                            className="py-0.5 pl-2"
+                            className="py-1 pr-0.5"
                           >
-                            [{tab.projectName}] {tab.title}
+                            <span className="font-medium">{tab.projectName}</span>
+                            <span className="ml-1 text-neutral-500">{tab.title}</span>
                           </button>
                           <button
                             type="button"
