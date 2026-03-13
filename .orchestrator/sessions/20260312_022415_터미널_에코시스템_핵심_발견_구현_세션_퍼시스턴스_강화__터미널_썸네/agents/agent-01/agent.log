@@ -1,0 +1,5719 @@
+# Agent Log: agent-01
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+3가지 구현:
+
+1. PtyBackend 인터페이스에 getScreenPreview(id: string, lines?: number): string 메서드 추가 (src/server/pty/ptyBackend.ts)
+   - scrollback 버퍼에서 마지막 N줄(기본 5줄)을 추출하여 반환
+   - ANSI escape 시퀀스 strip하여 플레인텍스트만 반환
+
+2. PtyManager(src/server/pty/ptyManager.ts)와 RemotePty(src/server/ssh/remotePty.ts)에 getScreenPreview 구현
+   - outputBuffers에서 마지막 5줄 추출
+   - ANSI strip: 정규식 /\x1b\[[0-9;]*[A-Za-z]/g 제거
+
+3. terminal.ts 소켓 핸들러(src/server/socket/handlers/terminal.ts) 수정:
+   - session-list 핸들러에서 각 세션의 lastContext를 backend.getScreenPreview()로 채움
+   - session-exit 시 io.to('dashboard').emit('session-update', sessionInfo) 브로드캐스트
+   - 새 소켓 이벤트 'dashboard-join' 추가: 클라이언트가 dashboard 룸에 조인
+
+참고: ServerToClientEvents에 session-update는 이미 (session: SessionInfo) => void로 정의되어 있음.
+SessionInfo.lastContext 필드도 이미 존재 (string | null).
+AGENTS.md 참조하여 프로젝트 컨벤션 준수.
+
+## Target Files
+- `src/server/pty/ptyBackend.ts`
+- `src/server/pty/ptyManager.ts`
+- `src/server/ssh/remotePty.ts`
+- `src/server/socket/handlers/terminal.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] getScreenPreview가 ANSI-stripped 플레인텍스트 반환
+- [ ] session-list에 lastContext 포함
+- [ ] session-exit시 session-update emit
+- [ ] npx tsc --noEmit 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree
+# Started: 2026-03-12T02:27:42.095236
+
+OpenAI Codex v0.111.0 (research preview)
+--------
+workdir: /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019cddf0-aac1-7580-9ed5-233df6ce2a71
+--------
+user
+Read and execute the task described below.
+
+# Task: 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+3가지 구현:
+
+1. PtyBackend 인터페이스에 getScreenPreview(id: string, lines?: number): string 메서드 추가 (src/server/pty/ptyBackend.ts)
+   - scrollback 버퍼에서 마지막 N줄(기본 5줄)을 추출하여 반환
+   - ANSI escape 시퀀스 strip하여 플레인텍스트만 반환
+
+2. PtyManager(src/server/pty/ptyManager.ts)와 RemotePty(src/server/ssh/remotePty.ts)에 getScreenPreview 구현
+   - outputBuffers에서 마지막 5줄 추출
+   - ANSI strip: 정규식 /\x1b\[[0-9;]*[A-Za-z]/g 제거
+
+3. terminal.ts 소켓 핸들러(src/server/socket/handlers/terminal.ts) 수정:
+   - session-list 핸들러에서 각 세션의 lastContext를 backend.getScreenPreview()로 채움
+   - session-exit 시 io.to('dashboard').emit('session-update', sessionInfo) 브로드캐스트
+   - 새 소켓 이벤트 'dashboard-join' 추가: 클라이언트가 dashboard 룸에 조인
+
+참고: ServerToClientEvents에 session-update는 이미 (session: SessionInfo) => void로 정의되어 있음.
+SessionInfo.lastContext 필드도 이미 존재 (string | null).
+AGENTS.md 참조하여 프로젝트 컨벤션 준수.
+
+## Target Files
+- `src/server/pty/ptyBackend.ts`
+- `src/server/pty/ptyManager.ts`
+- `src/server/ssh/remotePty.ts`
+- `src/server/socket/handlers/terminal.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] getScreenPreview가 ANSI-stripped 플레인텍스트 반환
+- [ ] session-list에 lastContext 포함
+- [ ] session-exit시 session-update emit
+- [ ] npx tsc --noEmit 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+요청한 백엔드 변경을 바로 적용하겠습니다. 먼저 `CLAUDE.md`, `tasks/lessons.md`, `tasks/todo.md`와 대상 구현 파일을 읽고, 작업 추적 항목부터 갱신한 뒤 실제 코드 수정으로 들어가겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/server/pty/ptyBackend.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,260p' src/server/ssh/remotePty.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,320p' src/server/socket/handlers/terminal.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,260p' src/server/pty/ptyManager.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 50ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 50ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+ succeeded in 50ms:
+/** Common interface for local and remote PTY backends */
+export interface PtyBackend {
+  has(id: string): boolean;
+  write(id: string, data: string): void;
+  resize(id: string, cols: number, rows: number): void;
+  getScrollback(id: string): string;
+  onData(id: string, cb: (data: string) => void): () => void;
+  onExit(id: string, cb: (code: number) => void): () => void;
+  destroy(id: string): void;
+  getIdleSessions(maxIdleMs: number): { id: string }[];
+  isReady(id: string): boolean;
+  onReady(id: string, cb: () => void): () => void;
+}
+
+// Registry of backends for unified lookup
+const backends: PtyBackend[] = [];
+
+export function registerPtyBackend(backend: PtyBackend): void {
+  backends.push(backend);
+}
+ succeeded in 51ms:
+import * as pty from "node-pty";
+import type { IPty } from "node-pty";
+import type { PtyBackend } from "@/server/pty/ptyBackend";
+import { registerPtyBackend } from "@/server/pty/ptyBackend";
+import {
+  DEFAULT_COLS,
+  DEFAULT_ROWS,
+  DEFAULT_SHELL,
+  SCROLLBACK_LIMIT,
+} from "@/lib/constants";
+
+interface PtySession {
+  id: string;
+  process: IPty;
+  cols: number;
+  rows: number;
+  lastActivity: number;
+  cwd: string;
+}
+
+ succeeded in 51ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+
+## 이번 세션 (2026-02-28)
+
+- [x] Prisma에 프로젝트 하네스 설정 모델 추가 (`ProjectHarnessConfig`)
+- [x] 프로젝트 단위 하네스 API 추가 (`GET/PUT /api/projects/[id]/harness`)
+- [x] Dashboard에 하네스 패널 추가 (provider/profile/maxParallel/config 편집)
+- [x] oh-my-opencode 프리셋 버튼 추가
+- [x] 세션 화면 UI를 터미널 중심에서 대화형 워크스페이스 톤으로 개선
+- [x] 타입체크/린트/빌드 검증
+
+## 계획
+
+### Phase 1: 인프라 구축
+
+ succeeded in 51ms:
+import type { OrbitServer, OrbitSocket } from "@/server/socket/types";
+import { ptyManager } from "@/server/pty/ptyManager";
+import { getPtyBackend } from "@/server/pty/ptyBackend";
+import { commandInterceptor } from "@/server/pty/interceptor";
+import { sessionManager } from "@/server/session/sessionManager";
+import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
+
+export function registerTerminalHandlers(
+  io: OrbitServer,
+  socket: OrbitSocket,
+): void {
+  let unsubData: (() => void) | null = null;
+  let unsubExit: (() => void) | null = null;
+  let unsubReady: (() => void) | null = null;
+  let batcher: DeltaBatcher | null = null;
+  let sessionRoom: string | null = null;
+
+  function detach() {
+    if (sessionRoom) {
+      socket.leave(sessionRoom);
+ succeeded in 51ms:
+import type { ClientChannel } from "ssh2";
+import type { PtyBackend } from "@/server/pty/ptyBackend";
+import { registerPtyBackend } from "@/server/pty/ptyBackend";
+import { sshManager } from "@/server/ssh/sshManager";
+import {
+  DEFAULT_COLS,
+  DEFAULT_ROWS,
+  SCROLLBACK_LIMIT,
+} from "@/lib/constants";
+
+type DataCallback = (data: string) => void;
+type ExitCallback = (exitCode: number) => void;
+
+interface RemoteSession {
+  id: string;
+  sshConfigId: string;
+  channel: ClientChannel;
+  cols: number;
+  rows: number;
+  lastActivity: number;
+codex
+구현 경로는 확인됐습니다. 이제 `tasks/todo.md`에 현재 작업과 계획을 추가하고, `SessionInfo` 흐름과 소켓 타입을 한 번 더 확인해서 타입까지 맞춘 뒤 수정하겠습니다.
+exec
+/bin/bash -lc "sed -n '260,360p' src/server/ssh/remotePty.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+    const timer = this.readyTimers.get(sessionId);
+    if (timer) {
+      clearTimeout(timer);
+      this.readyTimers.delete(sessionId);
+    }
+  }
+}
+
+export const remotePtyManager = new RemotePtyManager();
+registerPtyBackend(remotePtyManager);
+exec
+/bin/bash -lc "sed -n '1,260p' src/server/session/sessionManager.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,260p' src/server/socket/types.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc 'rg -n "interface SessionInfo|type SessionInfo|session-update|dashboard-join|lastContext" src' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+import { prisma } from "@/lib/prisma";
+import { shellQuote } from "@/lib/shellQuote";
+import { ptyManager } from "@/server/pty/ptyManager";
+import { remotePtyManager } from "@/server/ssh/remotePty";
+import { sshManager } from "@/server/ssh/sshManager";
+import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
+import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+
+const AGENT_TYPES = {
+  TERMINAL: "terminal",
+  CODEX: "codex",
+  OPENCODE: "opencode",
+} as const;
+
+const READY_MARKER_CMD = "printf '\\033]777;orbit-ready\\007'";
+
+function dockerInnerCommand(
+  workdir: string,
+ succeeded in 51ms:
+import type { Server, Socket } from "socket.io";
+import type {
+  ServerToClientEvents,
+  ClientToServerEvents,
+  InterServerEvents,
+  SocketData,
+} from "@/lib/types";
+
+export type OrbitServer = Server<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+>;
+
+export type OrbitSocket = Socket<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+ succeeded in 51ms:
+src/server/AGENTS.md:18:- Socket 이벤트: kebab-case (`terminal-data`, `session-update`)
+src/server/ssh/remoteScanner.ts:137:          lastContext: title,
+src/server/session/sessionManager.ts:51:  lastContext: string | null;
+src/server/session/sessionManager.ts:65:    lastContext: row.lastContext,
+src/server/session/claudeHistory.ts:138:        lastContext: title,
+src/lib/types.ts:6:  "session-update": (session: SessionInfo) => void;
+src/lib/types.ts:78:export interface SessionInfo {
+src/lib/types.ts:87:  lastContext: string | null;
+src/components/dashboard/SessionList.tsx:159:              {s.lastContext && (
+src/components/dashboard/SessionList.tsx:161:                  {s.lastContext}
+src/app/api/resources/sessions/[id]/context/route.ts:27:    lastContext: session.lastContext,
+exec
+/bin/bash -lc "sed -n '260,420p' src/server/session/sessionManager.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/lib/types.ts" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+      orderBy: { updatedAt: "desc" },
+    });
+    return rows.map(toSessionInfo);
+  }
+
+  async ensureSessionRunning(sessionId: string): Promise<boolean> {
+    if (ptyManager.has(sessionId) || remotePtyManager.has(sessionId))
+      return true;
+
+    const row = await prisma.agentSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        project: {
+          select: {
+            path: true,
+            type: true,
+            sshConfigId: true,
+            dockerContainer: true,
+          },
+        },
+ succeeded in 51ms:
+// --- Socket.io Event Contracts ---
+
+export interface ServerToClientEvents {
+  "terminal-data": (data: string) => void;
+  "terminal-data-compressed": (data: Buffer) => void;
+  "session-update": (session: SessionInfo) => void;
+  "session-list": (sessions: SessionInfo[]) => void;
+  "session-exit": (sessionId: string, exitCode: number) => void;
+  // Phase 2: SSH
+  "ssh-status": (status: SshConnectionStatus) => void;
+  // Phase 3: Skill Graph
+  "graph-state": (state: GraphState) => void;
+  "skill-trace": (trace: SkillTrace) => void;
+  // Bootstrap ready signal
+  "session-ready": (sessionId: string) => void;
+  // Phase 4: Interceptor
+  "interceptor-pending": (approval: PendingApproval) => void;
+  "interceptor-resolved": (approvalId: string, approved: boolean) => void;
+  "interceptor-warn": (warning: InterceptorWarning) => void;
+  // Observability
+codex
+작업 추적부터 반영합니다. `tasks/todo.md`에 이번 변경용 섹션을 추가한 뒤, 인터페이스 확장과 소켓 브로드캐스트를 한 번에 맞추겠습니다.
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+@@ -18,2 +19,9 @@
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+@@ -54,2 +62,6 @@
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+apply_patch(auto_approved=true) exited 0 in 4ms:
+Success. Updated the following files:
+M tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+서버 디렉터리 전용 지침이 있는지 한 번 더 확인하고, 그 기준에 맞춰 공용 preview 헬퍼와 소켓 핸들러를 수정하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' src/server/AGENTS.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+# Server Layer Rules
+
+## Architecture Boundary
+- 이 디렉토리는 백엔드 전용. `src/components/`를 절대 import하지 마라.
+- `src/lib/types.ts`와 `src/lib/constants.ts`만 공유 의존성으로 사용.
+- React, DOM API 사용 금지.
+
+## Modules
+- `pty/` — PTY 프로세스 관리 (node-pty 싱글턴)
+- `ssh/` — SSH 터널링 (ssh2), RemotePty, DeltaStream
+- `session/` — Prisma CRUD, GC, resume
+- `socket/` — Socket.io 이벤트 핸들러 레지스트리
+- `graph/` — 스킬 그래프 CRUD, 트레이스 감지
+
+## Conventions
+- 파일명: camelCase (`ptyManager.ts`)
+- 싱글턴: 모듈 레벨 인스턴스, 명시적 init/destroy
+- Socket 이벤트: kebab-case (`terminal-data`, `session-update`)
+- 에러 핸들링: try-catch + 의미 있는 에러 메시지, 절대 swallow하지 마라
+- Prisma: `src/lib/prisma.ts`의 공유 인스턴스 사용
+exec
+/bin/bash -lc 'rg -n "skill_graph/.+_TEMPLATE|skill_graph/index.md|skill_graph/bugfix|skill_graph/features" -S' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+OUTLINE.md:188:4. **Phase 완료 시 Feature Note 작성** — `skill_graph/features/`에 구현 기록
+CLAUDE.md:184:`skill_graph/index.md`에 키워드 기반 인덱스·그래프 유지.
+tasks/todo.md:89:- `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc 'rg --files skill_graph' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 50ms:
+Total output lines: 195
+
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+ succeeded in 50ms:
+skill_graph/decisions/_TEMPLATE.md
+skill_graph/decisions/2026-03-12_libghostty-terminal-ecosystem-research.md
+skill_graph/decisions/2026-02-27_skill-strategy.md
+skill_graph/decisions/2026-02-28_harness-engineering.md
+skill_graph/refactor/2026-03-01_simplify-recent.md
+skill_graph/refactor/_TEMPLATE.md
+skill_graph/refactor/2026-03-11_simplify-critical-8.md
+skill_graph/bugfix/_TEMPLATE.md
+skill_graph/devops/_TEMPLATE.md
+skill_graph/index.md
+skill_graph/features/_TEMPLATE.md
+skill_graph/features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md
+skill_graph/features/2026-02-27_phase1-infra.md
+skill_graph/features/2026-02-28_phase2-4-parallel.md
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/features/2026-02-27_phase1-infra.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+# Phase 1: 인프라 구축 — 2026-02-27
+
+> **상태**: 🟢 완료
+> **Phase**: Phase 1
+> **keywords**: pty, terminal, socket.io, custom-server, session, dashboard, xterm
+
+---
+
+## 요구사항
+
+로컬 환경에서 PTY 기반 웹 터미널 + 세션 resume가 동작하는 최소 프로덕트.
+- Custom Server가 Socket.io + Next.js를 동시 서빙
+- 웹 터미널에서 로컬 쉘 명령 실행 가능
+- 브라우저 탭 닫고 재접속 시 PTY 세션 유지
+- 대시보드에서 프로젝트/세션 목록 조회
+- 세션 선택 → 터미널 연결 → 명령 실행 E2E 동작
+- 24시간 미활동 세션 자동 정리 (GC)
+
+## 설계
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+인터페이스와 핸들러를 동시에 맞춥니다. 공용 preview 추출 함수를 `ptyBackend.ts`에 두고, 각 backend와 `terminal.ts`가 그 계약을 사용하도록 수정하겠습니다.
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/pty/ptyBackend.ts
+@@ -6,2 +6,3 @@
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+@@ -14,2 +15,25 @@
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M src/server/pty/ptyBackend.ts
+file update:
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/pty/ptyManager.ts
+@@ -3,4 +3,7 @@
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+@@ -150,2 +153,9 @@
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M src/server/pty/ptyManager.ts
+file update:
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/ssh/remotePty.ts
+@@ -2,3 +2,6 @@
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+@@ -212,2 +215,9 @@
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M src/server/ssh/remotePty.ts
+file update:
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/lib/types.ts
+@@ -36,2 +36,3 @@
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+apply_patch(auto_approved=true) exited 0 in 7ms:
+Success. Updated the following files:
+M src/lib/types.ts
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/socket/handlers/terminal.ts
+@@ -6,2 +6,3 @@
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+@@ -87,4 +88,14 @@
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+@@ -142,3 +153,20 @@
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+apply_patch(auto_approved=true) exited 0 in 8ms:
+Success. Updated the following files:
+M src/server/socket/handlers/terminal.ts
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+코드 수정은 끝났습니다. 이제 타입 체크를 돌려서 인터페이스 누락이나 소켓 이벤트 타입 불일치를 바로 정리하겠습니다.
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreefile update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+ succeeded in 3.04s:
+
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+타입 체크는 통과했습니다. 마무리로 작업 추적을 완료 상태로 갱신하고, 이번 변경을 `skill_graph`에 짧게 기록하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/features/_TEMPLATE.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc 'git diff -- src/server/pty/ptyBackend.ts src/server/pty/ptyManager.ts src/server/ssh/remotePty.ts src/server/socket/handlers/terminal.ts src/lib/types.ts tasks/todo.md' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 50ms:
+# [기능명] — YYYY-MM-DD
+
+> **상태**: 🔴 계획 / 🟡 진행중 / 🟢 완료
+> **Phase**: Phase 1 / 2 / 3 / 4
+> **keywords**:
+
+---
+
+## 요구사항
+
+<!-- 이 기능이 해결하는 문제와 기대 동작 -->
+
+## 설계
+
+### 변경 범위
+<!-- 영향받는 모듈/파일 목록 -->
+-
+
+### 접근 방식
+<!-- 구현 전략 요약 -->
+ succeeded in 51ms:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a..2f49373 100644
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@ export interface ClientToServerEvents {
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a..285cacb 100644
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@ export interface PtyBackend {
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+작업 기록과 변경 노트까지 정리합니다. `tasks/todo.md`를 완료 상태로 바꾸고, `skill_graph`에 이번 백엔드 세션 프리뷰 변경을 짧게 남기겠습니다.
+exec
+/bin/bash -lc 'rg -n "### features/|### bugfix/|## 타임라인|문서 → 키워드 역매핑" skill_graph/index.md' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '130,220p' skill_graph/index.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+126:## 문서 → 키워드 역매핑
+128:### features/
+144:### bugfix/
+185:## 타임라인
+ succeeded in 51ms:
+| 문서                                                                                  | Phase | 상태 | 키워드                                                                      |
+| ------------------------------------------------------------------------------------- | ----- | ---- | --------------------------------------------------------------------------- |
+| [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
+| [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+| [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+
+### decisions/
+
+| 문서                                                                 | 상태 | 키워드                                                                                            |
+| -------------------------------------------------------------------- | ---- | ------------------------------------------------------------------------------------------------- |
+| [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)              | 완료 | `skill` `phase` `link-notes` `dep-install` `워크플로우` `자동화`                                  |
+| [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 완료 | `harness` `에이전트` `observability` `guardrail` `golden-path` `컨텍스트` `GC에이전트` `세션포크` |
+| [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | 완료 | `libghostty` `ghostty-web` `restty` `WebGPU` `WASM` `zmx` `mux` `session-persist` |
+
+### bugfix/
+
+_(아직 없음)_
+
+### refactor/
+
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c06de57af91532da1e839d5bfff6d15c219cef39
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [ ] PTY backend 인터페이스에 screen preview API 추가
++- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [ ] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,10 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+@@ -21,6 +21,6 @@
+ 
+-- [ ] PTY backend 인터페이스에 screen preview API 추가
+-- [ ] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
+-- [ ] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
+-- [ ] 타입 체크로 검증
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
+ 
+@@ -64,3 +64,6 @@
+ 
+-- 진행 중
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
+ 
+apply_patch(auto_approved=true) exited 0 in 8ms:
+Success. Updated the following files:
+M tasks/todo.md
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+A /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
+
+> **상태**: 🟢 완료
+> **Phase**: Phase 1
+> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
+
+---
+
+## 요구사항
+
+대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
+
+## 설계
+
+### 변경 범위
+- `src/server/pty/ptyBackend.ts`
+- `src/server/pty/ptyManager.ts`
+- `src/server/ssh/remotePty.ts`
+- `src/server/socket/handlers/terminal.ts`
+- `src/lib/types.ts`
+
+### 접근 방식
+- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
+- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
+- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
+
+### API / 인터페이스
+```typescript
+interface PtyBackend {
+  getScreenPreview(id: string, lines?: number): string;
+}
+```
+
+---
+
+## 구현 내역
+
+- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
+- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
+- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
+- [x] `dashboard-join` socket 이벤트 추가
+- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
+
+### 주요 변경 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
+| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
+| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
+| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
+| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
+
+---
+
+## 테스트
+
+- [x] `npx tsc --noEmit`
+- [ ] 통합 소켓 테스트
+- [ ] 수동 대시보드 확인
+
+---
+
+## 회고
+
+### 잘된 점
+- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
+
+### 개선할 점
+- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
+
+### 교훈 → `tasks/lessons.md` 반영 여부
+- [x] 반영 불필요
+
+---
+
+## 관련 노트
+- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
+- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
+- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+apply_patch(auto_approved=true) exited 0 in 9ms:
+Success. Updated the following files:
+A skill_graph/features/2026-03-12_terminal-preview-session-update.md
+file update:
+diff --git a/skill_graph/features/2026-03-12_terminal-preview-session-update.md b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f13ebfe182381fd5b07e61498839146c0b34144
+--- /dev/null
++++ b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+@@ -0,0 +1,79 @@
++# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 1
++> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
++
++---
++
++## 요구사항
++
++대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/pty/ptyBackend.ts`
++- `src/server/pty/ptyManager.ts`
++- `src/server/ssh/remotePty.ts`
++- `src/server/socket/handlers/terminal.ts`
++- `src/lib/types.ts`
++
++### 접근 방식
++- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
++- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
++- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
++
++### API / 인터페이스
++```typescript
++interface PtyBackend {
++  getScreenPreview(id: string, lines?: number): string;
++}
++```
++
++---
++
++## 구현 내역
++
++- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
++- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
++- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
++- [x] `dashboard-join` socket 이벤트 추가
++- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
++| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
++| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
++| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
++| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 통합 소켓 테스트
++- [ ] 수동 대시보드 확인
++
++---
++
++## 회고
++
++### 잘된 점
++- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
++
++### 개선할 점
++- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
++- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
++- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/skill_graph/features/2026-03-12_terminal-preview-session-update.md b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f13ebfe182381fd5b07e61498839146c0b34144
+--- /dev/null
++++ b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+@@ -0,0 +1,79 @@
++# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 1
++> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
++
++---
++
++## 요구사항
++
++대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/pty/ptyBackend.ts`
++- `src/server/pty/ptyManager.ts`
++- `src/server/ssh/remotePty.ts`
++- `src/server/socket/handlers/terminal.ts`
++- `src/lib/types.ts`
++
++### 접근 방식
++- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
++- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
++- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
++
++### API / 인터페이스
++```typescript
++interface PtyBackend {
++  getScreenPreview(id: string, lines?: number): string;
++}
++```
++
++---
++
++## 구현 내역
++
++- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
++- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
++- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
++- [x] `dashboard-join` socket 이벤트 추가
++- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
++| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
++| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
++| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
++| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 통합 소켓 테스트
++- [ ] 수동 대시보드 확인
++
++---
++
++## 회고
++
++### 잘된 점
++- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
++
++### 개선할 점
++- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
++- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
++- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/skill_graph/index.md
+@@ -134,2 +134,3 @@
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
++| [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | 1     | 🟢   | `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`       |
+ 
+@@ -171,2 +172,3 @@
+         ├──▶ decisions/2026-02-28_harness-engineering.md (방향 ADR)
++        ├──▶ features/2026-03-12_terminal-preview-session-update.md (대시보드 실시간 세션 프리뷰)
+         │
+@@ -194,2 +196,3 @@
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-12 | [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | PTY scrollback 기반 화면 프리뷰 추가, dashboard room 구독, 세션 종료 시 실시간 갱신 브로드캐스트 |
+ | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
+apply_patch(auto_approved=true) exited 0 in 9ms:
+Success. Updated the following files:
+M skill_graph/index.md
+file update:
+diff --git a/skill_graph/features/2026-03-12_terminal-preview-session-update.md b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f13ebfe182381fd5b07e61498839146c0b34144
+--- /dev/null
++++ b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+@@ -0,0 +1,79 @@
++# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 1
++> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
++
++---
++
++## 요구사항
++
++대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/pty/ptyBackend.ts`
++- `src/server/pty/ptyManager.ts`
++- `src/server/ssh/remotePty.ts`
++- `src/server/socket/handlers/terminal.ts`
++- `src/lib/types.ts`
++
++### 접근 방식
++- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
++- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
++- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
++
++### API / 인터페이스
++```typescript
++interface PtyBackend {
++  getScreenPreview(id: string, lines?: number): string;
++}
++```
++
++---
++
++## 구현 내역
++
++- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
++- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
++- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
++- [x] `dashboard-join` socket 이벤트 추가
++- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
++| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
++| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
++| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
++| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 통합 소켓 테스트
++- [ ] 수동 대시보드 확인
++
++---
++
++## 회고
++
++### 잘된 점
++- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
++
++### 개선할 점
++- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
++- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
++- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 9da9983abdfca6ff54dff8af4339e25cb391a5ad..1ee849f043c372e7be6283f9e225f3221a3213b3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -132,6 +132,7 @@
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
++| [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | 1     | 🟢   | `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`       |
+ 
+ ### decisions/
+ 
+@@ -169,6 +170,7 @@
+ features/2026-02-28_phase2-4-parallel.md
+         │
+         ├──▶ decisions/2026-02-28_harness-engineering.md (방향 ADR)
++        ├──▶ features/2026-03-12_terminal-preview-session-update.md (대시보드 실시간 세션 프리뷰)
+         │
+         ▼ (후속 예정)
+ ??? E2E 테스트 / 성능 최적화 / 프로덕션 배포 / 하네스 패턴 구현
+@@ -192,4 +194,5 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-12 | [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | PTY scrollback 기반 화면 프리뷰 추가, dashboard room 구독, 세션 종료 시 실시간 갱신 브로드캐스트 |
+ | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/skill_graph/features/2026-03-12_terminal-preview-session-update.md b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f13ebfe182381fd5b07e61498839146c0b34144
+--- /dev/null
++++ b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+@@ -0,0 +1,79 @@
++# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 1
++> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
++
++---
++
++## 요구사항
++
++대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/pty/ptyBackend.ts`
++- `src/server/pty/ptyManager.ts`
++- `src/server/ssh/remotePty.ts`
++- `src/server/socket/handlers/terminal.ts`
++- `src/lib/types.ts`
++
++### 접근 방식
++- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
++- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
++- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
++
++### API / 인터페이스
++```typescript
++interface PtyBackend {
++  getScreenPreview(id: string, lines?: number): string;
++}
++```
++
++---
++
++## 구현 내역
++
++- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
++- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
++- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
++- [x] `dashboard-join` socket 이벤트 추가
++- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
++| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
++| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
++| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
++| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 통합 소켓 테스트
++- [ ] 수동 대시보드 확인
++
++---
++
++## 회고
++
++### 잘된 점
++- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
++
++### 개선할 점
++- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
++- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
++- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 9da9983abdfca6ff54dff8af4339e25cb391a5ad..1ee849f043c372e7be6283f9e225f3221a3213b3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -132,6 +132,7 @@
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
++| [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | 1     | 🟢   | `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`       |
+ 
+ ### decisions/
+ 
+@@ -169,6 +170,7 @@
+ features/2026-02-28_phase2-4-parallel.md
+         │
+         ├──▶ decisions/2026-02-28_harness-engineering.md (방향 ADR)
++        ├──▶ features/2026-03-12_terminal-preview-session-update.md (대시보드 실시간 세션 프리뷰)
+         │
+         ▼ (후속 예정)
+ ??? E2E 테스트 / 성능 최적화 / 프로덕션 배포 / 하네스 패턴 구현
+@@ -192,4 +194,5 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-12 | [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | PTY scrollback 기반 화면 프리뷰 추가, dashboard room 구독, 세션 종료 시 실시간 갱신 브로드캐스트 |
+ | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+최종 보고 전에 참조용 라인 번호만 정리하겠습니다. 구현 파일과 작업 기록 파일의 정확한 위치를 확인하고 끝내겠습니다.
+exec
+/bin/bash -lc "nl -ba src/server/pty/ptyBackend.ts | sed -n '1,120p'" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+     1	/** Common interface for local and remote PTY backends */
+     2	export interface PtyBackend {
+     3	  has(id: string): boolean;
+     4	  write(id: string, data: string): void;
+     5	  resize(id: string, cols: number, rows: number): void;
+     6	  getScrollback(id: string): string;
+     7	  getScreenPreview(id: string, lines?: number): string;
+     8	  onData(id: string, cb: (data: string) => void): () => void;
+     9	  onExit(id: string, cb: (code: number) => void): () => void;
+    10	  destroy(id: string): void;
+    11	  getIdleSessions(maxIdleMs: number): { id: string }[];
+    12	  isReady(id: string): boolean;
+    13	  onReady(id: string, cb: () => void): () => void;
+    14	}
+    15	
+    16	const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
+    17	const DEFAULT_PREVIEW_LINES = 5;
+    18	
+    19	export function getScreenPreviewFromScrollback(
+    20	  scrollback: string,
+exec
+/bin/bash -lc "nl -ba src/server/socket/handlers/terminal.ts | sed -n '80,180p'" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "nl -ba src/server/pty/ptyManager.ts | sed -n '140,180p'" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "nl -ba src/server/ssh/remotePty.ts | sed -n '204,236p'" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "nl -ba src/lib/types.ts | sed -n '24,44p'" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktreeexec
+/bin/bash -lc "nl -ba tasks/todo.md | sed -n '1,90p'" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree succeeded in 51ms:
+   204	    session.rows = safeRows;
+   205	    try {
+   206	      session.channel.setWindow(safeRows, safeCols, safeRows * 16, safeCols * 8);
+   207	    } catch {
+   208	      // Resize can fail if channel is closed
+   209	    }
+   210	  }
+   211	
+   212	  getScrollback(sessionId: string): string {
+   213	    return this.outputBuffers.get(sessionId) ?? "";
+   214	  }
+   215	
+   216	  getScreenPreview(sessionId: string, lines = 5): string {
+   217	    return getScreenPreviewFromScrollback(
+   218	      this.outputBuffers.get(sessionId) ?? "",
+   219	      lines,
+   220	    );
+   221	  }
+   222	
+   223	  onData(sessionId: string, cb: DataCallback): () => void {
+ succeeded in 51ms:
+    80	      });
+    81	
+    82	      unsubData = backend.onData(sessionId, (data) => {
+    83	        batcher!.push(data);
+    84	      });
+    85	
+    86	      socket.emit("session-ready", sessionId);
+    87	    }
+    88	
+    89	    unsubExit = backend.onExit(sessionId, async (exitCode) => {
+    90	      const preview = backend.getScreenPreview(sessionId);
+    91	      socket.emit("session-exit", sessionId, exitCode);
+    92	      const session = await sessionManager.getSession(sessionId);
+    93	      if (session) {
+    94	        const sessionUpdate: SessionInfo = {
+    95	          ...session,
+    96	          status: "terminated",
+    97	          lastContext: preview || session.lastContext,
+    98	        };
+    99	        io.to("dashboard").emit("session-update", sessionUpdate);
+ succeeded in 51ms:
+   140	  }
+   141	
+   142	  get(sessionId: string): PtySession | undefined {
+   143	    return this.sessions.get(sessionId);
+   144	  }
+   145	
+   146	  getAll(): PtySession[] {
+   147	    return Array.from(this.sessions.values());
+   148	  }
+   149	
+   150	  getScrollback(sessionId: string): string {
+   151	    return this.outputBuffers.get(sessionId) ?? "";
+   152	  }
+   153	
+   154	  getScreenPreview(sessionId: string, lines = 5): string {
+   155	    return getScreenPreviewFromScrollback(
+   156	      this.outputBuffers.get(sessionId) ?? "",
+   157	      lines,
+   158	    );
+   159	  }
+ succeeded in 50ms:
+     1	# Tasks — Todo
+     2	
+     3	## 현재 작업
+     4	
+     5	- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+     6	- [x] Phase 1: 인프라 구축
+     7	- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+     8	
+     9	## 이번 세션 (2026-02-28)
+    10	
+    11	- [x] Prisma에 프로젝트 하네스 설정 모델 추가 (`ProjectHarnessConfig`)
+    12	- [x] 프로젝트 단위 하네스 API 추가 (`GET/PUT /api/projects/[id]/harness`)
+    13	- [x] Dashboard에 하네스 패널 추가 (provider/profile/maxParallel/config 편집)
+    14	- [x] oh-my-opencode 프리셋 버튼 추가
+    15	- [x] 세션 화면 UI를 터미널 중심에서 대화형 워크스페이스 톤으로 개선
+    16	- [x] 타입체크/린트/빌드 검증
+    17	
+    18	## 계획
+    19	
+    20	### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
+ succeeded in 50ms:
+    24	
+    25	export interface ClientToServerEvents {
+    26	  "terminal-data": (data: string) => void;
+    27	  "terminal-resize": (size: { cols: number; rows: number }) => void;
+    28	  "session-attach": (
+    29	    sessionId: string,
+    30	    callback: (res: { ok: boolean; error?: string }) => void,
+    31	  ) => void;
+    32	  "session-detach": () => void;
+    33	  "session-list": (
+    34	    projectId: string | null,
+    35	    callback: (sessions: SessionInfo[]) => void,
+    36	  ) => void;
+    37	  "dashboard-join": () => void;
+    38	  // Phase 2: SSH
+    39	  "ssh-connect": (
+    40	    configId: string,
+    41	    callback: (res: { ok: boolean; error?: string }) => void,
+    42	  ) => void;
+    43	  "ssh-disconnect": (configId: string) => void;
+file update:
+diff --git a/skill_graph/features/2026-03-12_terminal-preview-session-update.md b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f13ebfe182381fd5b07e61498839146c0b34144
+--- /dev/null
++++ b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+@@ -0,0 +1,79 @@
++# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 1
++> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
++
++---
++
++## 요구사항
++
++대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/pty/ptyBackend.ts`
++- `src/server/pty/ptyManager.ts`
++- `src/server/ssh/remotePty.ts`
++- `src/server/socket/handlers/terminal.ts`
++- `src/lib/types.ts`
++
++### 접근 방식
++- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
++- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
++- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
++
++### API / 인터페이스
++```typescript
++interface PtyBackend {
++  getScreenPreview(id: string, lines?: number): string;
++}
++```
++
++---
++
++## 구현 내역
++
++- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
++- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
++- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
++- [x] `dashboard-join` socket 이벤트 추가
++- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
++| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
++| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
++| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
++| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 통합 소켓 테스트
++- [ ] 수동 대시보드 확인
++
++---
++
++## 회고
++
++### 잘된 점
++- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
++
++### 개선할 점
++- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
++- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
++- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 9da9983abdfca6ff54dff8af4339e25cb391a5ad..1ee849f043c372e7be6283f9e225f3221a3213b3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -132,6 +132,7 @@
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
++| [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | 1     | 🟢   | `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`       |
+ 
+ ### decisions/
+ 
+@@ -169,6 +170,7 @@
+ features/2026-02-28_phase2-4-parallel.md
+         │
+         ├──▶ decisions/2026-02-28_harness-engineering.md (방향 ADR)
++        ├──▶ features/2026-03-12_terminal-preview-session-update.md (대시보드 실시간 세션 프리뷰)
+         │
+         ▼ (후속 예정)
+ ??? E2E 테스트 / 성능 최적화 / 프로덕션 배포 / 하네스 패턴 구현
+@@ -192,4 +194,5 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-12 | [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | PTY scrollback 기반 화면 프리뷰 추가, dashboard room 구독, 세션 종료 시 실시간 갱신 브로드캐스트 |
+ | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+`PtyBackend`에 screen preview 계약과 공용 ANSI strip 헬퍼를 추가했고, 로컬/원격 PTY가 모두 scrollback의 마지막 N줄을 plain text로 반환하도록 맞췄습니다. 구현 위치는 [ptyBackend.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/pty/ptyBackend.ts#L2), [ptyManager.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/pty/ptyManager.ts#L150), [remotePty.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/ssh/remotePty.ts#L212)입니다.
+
+소켓 핸들러는 `session-list`에서 runtime preview를 `lastContext`에 채우고, `dashboard-join`으로 dashboard room 구독을 지원하며, `session-exit` 시 해당 room에 `session-update`를 브로드캐스트하도록 바꿨습니다. 관련 변경은 [terminal.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/socket/handlers/terminal.ts#L89), 이벤트 타입은 [types.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/lib/types.ts#L25)에 반영했습니다. 작업 추적과 기록도 [tasks/todo.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/tasks/todo.md#L3), [2026-03-12_terminal-preview-session-update.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/skill_graph/features/2026-03-12_terminal-preview-session-update.md)에 남겼습니다.
+
+검증은 `npx tsc --noEmit`까지 통과했습니다. 대시보드 실시간 수신의 수동 소켓 확인은 이번 턴에서 실행하지 않았습니다.
+file update:
+diff --git a/skill_graph/features/2026-03-12_terminal-preview-session-update.md b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..9f13ebfe182381fd5b07e61498839146c0b34144
+--- /dev/null
++++ b/skill_graph/features/2026-03-12_terminal-preview-session-update.md
+@@ -0,0 +1,79 @@
++# 터미널 프리뷰 + session-update 브로드캐스트 — 2026-03-12
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 1
++> **keywords**: `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`
++
++---
++
++## 요구사항
++
++대시보드 세션 목록에 실행 중 터미널의 최근 화면 일부를 노출하고, 세션 종료 시 대시보드가 즉시 상태 변화를 수신해야 한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/pty/ptyBackend.ts`
++- `src/server/pty/ptyManager.ts`
++- `src/server/ssh/remotePty.ts`
++- `src/server/socket/handlers/terminal.ts`
++- `src/lib/types.ts`
++
++### 접근 방식
++- PTY 추상화에 screen preview API를 추가해 로컬/원격 구현을 동일 계약으로 맞춤
++- scrollback에서 마지막 N줄만 잘라 dashboard용 `lastContext`로 사용
++- 세션 종료 시 dashboard room으로 `session-update`를 푸시해 목록 갱신 경로를 단순화
++
++### API / 인터페이스
++```typescript
++interface PtyBackend {
++  getScreenPreview(id: string, lines?: number): string;
++}
++```
++
++---
++
++## 구현 내역
++
++- [x] 공용 ANSI escape strip + preview line 추출 헬퍼 추가
++- [x] `PtyManager`, `RemotePtyManager`에 `getScreenPreview()` 구현
++- [x] `session-list` 응답에 runtime preview 기반 `lastContext` 주입
++- [x] `dashboard-join` socket 이벤트 추가
++- [x] `session-exit` 시 dashboard room 대상 `session-update` 브로드캐스트 추가
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/pty/ptyBackend.ts` | PTY 공통 preview 인터페이스와 ANSI strip 헬퍼 추가 |
++| `src/server/pty/ptyManager.ts` | 로컬 PTY scrollback preview 구현 |
++| `src/server/ssh/remotePty.ts` | 원격 PTY scrollback preview 구현 |
++| `src/server/socket/handlers/terminal.ts` | dashboard room join, session-list preview 주입, session-exit broadcast 연결 |
++| `src/lib/types.ts` | `dashboard-join` client event 타입 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 통합 소켓 테스트
++- [ ] 수동 대시보드 확인
++
++---
++
++## 회고
++
++### 잘된 점
++- preview 추출을 backend 공용 계약으로 올려 terminal handler의 backend 분기 로직을 최소화했다.
++
++### 개선할 점
++- 현재 preview는 메모리 scrollback 기준이며 DB `lastContext`와의 동기화는 별도 경로가 필요하다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `skill_graph/features/2026-02-27_phase1-infra.md`
++- 선행: `skill_graph/features/2026-02-28_phase2-4-parallel.md`
++- 후속: 대시보드 실시간 구독을 사용하는 클라이언트 이벤트 연결
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 9da9983abdfca6ff54dff8af4339e25cb391a5ad..1ee849f043c372e7be6283f9e225f3221a3213b3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -132,6 +132,7 @@
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
++| [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | 1     | 🟢   | `pty` `terminal` `dashboard` `session-update` `socket.io` `RemotePty`       |
+ 
+ ### decisions/
+ 
+@@ -169,6 +170,7 @@
+ features/2026-02-28_phase2-4-parallel.md
+         │
+         ├──▶ decisions/2026-02-28_harness-engineering.md (방향 ADR)
++        ├──▶ features/2026-03-12_terminal-preview-session-update.md (대시보드 실시간 세션 프리뷰)
+         │
+         ▼ (후속 예정)
+ ??? E2E 테스트 / 성능 최적화 / 프로덕션 배포 / 하네스 패턴 구현
+@@ -192,4 +194,5 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-12 | [터미널 프리뷰 + session-update](features/2026-03-12_terminal-preview-session-update.md) | PTY scrollback 기반 화면 프리뷰 추가, dashboard room 구독, 세션 종료 시 실시간 갱신 브로드캐스트 |
+ | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
+diff --git a/src/lib/types.ts b/src/lib/types.ts
+index fdcfb4a191286748feefadbde224fdaa538e738e..2f493733a6a3c1d3c8b6d36df59d3f9a3230497e
+--- a/src/lib/types.ts
++++ b/src/lib/types.ts
+@@ -34,6 +34,7 @@
+     projectId: string | null,
+     callback: (sessions: SessionInfo[]) => void,
+   ) => void;
++  "dashboard-join": () => void;
+   // Phase 2: SSH
+   "ssh-connect": (
+     configId: string,
+diff --git a/src/server/pty/ptyBackend.ts b/src/server/pty/ptyBackend.ts
+index 59fb90a4fabdde242f6090f74414beb2e07b7a06..285cacba71c26bae80bc68a424e761c7173cbdee
+--- a/src/server/pty/ptyBackend.ts
++++ b/src/server/pty/ptyBackend.ts
+@@ -4,6 +4,7 @@
+   write(id: string, data: string): void;
+   resize(id: string, cols: number, rows: number): void;
+   getScrollback(id: string): string;
++  getScreenPreview(id: string, lines?: number): string;
+   onData(id: string, cb: (data: string) => void): () => void;
+   onExit(id: string, cb: (code: number) => void): () => void;
+   destroy(id: string): void;
+@@ -12,6 +13,29 @@
+   onReady(id: string, cb: () => void): () => void;
+ }
+ 
++const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
++const DEFAULT_PREVIEW_LINES = 5;
++
++export function getScreenPreviewFromScrollback(
++  scrollback: string,
++  lines = DEFAULT_PREVIEW_LINES,
++): string {
++  const safeLines = Math.max(1, Math.floor(lines) || DEFAULT_PREVIEW_LINES);
++  const normalized = scrollback
++    .replace(ANSI_ESCAPE_PATTERN, "")
++    .replace(/\r/g, "");
++  const previewLines = normalized.split("\n");
++
++  while (
++    previewLines.length > 0 &&
++    previewLines[previewLines.length - 1] === ""
++  ) {
++    previewLines.pop();
++  }
++
++  return previewLines.slice(-safeLines).join("\n");
++}
++
+ // Registry of backends for unified lookup
+ const backends: PtyBackend[] = [];
+ 
+diff --git a/src/server/pty/ptyManager.ts b/src/server/pty/ptyManager.ts
+index fbf18814ea77a118a420f5cc3640cce508b3943a..c6a63b11b49e1252833e7239dbdbd3d9dca5b62a
+--- a/src/server/pty/ptyManager.ts
++++ b/src/server/pty/ptyManager.ts
+@@ -1,8 +1,11 @@
+ import * as pty from "node-pty";
+ import type { IPty } from "node-pty";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
+ import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
++import {
+   DEFAULT_COLS,
+   DEFAULT_ROWS,
+   DEFAULT_SHELL,
+@@ -148,6 +151,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, callback: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/src/server/socket/handlers/terminal.ts b/src/server/socket/handlers/terminal.ts
+index 7a92256883ed78fcd8f25ea0e6a96d8c6fa748d0..abc2ab01ef9258092af3555ee1d91e7a787c29cb
+--- a/src/server/socket/handlers/terminal.ts
++++ b/src/server/socket/handlers/terminal.ts
+@@ -4,6 +4,7 @@
+ import { commandInterceptor } from "@/server/pty/interceptor";
+ import { sessionManager } from "@/server/session/sessionManager";
+ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
++import type { SessionInfo } from "@/lib/types";
+ 
+ export function registerTerminalHandlers(
+   io: OrbitServer,
+@@ -85,8 +86,18 @@
+       socket.emit("session-ready", sessionId);
+     }
+ 
+-    unsubExit = backend.onExit(sessionId, (exitCode) => {
++    unsubExit = backend.onExit(sessionId, async (exitCode) => {
++      const preview = backend.getScreenPreview(sessionId);
+       socket.emit("session-exit", sessionId, exitCode);
++      const session = await sessionManager.getSession(sessionId);
++      if (session) {
++        const sessionUpdate: SessionInfo = {
++          ...session,
++          status: "terminated",
++          lastContext: preview || session.lastContext,
++        };
++        io.to("dashboard").emit("session-update", sessionUpdate);
++      }
+       detach();
+     });
+ 
+@@ -140,7 +151,24 @@
+     const sessions = await sessionManager.listSessions(
+       projectId ?? undefined,
+     );
+-    callback(sessions);
++    callback(
++      sessions.map((session) => {
++        const backend = getPtyBackend(session.id);
++        if (!backend) {
++          return session;
++        }
++
++        const preview = backend.getScreenPreview(session.id);
++        return {
++          ...session,
++          lastContext: preview || session.lastContext,
++        };
++      }),
++    );
++  });
++
++  socket.on("dashboard-join", () => {
++    void socket.join("dashboard");
+   });
+ 
+   socket.on("disconnect", () => {
+diff --git a/src/server/ssh/remotePty.ts b/src/server/ssh/remotePty.ts
+index 974b942a7251dd8d2676118f8d88f41b925cb78a..781ee91386b1287db52de2ef853a39a973f44566
+--- a/src/server/ssh/remotePty.ts
++++ b/src/server/ssh/remotePty.ts
+@@ -1,6 +1,9 @@
+ import type { ClientChannel } from "ssh2";
+ import type { PtyBackend } from "@/server/pty/ptyBackend";
+-import { registerPtyBackend } from "@/server/pty/ptyBackend";
++import {
++  getScreenPreviewFromScrollback,
++  registerPtyBackend,
++} from "@/server/pty/ptyBackend";
+ import { sshManager } from "@/server/ssh/sshManager";
+ import {
+   DEFAULT_COLS,
+@@ -210,6 +213,13 @@
+     return this.outputBuffers.get(sessionId) ?? "";
+   }
+ 
++  getScreenPreview(sessionId: string, lines = 5): string {
++    return getScreenPreviewFromScrollback(
++      this.outputBuffers.get(sessionId) ?? "",
++      lines,
++    );
++  }
++
+   onData(sessionId: string, cb: DataCallback): () => void {
+     const listeners = this.dataListeners.get(sessionId);
+     if (!listeners) {
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..c9b3c2465b0a57298965efb1a11871403d508981
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+ 
+@@ -16,6 +17,13 @@
+ 
+ ## 계획
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- [x] PTY backend 인터페이스에 screen preview API 추가
++- [x] 로컬/원격 PTY의 ANSI-stripped 마지막 N줄 프리뷰 구현
++- [x] terminal socket handler에 session-list lastContext, dashboard room, session-update 브로드캐스트 연결
++- [x] 타입 체크로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -52,6 +60,13 @@
+ 
+ ## 결과
+ 
++### 백엔드: 터미널 프리뷰 캡처 + session-update 브로드캐스트 (2026-03-12)
++
++- `PtyBackend`에 `getScreenPreview(id, lines?)` 추가, 공용 ANSI strip + 마지막 N줄 추출 헬퍼로 로컬/원격 PTY 동작 일원화
++- `session-list` 응답에서 실행 중 세션의 `lastContext`를 실시간 프리뷰로 채우고, `dashboard-join`으로 dashboard 룸 구독 지원
++- `session-exit` 시 `session-update`를 dashboard 룸에 브로드캐스트하도록 연결
++- `npx tsc --noEmit` 통과
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+tokens used
+42,888
+`PtyBackend`에 screen preview 계약과 공용 ANSI strip 헬퍼를 추가했고, 로컬/원격 PTY가 모두 scrollback의 마지막 N줄을 plain text로 반환하도록 맞췄습니다. 구현 위치는 [ptyBackend.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/pty/ptyBackend.ts#L2), [ptyManager.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/pty/ptyManager.ts#L150), [remotePty.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/ssh/remotePty.ts#L212)입니다.
+
+소켓 핸들러는 `session-list`에서 runtime preview를 `lastContext`에 채우고, `dashboard-join`으로 dashboard room 구독을 지원하며, `session-exit` 시 해당 room에 `session-update`를 브로드캐스트하도록 바꿨습니다. 관련 변경은 [terminal.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/server/socket/handlers/terminal.ts#L89), 이벤트 타입은 [types.ts](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/src/lib/types.ts#L25)에 반영했습니다. 작업 추적과 기록도 [tasks/todo.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/tasks/todo.md#L3), [2026-03-12_terminal-preview-session-update.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260312_022415_터미널_에코시스템_핵심_발견_구현_세션_퍼시스턴스_강화__터미널_썸네/agents/agent-01/worktree/skill_graph/features/2026-03-12_terminal-preview-session-update.md)에 남겼습니다.
+
+검증은 `npx tsc --noEmit`까지 통과했습니다. 대시보드 실시간 수신의 수동 소켓 확인은 이번 턴에서 실행하지 않았습니다.

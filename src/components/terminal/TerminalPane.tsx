@@ -254,7 +254,7 @@ export default function TerminalPane({
           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
           e.dataTransfer.effectAllowed = "move";
         }}
-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b border-neutral-800 bg-neutral-900 px-2.5 py-1.5"
+        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 overflow-hidden border-b border-neutral-800 bg-neutral-900 px-2.5 py-1.5"
       >
         {/* Project color + status indicator */}
         {sessionId ? (
@@ -279,7 +279,7 @@ export default function TerminalPane({
           onChange={(e) => {
             if (e.target.value) onSelectSession(e.target.value);
           }}
-          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500"
         >
           <option value="">Select session...</option>
           {sessions

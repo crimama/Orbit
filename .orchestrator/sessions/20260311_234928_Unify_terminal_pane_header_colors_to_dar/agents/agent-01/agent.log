@@ -1,0 +1,4046 @@
+# Agent Log: agent-01
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: Dark theme for TerminalPane header
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+Convert TerminalPane.tsx from light slate theme to dark neutral theme to match the Dashboard sidebar and nav bar.
+
+CRITICAL COLOR MAPPINGS (apply these exact Tailwind class changes):
+
+1. Outer container (line 177):
+   - FROM: border-slate-300 bg-white
+   - TO: border-neutral-800 bg-neutral-950
+
+2. Header bar (line 257):
+   - FROM: bg-slate-100/90
+   - TO: bg-neutral-900
+   - borderBottomColor fallback: change '#cbd5e1' to '#404040'
+
+3. Session select dropdown (line 283):
+   - FROM: border-slate-300 bg-white text-slate-900 focus:border-sky-400
+   - TO: border-neutral-700 bg-neutral-800 text-neutral-100 focus:border-sky-500
+
+4. Project name badge (line 297):
+   - FROM: border-slate-300 bg-white text-slate-700
+   - TO: border-neutral-700 bg-neutral-800 text-neutral-300
+
+5. Status badge (line 307):
+   - FROM: bg-red-50 text-red-600 / bg-emerald-50 text-emerald-700
+   - TO: bg-red-900/30 text-red-400 / bg-emerald-900/30 text-emerald-400
+
+6. Workspace area border (line 314):
+   - FROM: border-slate-300
+   - TO: border-neutral-700
+
+7. Workspace select (line 323):
+   - FROM: border-slate-300 bg-white text-slate-700
+   - TO: border-neutral-700 bg-neutral-800 text-neutral-300
+
+8. ALL button hover states:
+   - FROM: text-slate-500 hover:bg-slate-200 hover:text-slate-900
+   - TO: text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200
+
+9. Close button hover:
+   - FROM: hover:bg-red-100 hover:text-red-600
+   - TO: hover:bg-red-900/30 hover:text-red-400
+
+10. Delete workspace hover:
+    - FROM: hover:bg-rose-100 hover:text-rose-600
+    - TO: hover:bg-rose-900/30 hover:text-rose-400
+
+11. Kill Session button:
+    - FROM: text-slate-500 hover:bg-red-100 hover:text-red-600
+    - TO: text-neutral-400 hover:bg-red-900/30 hover:text-red-400
+
+12. Empty pane placeholder (line 450):
+    - FROM: bg-slate-100 text-slate-600
+    - TO: bg-neutral-950 text-neutral-500
+
+13. Drag handle text (line 378):
+    - FROM: text-slate-500
+    - TO: text-neutral-500
+
+IMPORTANT: Read the existing AGENTS.md if available. Keep all existing functionality intact. Only change Tailwind CSS classes for theming.
+
+## Target Files
+- `src/components/terminal/TerminalPane.tsx`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] All slate classes removed
+- [ ] Dark neutral theme applied
+- [ ] No functional changes
+- [ ] tsc passes
+- [ ] lint passes
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree
+# Started: 2026-03-11T23:53:50.437678
+
+OpenAI Codex v0.111.0 (research preview)
+--------
+workdir: /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019cdd63-cbab-79b0-b366-dd12457a6747
+--------
+user
+Read and execute the task described below.
+
+# Task: Dark theme for TerminalPane header
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+Convert TerminalPane.tsx from light slate theme to dark neutral theme to match the Dashboard sidebar and nav bar.
+
+CRITICAL COLOR MAPPINGS (apply these exact Tailwind class changes):
+
+1. Outer container (line 177):
+   - FROM: border-slate-300 bg-white
+   - TO: border-neutral-800 bg-neutral-950
+
+2. Header bar (line 257):
+   - FROM: bg-slate-100/90
+   - TO: bg-neutral-900
+   - borderBottomColor fallback: change '#cbd5e1' to '#404040'
+
+3. Session select dropdown (line 283):
+   - FROM: border-slate-300 bg-white text-slate-900 focus:border-sky-400
+   - TO: border-neutral-700 bg-neutral-800 text-neutral-100 focus:border-sky-500
+
+4. Project name badge (line 297):
+   - FROM: border-slate-300 bg-white text-slate-700
+   - TO: border-neutral-700 bg-neutral-800 text-neutral-300
+
+5. Status badge (line 307):
+   - FROM: bg-red-50 text-red-600 / bg-emerald-50 text-emerald-700
+   - TO: bg-red-900/30 text-red-400 / bg-emerald-900/30 text-emerald-400
+
+6. Workspace area border (line 314):
+   - FROM: border-slate-300
+   - TO: border-neutral-700
+
+7. Workspace select (line 323):
+   - FROM: border-slate-300 bg-white text-slate-700
+   - TO: border-neutral-700 bg-neutral-800 text-neutral-300
+
+8. ALL button hover states:
+   - FROM: text-slate-500 hover:bg-slate-200 hover:text-slate-900
+   - TO: text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200
+
+9. Close button hover:
+   - FROM: hover:bg-red-100 hover:text-red-600
+   - TO: hover:bg-red-900/30 hover:text-red-400
+
+10. Delete workspace hover:
+    - FROM: hover:bg-rose-100 hover:text-rose-600
+    - TO: hover:bg-rose-900/30 hover:text-rose-400
+
+11. Kill Session button:
+    - FROM: text-slate-500 hover:bg-red-100 hover:text-red-600
+    - TO: text-neutral-400 hover:bg-red-900/30 hover:text-red-400
+
+12. Empty pane placeholder (line 450):
+    - FROM: bg-slate-100 text-slate-600
+    - TO: bg-neutral-950 text-neutral-500
+
+13. Drag handle text (line 378):
+    - FROM: text-slate-500
+    - TO: text-neutral-500
+
+IMPORTANT: Read the existing AGENTS.md if available. Keep all existing functionality intact. Only change Tailwind CSS classes for theming.
+
+## Target Files
+- `src/components/terminal/TerminalPane.tsx`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] All slate classes removed
+- [ ] Dark neutral theme applied
+- [ ] No functional changes
+- [ ] tsc passes
+- [ ] lint passes
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+I’m reviewing the repo instructions first, then I’ll update the task tracker and make the minimal theme-only changes in `TerminalPane.tsx` before verifying with typecheck and lint.
+exec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 50ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 50ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 51ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+
+## 이번 세션 (2026-02-28)
+
+- [x] Prisma에 프로젝트 하네스 설정 모델 추가 (`ProjectHarnessConfig`)
+- [x] 프로젝트 단위 하네스 API 추가 (`GET/PUT /api/projects/[id]/harness`)
+- [x] Dashboard에 하네스 패널 추가 (provider/profile/maxParallel/config 편집)
+- [x] oh-my-opencode 프리셋 버튼 추가
+- [x] 세션 화면 UI를 터미널 중심에서 대화형 워크스페이스 톤으로 개선
+- [x] 타입체크/린트/빌드 검증
+
+## 계획
+
+### Phase 1: 인프라 구축
+
+codex
+I’ve loaded the project playbook and current task log. Next I’m checking `TerminalPane.tsx` and then I’ll add a session-specific entry to `tasks/todo.md` before editing the theme classes.
+exec
+/bin/bash -lc 'rg -n "slate|red-50|emerald-50|hover:bg-red-100|hover:bg-rose-100|neutral|borderBottomColor|text-slate-500|bg-slate-100|bg-white" src/components/terminal/TerminalPane.tsx' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '150,520p' src/components/terminal/TerminalPane.tsx" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 50ms:
+164:      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
+244:        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+245:        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
+260:            className="mr-1.5 inline-block h-2 w-2 flex-shrink-0 rounded-full bg-neutral-600"
+270:          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
+284:            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
+294:            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
+303:            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
+313:            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+323:            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
+334:              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
+348:                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
+375:            <div className="flex h-full items-center justify-center bg-slate-100">
+376:              <p className="text-base font-medium text-slate-600">
+ succeeded in 50ms:
+    updateInset();
+    viewport.addEventListener("resize", updateInset);
+    viewport.addEventListener("scroll", updateInset);
+    window.addEventListener("resize", updateInset);
+
+    return () => {
+      viewport.removeEventListener("resize", updateInset);
+      viewport.removeEventListener("scroll", updateInset);
+      window.removeEventListener("resize", updateInset);
+    };
+  }, [keyboardEnabled]);
+
+  return (
+    <div
+      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
+        isActive || isDropTarget ? "ring-1 ring-inset" : ""
+      }`}
+      style={
+        isDropTarget
+          ? { boxShadow: "inset 0 0 0 2px #38bdf8" }
+codex
+I’ve confirmed the current file only contains the header controls listed in the task, plus the empty-state block. I’m updating `tasks/todo.md` now, then I’ll patch the exact class mappings and verify there are no remaining `slate` theme classes in this component.
+exec
+/bin/bash -lc "sed -n '1,220p' .claude/skills/todo/SKILL.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 51ms:
+---
+name: todo
+description: tasks/todo.md 조회, 계획 작성, 체크, 완료 관리
+allowed-tools:
+  - Read
+  - Write
+---
+
+# /todo
+
+**사용법**: `/todo [plan <desc> | check <n> | done | (빈 인자)]`
+
+현재 상태:
+
+```
+!cat tasks/todo.md 2>/dev/null || echo "(tasks/todo.md 없음)"!
+```
+
+## 동작
+
+codex
+I’m making two edits next: a session entry in `tasks/todo.md` to track this work, and a narrow theme-only patch in `TerminalPane.tsx`. After that I’ll run `tsc` and `lint` as the acceptance checks.
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/tasks/todo.md
+@@ -6,2 +6,3 @@
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+@@ -18,2 +19,8 @@
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+apply_patch(auto_approved=true) exited 0 in 4ms:
+Success. Updated the following files:
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/src/components/terminal/TerminalPane.tsx
+@@ -163,3 +163,3 @@
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+@@ -243,4 +243,4 @@
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+@@ -269,3 +269,3 @@
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+@@ -283,3 +283,3 @@
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+@@ -293,3 +293,3 @@
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+@@ -302,3 +302,3 @@
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+@@ -312,3 +312,3 @@
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+@@ -322,3 +322,3 @@
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+@@ -333,3 +333,3 @@
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+@@ -347,3 +347,3 @@
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+@@ -374,4 +374,4 @@
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/src/components/terminal/TerminalPane.tsx
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+codex
+The theme patch is in. I’m checking for any remaining `slate` classes in `TerminalPane.tsx`, then I’ll run typecheck and lint before I update the task log with the verification result.
+exec
+/bin/bash -lc 'rg -n "slate|rose-100|rose-600|red-50|emerald-50|hover:bg-slate|text-slate|bg-white|border-slate" src/components/terminal/TerminalPane.tsx' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree exited 1 in 50ms:
+
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreeexec
+/bin/bash -lc 'npm run lint' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreefile update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+ succeeded in 3.30s:
+
+ succeeded in 3.80s:
+✔ No ESLint warnings or errors
+codex
+Typecheck and lint are still running. The class scan came back clean for the old slate/light tokens I searched for, so I’m waiting on the build checks now.
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+codex
+Verification is complete: `tsc` passed and `next lint` passed cleanly. I’m recording the completed checklist and result in `tasks/todo.md`, and I’ll add a short `skill_graph` note to match the repo workflow.
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/refactor/_TEMPLATE.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreeexec
+/bin/bash -lc 'rg --files skill_graph | sort' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 51ms:
+# [리팩토링 제목] — YYYY-MM-DD
+
+> **상태**: 🔴 계획 / 🟡 진행중 / 🟢 완료
+> **범위**: 소규모 / 중규모 / 대규모
+> **keywords**:
+
+---
+
+## 동기
+
+<!-- 왜 리팩토링이 필요한가 (기술 부채, 성능, 가독성 등) -->
+
+## Before / After
+
+### Before
+```
+// 기존 구조 또는 코드
+```
+
+### After
+ succeeded in 51ms:
+skill_graph/bugfix/_TEMPLATE.md
+skill_graph/decisions/2026-02-27_skill-strategy.md
+skill_graph/decisions/2026-02-28_harness-engineering.md
+skill_graph/decisions/_TEMPLATE.md
+skill_graph/devops/_TEMPLATE.md
+skill_graph/features/2026-02-27_phase1-infra.md
+skill_graph/features/2026-02-28_phase2-4-parallel.md
+skill_graph/features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md
+skill_graph/features/_TEMPLATE.md
+skill_graph/index.md
+skill_graph/refactor/2026-03-01_simplify-recent.md
+skill_graph/refactor/_TEMPLATE.md
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 51ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/refactor/2026-03-01_simplify-recent.md" in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 51ms:
+# Simplify Recent 5 Files — Code Deduplication & Complexity Reduction
+
+**Date**: 2026-03-01
+**Scope**: 5개 파일, 56개 변경 (1102 + 831 + 677 + 546 + 307 줄)
+**Result**: ✅ 타입 안전 + ESLint 통과
+
+---
+
+## 실행 내용
+
+### Phase 1: `src/server/pty/interceptor.ts` (307줄)
+
+| Item | Type | Impact | Before | After |
+|------|------|--------|--------|-------|
+| **I1** | 중복 제거 | `getPending()` / `getPendingById()` 공통화 | 16줄 | 4줄 |
+| **I2** | 패턴 추출 | `isCacheValid()` 헬퍼 — 캐시 로직 단순화 | 22줄 | 6줄 |
+| **I3** | 성능 개선 | `compileRegex()` 캐싱 — regex 재생성 제거 | - | +8줄 (캐시) |
+| **I4** | 상수 추출 | `ALLOWLIST_DENY_RULE` 매직 객체 제거 | 인라인 | 12줄 상수 |
+| **I5** | 타입 정확화 | `checkBlockWarn()` return type: `boolean \| Promise<boolean>` → `boolean` | - | - |
+
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..d7e89c391bf33838fd3117f2e337156b1abf3efe
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/tasks/todo.md
+@@ -6,3 +6,3 @@
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+-- [ ] TerminalPane 헤더 다크 뉴트럴 테마 적용
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+@@ -21,5 +21,5 @@
+ 
+-- [ ] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
+-- [ ] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
+-- [ ] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
+ 
+@@ -69,2 +69,9 @@
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+@@ -84 +91,2 @@
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/tasks/todo.md
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+file update:
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+file update
+A /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+# TerminalPane Header Dark Neutral Theme
+
+**Date**: 2026-03-11
+**Scope**: `src/components/terminal/TerminalPane.tsx`
+**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
+
+---
+
+## 동기
+
+대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
+
+## Before / After
+
+### Before
+
+- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
+- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
+- 빈 상태 placeholder가 연한 slate 배경
+
+### After
+
+- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
+- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
+- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
+
+## 변경 내역
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
+
+## 검증
+
+- [x] 기존 동작 변경 없음 확인
+- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
+- [x] `npx tsc --noEmit`
+- [x] `npm run lint`
+
+## 관련 노트
+
+- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+A /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+file update:
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+file update:
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/index.md
+@@ -92,2 +92,4 @@
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -128,2 +130,3 @@
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+@@ -164 +167,2 @@
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/index.md
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+codex
+The code and tracking docs are updated. I’m doing one last quick pass on the diff so I can call out exactly what changed and whether anything from the task list was not present in this file revision.
+exec
+/bin/bash -lc 'git diff -- src/components/terminal/TerminalPane.tsx tasks/todo.md skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md skill_graph/index.md' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreeexec
+/bin/bash -lc 'rg -n "slate" src/components/terminal/TerminalPane.tsx' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree succeeded in 51ms:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf..5c4fa5c 100644
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@ _(아직 없음)_
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ exited 1 in 51ms:
+
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..4a767932d5a4335ae32cdeeba99df2ed1b2d0174
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,7 +281,7 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+             style={{ borderColor: projectColor ?? "#cbd5e1" }}
+             title={currentSession.projectName}
+           >
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+codex
+One small mismatch showed up in the diff review: the project badge still had a light fallback border color in inline style. I’m aligning that fallback to the same neutral border now, then I’ll close this out.
+file update
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/src/components/terminal/TerminalPane.tsx
+@@ -284,3 +284,3 @@
+             className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
+-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
++            style={{ borderColor: projectColor ?? "#404040" }}
+             title={currentSession.projectName}
+apply_patch(auto_approved=true) exited 0 in 7ms:
+Success. Updated the following files:
+M /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/src/components/terminal/TerminalPane.tsx
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..f2e684906914272f886847c733dc3369b2987416
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,8 +281,8 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
+-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
++            style={{ borderColor: projectColor ?? "#404040" }}
+             title={currentSession.projectName}
+           >
+             {currentSession.projectName}
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..f2e684906914272f886847c733dc3369b2987416
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,8 +281,8 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
+-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
++            style={{ borderColor: projectColor ?? "#404040" }}
+             title={currentSession.projectName}
+           >
+             {currentSession.projectName}
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+codex
+The last change was only the badge’s inline border fallback, but I’m rerunning `tsc` and `lint` so the verification still reflects the final file state.
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreeexec
+/bin/bash -lc 'npm run lint' in /home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktreefile update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..f2e684906914272f886847c733dc3369b2987416
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,8 +281,8 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
+-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
++            style={{ borderColor: projectColor ?? "#404040" }}
+             title={currentSession.projectName}
+           >
+             {currentSession.projectName}
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+ succeeded in 1.82s:
+
+ succeeded in 2.21s:
+✔ No ESLint warnings or errors
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..f2e684906914272f886847c733dc3369b2987416
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,8 +281,8 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
+-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
++            style={{ borderColor: projectColor ?? "#404040" }}
+             title={currentSession.projectName}
+           >
+             {currentSession.projectName}
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+codex
+Applied the dark neutral theme update in [TerminalPane.tsx](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/src/components/terminal/TerminalPane.tsx). The outer shell, header, session select, project badge, status badge, drag handle, action buttons, kill button, and empty placeholder now use the requested neutral palette, and the header/project badge fallback border color is `#404040`. All `slate` Tailwind classes are removed from this component.
+
+I also updated [tasks/todo.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/tasks/todo.md) and added a short refactor note in [2026-03-11_terminalpane-dark-neutral-theme.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md) with the index updated in [skill_graph/index.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/index.md).
+
+Verification: `npx tsc --noEmit` passed, `npm run lint` passed. The current `TerminalPane.tsx` revision does not contain separate workspace/delete-workspace controls, so only the mappings present in this file were applied.
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 1f36dcf21edadc325e254f08bbd175770209de5e..5c4fa5c848acce1d60874e73389e17b96f7a7a98
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -90,6 +90,8 @@
+ | **link-notes**      | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **dep-install**     | [스킬 전략 ADR](decisions/2026-02-27_skill-strategy.md)                                                             | decision          |
+ | **harness**         | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
++| **neutral-theme**   | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
++| **TerminalPane**    | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md)                             | refactor          |
+ | **에이전트**        | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **observability**   | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+ | **guardrail**       | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                                                | decision          |
+@@ -126,6 +128,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | 🟢   | UI 테마 정렬    | `TerminalPane` `neutral-theme` `dashboard` `terminal` |
+ 
+ ### devops/
+ 
+@@ -162,3 +165,4 @@
+ | 2026-02-28 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md)                  | 6대 하네스 패턴 체계화 (아키텍처 강제, 컨텍스트, 옵저버빌리티, Golden Path, GC, 세션 포크) |
+ | 2026-02-28 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 프로젝트 단위 하네스 설정 + oh-my-opencode 프리셋 + 세션 UI 개선                           |
+ | 2026-03-01 | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)                          | 중복 제거 + 복잡도 감소: interceptor(I1-5) + sessionManager(S1-4) + MultiTerminal(M1-4) + ProjectHarnessPanel(H1-5) + Dashboard(D1-5) |
++| 2026-03-11 | [TerminalPane 다크 뉴트럴 테마](refactor/2026-03-11_terminalpane-dark-neutral-theme.md) | TerminalPane 헤더를 대시보드와 맞춘 neutral 다크 톤으로 정렬 |
+diff --git a/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e932e1df03528f141b2fe0af6eed26e2cbcac871
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md
+@@ -0,0 +1,42 @@
++# TerminalPane Header Dark Neutral Theme
++
++**Date**: 2026-03-11
++**Scope**: `src/components/terminal/TerminalPane.tsx`
++**Result**: ✅ 지정 색상 매핑 반영, 타입체크/린트 통과
++
++---
++
++## 동기
++
++대시보드의 사이드바/네비게이션과 다른 밝은 slate 헤더 톤을 사용하던 `TerminalPane`를 다크 neutral 테마로 맞춰 시각적 일관성을 확보한다.
++
++## Before / After
++
++### Before
++
++- 외곽 컨테이너와 헤더가 `border-slate-300`, `bg-white`, `bg-slate-100/90` 기반의 밝은 톤
++- 상태 배지와 액션 버튼 hover가 밝은 red/slate 배경
++- 빈 상태 placeholder가 연한 slate 배경
++
++### After
++
++- 외곽 컨테이너와 헤더를 `border-neutral-800`, `bg-neutral-950`, `bg-neutral-900`로 통일
++- 드롭다운, 프로젝트 배지, 상태 배지, 액션 버튼 hover를 neutral 다크 톤으로 조정
++- 빈 상태 placeholder와 드래그 핸들 텍스트도 dark neutral 팔레트로 정렬
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/terminal/TerminalPane.tsx` | slate/light Tailwind 클래스 제거, neutral 다크 테마 클래스와 fallback border 색상 적용 |
++
++## 검증
++
++- [x] 기존 동작 변경 없음 확인
++- [x] `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- [x] `npx tsc --noEmit`
++- [x] `npm run lint`
++
++## 관련 노트
++
++- `../../features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md`
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 90d847fd727852785d38a7902add3ef981f80911..f2e684906914272f886847c733dc3369b2987416
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -161,7 +161,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border border-slate-300 bg-white ${
++      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
+         isActive || isDropTarget ? "ring-1 ring-inset" : ""
+       }`}
+       style={
+@@ -241,8 +241,8 @@
+           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
+           e.dataTransfer.effectAllowed = "move";
+         }}
+-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-slate-100/90 px-2.5 py-1.5"
+-        style={{ borderBottomColor: projectColor ?? "#cbd5e1" }}
++        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 border-b bg-neutral-900 px-2.5 py-1.5"
++        style={{ borderBottomColor: projectColor ?? "#404040" }}
+       >
+         {/* Project color + status indicator */}
+         {sessionId ? (
+@@ -267,7 +267,7 @@
+           onChange={(e) => {
+             if (e.target.value) onSelectSession(e.target.value);
+           }}
+-          className="min-w-0 flex-1 truncate rounded-full border border-slate-300 bg-white px-2.5 py-1 text-sm font-medium text-slate-900 outline-none focus:border-sky-400 sm:max-w-72 sm:flex-none"
++          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-sky-500 sm:max-w-72 sm:flex-none"
+         >
+           <option value="">Select session...</option>
+           {sessions
+@@ -281,8 +281,8 @@
+ 
+         {currentSession && (
+           <span
+-            className="hidden max-w-36 truncate rounded-full border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-700 sm:inline"
+-            style={{ borderColor: projectColor ?? "#cbd5e1" }}
++            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
++            style={{ borderColor: projectColor ?? "#404040" }}
+             title={currentSession.projectName}
+           >
+             {currentSession.projectName}
+@@ -291,7 +291,7 @@
+ 
+         {sessionId && (
+           <span
+-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-700"}`}
++            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
+           >
+             {exited ? "Exited" : "Active"}
+           </span>
+@@ -300,7 +300,7 @@
+         <div className="ml-auto flex items-center gap-1">
+           <span
+             title="Drag pane from header"
+-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-slate-500"
++            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+           >
+             ⠿
+           </span>
+@@ -310,7 +310,7 @@
+               onSplit("horizontal");
+             }}
+             title="Split Horizontal"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎸
+           </button>
+@@ -320,7 +320,7 @@
+               onSplit("vertical");
+             }}
+             title="Split Vertical"
+-            className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-slate-200 hover:text-slate-900"
++            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+           >
+             ⎯
+           </button>
+@@ -331,7 +331,7 @@
+                 onClose();
+               }}
+               title="Close Pane"
+-              className="rounded px-1.5 py-0.5 text-sm text-slate-500 hover:bg-red-100 hover:text-red-600"
++              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+             >
+               ✕
+             </button>
+@@ -345,7 +345,7 @@
+                   void onKillSession();
+                 }}
+                 title="Kill Session"
+-                className="rounded px-2 py-0.5 text-xs font-medium text-slate-500 hover:bg-red-100 hover:text-red-600"
++                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+               >
+                 Kill
+               </button>
+@@ -372,8 +372,8 @@
+               onExit={onExit}
+             />
+           ) : (
+-            <div className="flex h-full items-center justify-center bg-slate-100">
+-              <p className="text-base font-medium text-slate-600">
++            <div className="flex h-full items-center justify-center bg-neutral-950">
++              <p className="text-base font-medium text-neutral-500">
+                 Select a session
+               </p>
+             </div>
+diff --git a/tasks/todo.md b/tasks/todo.md
+index 02775e564abc235d5eb6f993a37fa103e58103c7..882fda4e1cd9eddb11270b07952c53e194aa4273
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -4,6 +4,7 @@
+ 
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
++- [x] TerminalPane 헤더 다크 뉴트럴 테마 적용
+ 
+ ## 이번 세션 (2026-02-28)
+ 
+@@ -16,6 +17,12 @@
+ 
+ ## 계획
+ 
++### TerminalPane 헤더 다크 테마 (2026-03-11)
++
++- [x] `TerminalPane.tsx`의 slate 계열 Tailwind 클래스를 neutral 다크 테마로 교체
++- [x] 기능 변경 없이 지정된 hover/status/placeholder 색상 매핑 반영
++- [x] `rg`, `npx tsc --noEmit`, `npm run lint`로 검증
++
+ ### Phase 1: 인프라 구축
+ 
+ - [x] Next.js 14 + TypeScript 프로젝트 초기화
+@@ -60,6 +67,13 @@
+ - `npx tsc --noEmit`, `npm run lint`, `npm run build` 통과
+ - `npm test`는 스크립트 미정의로 실행 불가(기존 상태)
+ 
++### TerminalPane 헤더 다크 뉴트럴 테마 (2026-03-11)
++
++- `src/components/terminal/TerminalPane.tsx`의 헤더/컨테이너/배지/버튼/빈 상태 slate 계열 클래스를 neutral 다크 톤으로 교체
++- 요청된 상태 배지, hover, fallback border 색상 매핑을 기능 변경 없이 반영
++- `rg`로 `TerminalPane.tsx` 내 slate/light 토큰 제거 확인
++- `npx tsc --noEmit`, `npm run lint` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+@@ -75,3 +89,4 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md` — TerminalPane 테마 정리 기록
+
+tokens used
+25,823
+Applied the dark neutral theme update in [TerminalPane.tsx](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/src/components/terminal/TerminalPane.tsx). The outer shell, header, session select, project badge, status badge, drag handle, action buttons, kill button, and empty placeholder now use the requested neutral palette, and the header/project badge fallback border color is `#404040`. All `slate` Tailwind classes are removed from this component.
+
+I also updated [tasks/todo.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/tasks/todo.md) and added a short refactor note in [2026-03-11_terminalpane-dark-neutral-theme.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/refactor/2026-03-11_terminalpane-dark-neutral-theme.md) with the index updated in [skill_graph/index.md](/home/hun/Volume/Orbit/.orchestrator/sessions/20260311_234928_Unify_terminal_pane_header_colors_to_dar/agents/agent-01/worktree/skill_graph/index.md).
+
+Verification: `npx tsc --noEmit` passed, `npm run lint` passed. The current `TerminalPane.tsx` revision does not contain separate workspace/delete-workspace controls, so only the mappings present in this file were applied.

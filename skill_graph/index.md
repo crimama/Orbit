@@ -136,6 +136,17 @@
 | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
 | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
 | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+| **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **thumb-zone**      | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **streaming-markdown** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **skeleton-screen** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **xterm-mobile**    | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **terminal-gesture** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **offline-first**   | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **viewport-dvh**    | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+| **OLED**            | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
 
 ---
 
@@ -158,6 +169,7 @@
 | [하네스 엔지니어링 ADR](decisions/2026-02-28_harness-engineering.md) | 완료 | `harness` `에이전트` `observability` `guardrail` `golden-path` `컨텍스트` `GC에이전트` `세션포크` |
 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | 완료 | `libghostty` `ghostty-web` `restty` `WebGPU` `WASM` `zmx` `mux` `session-persist` |
 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | 완료 | `happy-coder` `yolo` `E2E암호화` `device-switch` `push-notification` `permission` `Expo` `RPC` |
+| [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 완료 | `mobile-ux` `chat-ui` `chatbot` `thumb-zone` `streaming-markdown` `skeleton-screen` `xterm-mobile` `terminal-gesture` `offline-first` `viewport-dvh` `OLED` |
 
 ### bugfix/
 
@@ -215,6 +227,13 @@ bugfix/2026-03-12_mobile-command-send-execution.md
         │
         ├──▶ features/2026-02-28_phase2-4-parallel.md (모바일 터미널 경로 보정)
         └──▶ decisions/2026-03-12_happy-mobile-yolo-research.md (모바일 UX 맥락)
+
+decisions/2026-03-13_mobile-chat-terminal-ux-research.md
+        │
+        ├──▶ decisions/2026-03-12_happy-mobile-yolo-research.md (모바일 UX 기반)
+        ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+        ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+        └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
 ```
 
 ---
@@ -233,3 +252,4 @@ bugfix/2026-03-12_mobile-command-send-execution.md
 | 2026-03-12 | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md) | libghostty/ghostty-web/restty/zmx/mux 분석. xterm.js 대체재 평가 + 세션 퍼시스턴스/에이전트 병렬화 패턴 수집 |
 | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
 | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+| 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
