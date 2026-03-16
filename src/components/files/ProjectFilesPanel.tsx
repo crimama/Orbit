@@ -268,10 +268,59 @@ export default function ProjectFilesPanel({
   const [tree, setTree] = useState<PaneNode>(() => createLeaf(null));
   const [activePaneId, setActivePaneId] = useState(tree.id);
   const activePaneIdRef = useRef(activePaneId);
+  const [ctxMenu, setCtxMenu] = useState<{
+    entry: ProjectFileEntryInfo;
+    x: number;
+    y: number;
+  } | null>(null);
+  const fileTreeRef = useRef<HTMLDivElement>(null);
+  const allEntriesRef = useRef<Map<string, ProjectFileEntryInfo>>(new Map());
 
   useEffect(() => {
     activePaneIdRef.current = activePaneId;
   }, [activePaneId]);
+
+  // Native contextmenu on the file tree container — React synthetic events
+  // are delegated to the root and can't reliably preventDefault before the
+  // browser shows its own menu.
+  useEffect(() => {
+    const el = fileTreeRef.current;
+    if (!el) return;
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const row = target?.closest<HTMLElement>("[data-entry-path]");
+      if (!row) return;
+      const entryPath = row.dataset.entryPath;
+      if (!entryPath) return;
+      const entry = allEntriesRef.current.get(entryPath);
+      if (!entry) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setCtxMenu({ entry, x: e.clientX, y: e.clientY });
+    };
+    el.addEventListener("contextmenu", handler);
+    return () => el.removeEventListener("contextmenu", handler);
+  }, []);
+
+  // Close context menu on any click / scroll / Escape
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const dismiss = () => setCtxMenu(null);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") dismiss();
+    };
+    const raf = requestAnimationFrame(() => {
+      window.addEventListener("mousedown", dismiss);
+      window.addEventListener("keydown", onKey);
+      window.addEventListener("scroll", dismiss, true);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("mousedown", dismiss);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", dismiss, true);
+    };
+  }, [ctxMenu]);
 
   const refreshList = useCallback(
     async (pathToLoad: string) => {
@@ -620,6 +669,103 @@ export default function ProjectFilesPanel({
     [currentPath, projectId, refreshList],
   );
 
+  const copyEntry = useCallback(
+    async (entry: ProjectFileEntryInfo) => {
+      const destName = window
+        .prompt("Copy to (new name or path)", `${entry.name}-copy`)
+        ?.trim();
+      if (!destName) return;
+      const parent = parentPath(entry.path);
+      const toPath = parent ? `${parent}/${destName}` : destName;
+      setBusyPath(entry.path);
+      setError(null);
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files/copy`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ from: entry.path, to: toPath }),
+        });
+        const json = (await res.json()) as ApiResponse<{ ok: true }> | ApiError;
+        if (!res.ok || "error" in json) {
+          throw new Error("error" in json ? json.error : "Failed to copy");
+        }
+        await refreshList(parent);
+        if (currentPath !== parent) {
+          await refreshList(currentPath);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to copy");
+      } finally {
+        setBusyPath(null);
+      }
+    },
+    [currentPath, projectId, refreshList],
+  );
+
+  const moveEntry = useCallback(
+    async (entry: ProjectFileEntryInfo) => {
+      const destPath = window
+        .prompt("Move to (destination path)", entry.path)
+        ?.trim();
+      if (!destPath || destPath === entry.path) return;
+      setBusyPath(entry.path);
+      setError(null);
+      try {
+        const res = await fetch(`/api/projects/${projectId}/files/move`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ from: entry.path, to: destPath }),
+        });
+        const json = (await res.json()) as ApiResponse<{ ok: true }> | ApiError;
+        if (!res.ok || "error" in json) {
+          throw new Error("error" in json ? json.error : "Failed to move");
+        }
+        const entryParentPath = parentPath(entry.path);
+        const destParent = parentPath(destPath);
+
+        setDocs((prev) => {
+          if (!prev[entry.path]) return prev;
+          const next = { ...prev };
+          const existing = next[entry.path];
+          delete next[entry.path];
+          next[destPath] = { ...existing, path: destPath };
+          return next;
+        });
+        setTree((prev) => {
+          const leafIds = collectLeafIds(prev);
+          let nextTree = prev;
+          for (const leafId of leafIds) {
+            const leaf = findLeaf(nextTree, leafId);
+            if (leaf?.sessionId === entry.path) {
+              nextTree = updateLeafSession(nextTree, leafId, destPath);
+            }
+          }
+          return nextTree;
+        });
+        await refreshList(entryParentPath);
+        if (destParent !== entryParentPath) {
+          await refreshList(destParent);
+        }
+        if (currentPath !== entryParentPath && currentPath !== destParent) {
+          await refreshList(currentPath);
+        }
+        setExpandedDirs((prev) => {
+          if (!entry.isDir) return prev;
+          const next = { ...prev };
+          const wasExpanded = Boolean(next[entry.path]);
+          delete next[entry.path];
+          if (wasExpanded) next[destPath] = true;
+          return next;
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to move");
+      } finally {
+        setBusyPath(null);
+      }
+    },
+    [currentPath, projectId, refreshList],
+  );
+
   const splitActivePane = useCallback(
     (paneId: string, direction: "horizontal" | "vertical") => {
       setTree((prev) => splitPane(prev, paneId, direction, null));
@@ -732,6 +878,7 @@ export default function ProjectFilesPanel({
       const rows: JSX.Element[] = [];
 
       for (const entry of dirEntries) {
+        allEntriesRef.current.set(entry.path, entry);
         const isSelected = currentPath === entry.path;
         const handleEntryActivate = () => {
           if (entry.isDir) {
@@ -744,7 +891,8 @@ export default function ProjectFilesPanel({
         rows.push(
           <div
             key={entry.path}
-            className={`group mb-1 flex items-center gap-2 rounded px-2 py-1 ${
+            data-entry-path={entry.path}
+            className={`mb-1 flex items-center rounded px-2 py-1 ${
               isSelected ? "bg-neutral-800" : "hover:bg-neutral-800"
             }`}
             style={{ paddingLeft: `${depth * 12 + 8}px` }}
@@ -780,20 +928,6 @@ export default function ProjectFilesPanel({
               {entry.name}
               {entry.isSymlink ? " (symlink)" : ""}
             </button>
-            <button
-              onClick={() => void renameEntry(entry)}
-              className="hidden rounded border border-neutral-700 px-1.5 py-0.5 text-[11px] text-neutral-300 hover:bg-neutral-700 group-hover:block"
-              type="button"
-            >
-              Rename
-            </button>
-            <button
-              onClick={() => void deleteEntry(entry)}
-              className="hidden rounded border border-neutral-700 px-1.5 py-0.5 text-[11px] text-red-300 hover:bg-neutral-700 group-hover:block"
-              type="button"
-            >
-              Delete
-            </button>
           </div>,
         );
 
@@ -806,11 +940,9 @@ export default function ProjectFilesPanel({
     },
     [
       currentPath,
-      deleteEntry,
       directoryMap,
       expandedDirs,
       openFile,
-      renameEntry,
       toggleDirectory,
     ],
   );
@@ -954,7 +1086,7 @@ export default function ProjectFilesPanel({
           ) : null}
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto p-2">
+        <div ref={fileTreeRef} className="max-h-[60vh] overflow-y-auto p-2">
           {loadingList ? (
             <p className="px-2 py-4 text-sm text-neutral-500">Loading...</p>
           ) : rootEntries.length === 0 ? (
@@ -993,6 +1125,45 @@ export default function ProjectFilesPanel({
       {error ? (
         <div className="rounded border border-red-800 bg-red-950/40 px-3 py-2 text-sm text-red-300 xl:col-span-2">
           {error}
+        </div>
+      ) : null}
+
+      {ctxMenu ? (
+        <div
+          className="fixed z-50 min-w-[140px] rounded-lg border border-neutral-700 bg-neutral-900 py-1 shadow-xl"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => setCtxMenu(null)}
+        >
+          <button
+            onClick={() => void copyEntry(ctxMenu.entry)}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+            type="button"
+          >
+            Copy
+          </button>
+          <button
+            onClick={() => void moveEntry(ctxMenu.entry)}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+            type="button"
+          >
+            Move
+          </button>
+          <button
+            onClick={() => void renameEntry(ctxMenu.entry)}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+            type="button"
+          >
+            Rename
+          </button>
+          <div className="mx-2 my-1 border-t border-neutral-700" />
+          <button
+            onClick={() => void deleteEntry(ctxMenu.entry)}
+            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-red-400 hover:bg-neutral-700"
+            type="button"
+          >
+            Delete
+          </button>
         </div>
       ) : null}
     </div>

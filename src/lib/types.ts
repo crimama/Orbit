@@ -305,6 +305,20 @@ export interface ProjectFileDeleteRequest {
   recursive?: boolean;
 }
 
+export interface ProjectFileCopyRequest {
+  from: string;
+  to: string;
+  overwrite?: boolean;
+  destProjectId?: string;
+}
+
+export interface ProjectFileMoveRequest {
+  from: string;
+  to: string;
+  overwrite?: boolean;
+  destProjectId?: string;
+}
+
 export interface DockerContainerInfo {
   id: string;
   name: string;

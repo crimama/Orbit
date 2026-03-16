@@ -10,9 +10,11 @@ import {
   PROJECT_FILES_MAX_READ_BYTES,
 } from "@/lib/constants";
 import type {
+  ProjectFileCopyRequest,
   ProjectFileDeleteRequest,
   ProjectFileEntryInfo,
   ProjectFileListResponse,
+  ProjectFileMoveRequest,
   ProjectFileReadResponse,
   ProjectFileRenameRequest,
   ProjectFileWriteRequest,
@@ -1133,6 +1135,241 @@ export async function deleteProjectPath(
     }
     await sftpUnlink(sftp, resolved.absPath).catch((error) => {
       fromSftpError(error, "Failed to delete file");
+    });
+    return { ok: true };
+  });
+}
+
+async function sftpCopyRecursive(
+  sftp: SFTPWrapper,
+  srcPath: string,
+  destPath: string,
+): Promise<void> {
+  const attrs = await sftpLstat(sftp, srcPath);
+  if (attrsIsSymlink(attrs)) fail("Symlink operations are not allowed", 400);
+
+  if (!attrsIsDirectory(attrs)) {
+    const data = await sftpReadFile(sftp, srcPath).catch((error) => {
+      fromSftpError(error, "Failed to read source file");
+    });
+    await sftpWriteFile(sftp, destPath, data).catch((error) => {
+      fromSftpError(error, "Failed to write destination file");
+    });
+    return;
+  }
+
+  await sftpMkdir(sftp, destPath).catch((error) => {
+    fromSftpError(error, "Failed to create destination directory");
+  });
+  const entries = await sftpReadDir(sftp, srcPath);
+  for (const entry of entries) {
+    if (entry.filename === "." || entry.filename === "..") continue;
+    if (attrsIsSymlink(entry.attrs))
+      fail("Symlink operations are not allowed", 400);
+    const childSrc = path.posix.join(srcPath, entry.filename);
+    const childDest = path.posix.join(destPath, entry.filename);
+    await sftpCopyRecursive(sftp, childSrc, childDest);
+  }
+}
+
+export async function copyProjectPath(
+  project: ProjectRecord,
+  body: ProjectFileCopyRequest,
+  destProject?: ProjectRecord,
+): Promise<{ ok: true }> {
+  // --- Cross-project copy ---
+  if (destProject && destProject.id !== project.id) {
+    const srcBackend = pathByType(project);
+    const dstBackend = pathByType(destProject);
+    if (srcBackend !== "LOCAL" || dstBackend !== "LOCAL") {
+      fail("Cross-project copy is only supported between LOCAL projects", 501);
+    }
+    const fromRel = normalizeRelativePath(body.from);
+    const toRel = normalizeRelativePath(body.to);
+    if (!fromRel || !toRel) fail("Both from and to paths are required", 400);
+    const fromResolved = await resolveLocalExisting(project.path, fromRel);
+    const { targetAbs: toAbs } = await resolveLocalParentForCreate(
+      destProject.path,
+      toRel,
+    );
+    const toExisting = await fs.lstat(toAbs).catch(() => null);
+    if (toExisting && !body.overwrite)
+      fail("Destination already exists", 409);
+    await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
+    return { ok: true };
+  }
+
+  const backend = pathByType(project);
+  const fromRel = normalizeRelativePath(body.from);
+  const toRel = normalizeRelativePath(body.to);
+  if (!fromRel || !toRel) fail("Both from and to paths are required", 400);
+  if (fromRel === toRel) fail("Source and destination must differ", 400);
+
+  if (backend === "DOCKER") {
+    const container = project.dockerContainer?.trim();
+    if (!container)
+      fail("dockerContainer is not configured for this project", 400);
+    const script = [
+      'ROOT="$1"',
+      'FROM_REL="$2"',
+      'TO_REL="$3"',
+      'OVERWRITE="$4"',
+      'resolve_root() { cd "$ROOT" 2>/dev/null && pwd -P; }',
+      'CANON_ROOT=$(resolve_root) || { echo "__ERR__:ROOT"; exit 1; }',
+      'SRC="$CANON_ROOT/$FROM_REL"',
+      '[ -e "$SRC" ] || { echo "__ERR__:NOT_FOUND"; exit 1; }',
+      '[ -L "$SRC" ] && { echo "__ERR__:SYMLINK"; exit 1; }',
+      'DST="$CANON_ROOT/$TO_REL"',
+      'DST_PARENT=$(dirname "$DST")',
+      '[ -d "$DST_PARENT" ] || { echo "__ERR__:PARENT"; exit 1; }',
+      'if [ -e "$DST" ] && [ "$OVERWRITE" != "1" ]; then echo "__ERR__:EXISTS"; exit 1; fi',
+      'cp -r "$SRC" "$DST" || { echo "__ERR__:COPY_FAIL"; exit 1; }',
+      'echo "__OK__"',
+    ].join("; ");
+    const stdout = await dockerExec(project, script, [
+      project.path,
+      fromRel,
+      toRel,
+      body.overwrite ? "1" : "0",
+    ]).catch((error) => {
+      dockerErrorFromText(dockerExecErrorText(error));
+    });
+    if (!stdout.includes("__OK__")) dockerErrorFromText(stdout);
+    return { ok: true };
+  }
+
+  if (backend === "LOCAL") {
+    const fromResolved = await resolveLocalExisting(project.path, fromRel);
+    const { targetAbs: toAbs } = await resolveLocalParentForCreate(
+      project.path,
+      toRel,
+    );
+    const toExisting = await fs.lstat(toAbs).catch(() => null);
+    if (toExisting && !body.overwrite)
+      fail("Destination already exists", 409);
+    await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
+    return { ok: true };
+  }
+
+  return withSshRoot(project, async (sftp, rootReal) => {
+    const fromResolved = await resolveSshExisting(sftp, rootReal, fromRel);
+    const { targetAbsPath: toAbs } = await resolveSshParentForCreate(
+      sftp,
+      rootReal,
+      toRel,
+    );
+    const toExisting = await sftpLstat(sftp, toAbs).catch(() => null);
+    if (toExisting && !body.overwrite)
+      fail("Destination already exists", 409);
+    if (toExisting) await sftpDeleteRecursive(sftp, toAbs);
+    await sftpCopyRecursive(sftp, fromResolved.absPath, toAbs);
+    return { ok: true };
+  });
+}
+
+export async function moveProjectPath(
+  project: ProjectRecord,
+  body: ProjectFileMoveRequest,
+  destProject?: ProjectRecord,
+): Promise<{ ok: true }> {
+  // --- Cross-project move ---
+  if (destProject && destProject.id !== project.id) {
+    const srcBackend = pathByType(project);
+    const dstBackend = pathByType(destProject);
+    if (srcBackend !== "LOCAL" || dstBackend !== "LOCAL") {
+      fail("Cross-project move is only supported between LOCAL projects", 501);
+    }
+    const fromRel = normalizeRelativePath(body.from);
+    const toRel = normalizeRelativePath(body.to);
+    if (!fromRel || !toRel) fail("Both from and to paths are required", 400);
+    const fromResolved = await resolveLocalExisting(project.path, fromRel);
+    const { targetAbs: toAbs } = await resolveLocalParentForCreate(
+      destProject.path,
+      toRel,
+    );
+    const toExisting = await fs.lstat(toAbs).catch(() => null);
+    if (toExisting && !body.overwrite)
+      fail("Destination already exists", 409);
+    if (toExisting) await fs.rm(toAbs, { recursive: true, force: false });
+    await fs.rename(fromResolved.absPath, toAbs).catch(async () => {
+      await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
+      await fs.rm(fromResolved.absPath, { recursive: true, force: false });
+    });
+    return { ok: true };
+  }
+
+  const backend = pathByType(project);
+  const fromRel = normalizeRelativePath(body.from);
+  const toRel = normalizeRelativePath(body.to);
+  if (!fromRel || !toRel) fail("Both from and to paths are required", 400);
+  if (fromRel === toRel) fail("Source and destination must differ", 400);
+
+  if (backend === "DOCKER") {
+    const container = project.dockerContainer?.trim();
+    if (!container)
+      fail("dockerContainer is not configured for this project", 400);
+    const script = [
+      'ROOT="$1"',
+      'FROM_REL="$2"',
+      'TO_REL="$3"',
+      'OVERWRITE="$4"',
+      'resolve_root() { cd "$ROOT" 2>/dev/null && pwd -P; }',
+      'CANON_ROOT=$(resolve_root) || { echo "__ERR__:ROOT"; exit 1; }',
+      'SRC="$CANON_ROOT/$FROM_REL"',
+      '[ -e "$SRC" ] || { echo "__ERR__:NOT_FOUND"; exit 1; }',
+      '[ -L "$SRC" ] && { echo "__ERR__:SYMLINK"; exit 1; }',
+      'DST="$CANON_ROOT/$TO_REL"',
+      'DST_PARENT=$(dirname "$DST")',
+      '[ -d "$DST_PARENT" ] || { echo "__ERR__:PARENT"; exit 1; }',
+      'if [ -e "$DST" ] && [ "$OVERWRITE" != "1" ]; then echo "__ERR__:EXISTS"; exit 1; fi',
+      'mv "$SRC" "$DST" || { echo "__ERR__:MOVE_FAIL"; exit 1; }',
+      'echo "__OK__"',
+    ].join("; ");
+    const stdout = await dockerExec(project, script, [
+      project.path,
+      fromRel,
+      toRel,
+      body.overwrite ? "1" : "0",
+    ]).catch((error) => {
+      dockerErrorFromText(dockerExecErrorText(error));
+    });
+    if (!stdout.includes("__OK__")) dockerErrorFromText(stdout);
+    return { ok: true };
+  }
+
+  if (backend === "LOCAL") {
+    const fromResolved = await resolveLocalExisting(project.path, fromRel);
+    const { targetAbs: toAbs } = await resolveLocalParentForCreate(
+      project.path,
+      toRel,
+    );
+    const toExisting = await fs.lstat(toAbs).catch(() => null);
+    if (toExisting && !body.overwrite)
+      fail("Destination already exists", 409);
+    if (toExisting) await fs.rm(toAbs, { recursive: true, force: false });
+    await fs.rename(fromResolved.absPath, toAbs).catch(async () => {
+      // Cross-device move: copy + delete
+      await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
+      await fs.rm(fromResolved.absPath, { recursive: true, force: false });
+    });
+    return { ok: true };
+  }
+
+  return withSshRoot(project, async (sftp, rootReal) => {
+    const fromResolved = await resolveSshExisting(sftp, rootReal, fromRel);
+    const { targetAbsPath: toAbs } = await resolveSshParentForCreate(
+      sftp,
+      rootReal,
+      toRel,
+    );
+    const toExisting = await sftpLstat(sftp, toAbs).catch(() => null);
+    if (toExisting && !body.overwrite)
+      fail("Destination already exists", 409);
+    if (toExisting) await sftpDeleteRecursive(sftp, toAbs);
+    await sftpRename(sftp, fromResolved.absPath, toAbs).catch(async () => {
+      // If rename fails (cross-filesystem), copy + delete
+      await sftpCopyRecursive(sftp, fromResolved.absPath, toAbs);
+      await sftpDeleteRecursive(sftp, fromResolved.absPath);
     });
     return { ok: true };
   });
