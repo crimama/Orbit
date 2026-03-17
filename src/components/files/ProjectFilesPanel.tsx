@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   createLeaf,
   splitPane,
@@ -62,7 +62,7 @@ type RendererProps = {
   onSelectDoc: (paneId: string, filePath: string) => void;
   onDocChange: (filePath: string, content: string) => void;
   onSaveDoc: (filePath: string) => void;
-  onRatioChange: (splitId: string, ratio: number) => void;
+  onRatioChange: (splitId: string, index: number, delta: number) => void;
 };
 
 function FilePaneRenderer({
@@ -196,53 +196,47 @@ function FilePaneRenderer({
   }
 
   const isHorizontal = node.direction === "horizontal";
-  const firstPercent = `${node.ratio * 100}%`;
-  const secondPercent = `${(1 - node.ratio) * 100}%`;
 
   return (
     <div
       className={`flex h-full w-full ${isHorizontal ? "flex-row" : "flex-col"}`}
     >
-      <div
-        style={{ flexBasis: firstPercent }}
-        className="min-h-0 min-w-0 overflow-hidden"
-      >
-        <FilePaneRenderer
-          node={node.children[0]}
-          activePaneId={activePaneId}
-          docs={docs}
-          busyPath={busyPath}
-          onActivate={onActivate}
-          onSplit={onSplit}
-          onClose={onClose}
-          onSelectDoc={onSelectDoc}
-          onDocChange={onDocChange}
-          onSaveDoc={onSaveDoc}
-          onRatioChange={onRatioChange}
-        />
-      </div>
-      <SplitDivider
-        direction={node.direction}
-        onRatioChange={(ratio) => onRatioChange(node.id, ratio)}
-      />
-      <div
-        style={{ flexBasis: secondPercent }}
-        className="min-h-0 min-w-0 overflow-hidden"
-      >
-        <FilePaneRenderer
-          node={node.children[1]}
-          activePaneId={activePaneId}
-          docs={docs}
-          busyPath={busyPath}
-          onActivate={onActivate}
-          onSplit={onSplit}
-          onClose={onClose}
-          onSelectDoc={onSelectDoc}
-          onDocChange={onDocChange}
-          onSaveDoc={onSaveDoc}
-          onRatioChange={onRatioChange}
-        />
-      </div>
+      {node.children.map((child, index) => (
+        <Fragment key={child.id}>
+          <div
+            style={{ flexBasis: `${node.ratios[index] * 100}%` }}
+            className="min-h-0 min-w-0 overflow-hidden"
+          >
+            <FilePaneRenderer
+              node={child}
+              activePaneId={activePaneId}
+              docs={docs}
+              busyPath={busyPath}
+              onActivate={onActivate}
+              onSplit={onSplit}
+              onClose={onClose}
+              onSelectDoc={onSelectDoc}
+              onDocChange={onDocChange}
+              onSaveDoc={onSaveDoc}
+              onRatioChange={onRatioChange}
+            />
+          </div>
+          {index < node.children.length - 1 ? (
+            <SplitDivider
+              direction={node.direction}
+              onDeltaChange={(delta) => onRatioChange(node.id, index, delta)}
+              onReset={() => {
+                const combined = node.ratios[index] + node.ratios[index + 1];
+                onRatioChange(
+                  node.id,
+                  index,
+                  combined / 2 - node.ratios[index],
+                );
+              }}
+            />
+          ) : null}
+        </Fragment>
+      ))}
     </div>
   );
 }
@@ -773,9 +767,12 @@ export default function ProjectFilesPanel({
     [],
   );
 
-  const updatePaneRatio = useCallback((splitId: string, ratio: number) => {
-    setTree((prev) => updateSplitRatio(prev, splitId, ratio));
-  }, []);
+  const updatePaneRatio = useCallback(
+    (splitId: string, index: number, delta: number) => {
+      setTree((prev) => updateSplitRatio(prev, splitId, index, delta));
+    },
+    [],
+  );
 
   const closeEditorPane = useCallback(
     (paneId: string) => {
@@ -1174,5 +1171,9 @@ function findFirstLeaf(
   node: PaneNode,
 ): { id: string; sessionId: string | null } | null {
   if (node.type === "leaf") return node;
-  return findFirstLeaf(node.children[0]) ?? findFirstLeaf(node.children[1]);
+  for (const child of node.children) {
+    const leaf = findFirstLeaf(child);
+    if (leaf) return leaf;
+  }
+  return null;
 }

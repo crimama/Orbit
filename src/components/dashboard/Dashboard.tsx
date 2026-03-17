@@ -57,7 +57,7 @@ function matchesQuery(item: CommandPaletteItem, query: string): boolean {
 }
 
 export default function Dashboard() {
-  const LEFT_PANEL_MIN_WIDTH = 240;
+  const LEFT_PANEL_MIN_WIDTH = 200;
   const LEFT_PANEL_MAX_WIDTH = 560;
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
@@ -66,7 +66,7 @@ export default function Dashboard() {
   );
   const [addProjectMode, setAddProjectMode] = useState<AddProjectMode>(null);
   const [isProjectsListCollapsed, setIsProjectsListCollapsed] = useState(false);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(288);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(220);
   const [creatingSession, setCreatingSession] = useState(false);
   const [sessionViewMode, setSessionViewMode] =
     useState<SessionViewMode>("active");
@@ -749,10 +749,6 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", onGlobalKeyDown);
   }, [paletteCursor, paletteOpen, paletteResults]);
 
-  const dockSessions = useMemo(() => {
-    return sessions.filter((s) => s.status !== "terminated").slice(0, 14);
-  }, [sessions]);
-
   const startLeftPanelResize = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.preventDefault();
@@ -819,42 +815,7 @@ export default function Dashboard() {
         <h1 className="text-sm font-bold tracking-wide text-neutral-300">
           Agent Orbit
         </h1>
-        <div className="flex flex-wrap gap-1 sm:gap-2">
-          <button
-            onClick={handleGoHome}
-            className="rounded px-3 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-          >
-            Home
-          </button>
-          {/* Hidden: Skill Graph nav link */}
-          {false && selectedProject && (
-            <Link
-              href={`/graph?projectId=${selectedProject!.id}`}
-              className="rounded px-3 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-            >
-              Skill Graph
-            </Link>
-          )}
-          {false && (
-          <Link
-            href="/compare"
-            className="rounded px-3 py-1 text-xs text-neutral-400 transition-colors hover:bg-neutral-800 hover:text-neutral-200"
-          >
-            A/B Compare
-          </Link>
-          )}
-          <button
-            onClick={() => void toggleYoloMode()}
-            className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
-              yoloMode
-                ? "bg-red-600/80 text-red-100 hover:bg-red-600"
-                : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-            }`}
-            title={yoloMode ? "YOLO mode ON — all commands auto-approved" : "Enable YOLO mode (auto-approve all)"}
-          >
-            {yoloMode ? "YOLO ON" : "YOLO"}
-          </button>
-        </div>
+        <div className="flex flex-wrap gap-1 sm:gap-2"></div>
       </div>
 
       <div
@@ -1460,36 +1421,6 @@ export default function Dashboard() {
         </div>
       ) : null}
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-800 bg-neutral-950/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-[1600px] items-center gap-2 overflow-x-auto px-3 py-1.5">
-          <span className="shrink-0 text-[11px] uppercase tracking-wide text-neutral-500">
-            Global Session Dock
-          </span>
-          {dockSessions.length === 0 ? (
-            <span className="text-xs text-neutral-600">No active sessions</span>
-          ) : (
-            dockSessions.map((session) => {
-              const statusClass =
-                session.status === "active"
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
-                  : session.status === "paused"
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                    : "border-rose-500/40 bg-rose-500/10 text-rose-300";
-              return (
-                <button
-                  key={`dock-${session.id}`}
-                  onClick={() => openSessionInDashboard(session)}
-                  className={`shrink-0 rounded border px-2 py-1 text-xs transition-colors hover:bg-neutral-800 ${statusClass}`}
-                >
-                  <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-current align-middle" />
-                  {session.projectName} /{" "}
-                  {session.name || session.id.slice(0, 8)}
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
     </div>
   );
 }

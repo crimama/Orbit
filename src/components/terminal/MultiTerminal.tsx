@@ -9,6 +9,7 @@ import {
   updateSplitRatio,
   findLeaf,
   collectLeafIds,
+  migrateLegacyTree,
   type PaneNode,
 } from "@/lib/paneTree";
 import { createTerminalSocket, type OrbitSocket } from "@/lib/socketClient";
@@ -29,38 +30,6 @@ interface MultiTerminalProps {
   onKillSession?: (sessionId: string) => Promise<void> | void;
 }
 
-function isPaneNode(value: unknown): value is PaneNode {
-  if (!value || typeof value !== "object") return false;
-  const node = value as Partial<PaneNode>;
-
-  if (node.type === "leaf") {
-    return (
-      typeof node.id === "string" &&
-      (typeof node.sessionId === "string" || node.sessionId === null)
-    );
-  }
-
-  if (node.type === "split") {
-    const split = value as {
-      id?: unknown;
-      direction?: unknown;
-      ratio?: unknown;
-      children?: unknown;
-    };
-    return (
-      typeof split.id === "string" &&
-      (split.direction === "horizontal" || split.direction === "vertical") &&
-      typeof split.ratio === "number" &&
-      Array.isArray(split.children) &&
-      split.children.length === 2 &&
-      isPaneNode(split.children[0]) &&
-      isPaneNode(split.children[1])
-    );
-  }
-
-  return false;
-}
-
 function sanitizeTreeSessions(
   node: PaneNode,
   sessionIds: Set<string>,
@@ -74,10 +43,9 @@ function sanitizeTreeSessions(
 
   return {
     ...node,
-    children: [
-      sanitizeTreeSessions(node.children[0], sessionIds),
-      sanitizeTreeSessions(node.children[1], sessionIds),
-    ],
+    children: node.children.map((child) =>
+      sanitizeTreeSessions(child, sessionIds),
+    ),
   };
 }
 
@@ -89,12 +57,15 @@ function reorientSiblingLeafSplit(
 ): { node: PaneNode; changed: boolean } {
   if (node.type === "leaf") return { node, changed: false };
 
-  const [first, second] = node.children;
+  const leafChildren = node.children.filter(
+    (child): child is Extract<PaneNode, { type: "leaf" }> => child.type === "leaf",
+  );
   const isSiblingLeafPair =
-    first.type === "leaf" &&
-    second.type === "leaf" &&
-    ((first.id === sourcePaneId && second.id === targetPaneId) ||
-      (first.id === targetPaneId && second.id === sourcePaneId));
+    leafChildren.length === 2 &&
+    ((leafChildren[0].id === sourcePaneId &&
+      leafChildren[1].id === targetPaneId) ||
+      (leafChildren[0].id === targetPaneId &&
+        leafChildren[1].id === sourcePaneId));
 
   if (isSiblingLeafPair) {
     const direction =
@@ -103,8 +74,8 @@ function reorientSiblingLeafSplit(
       position === "top" || position === "left" ? sourcePaneId : targetPaneId;
     const secondId = firstId === sourcePaneId ? targetPaneId : sourcePaneId;
     const byId = new Map([
-      [first.id, first],
-      [second.id, second],
+      [leafChildren[0].id, leafChildren[0]],
+      [leafChildren[1].id, leafChildren[1]],
     ]);
 
     return {
@@ -112,35 +83,27 @@ function reorientSiblingLeafSplit(
         ...node,
         direction,
         children: [byId.get(firstId)!, byId.get(secondId)!],
+        ratios: [0.5, 0.5],
       },
       changed: true,
     };
   }
 
-  const left = reorientSiblingLeafSplit(
-    node.children[0],
-    sourcePaneId,
-    targetPaneId,
-    position,
-  );
-  if (left.changed) {
-    return {
-      node: { ...node, children: [left.node, node.children[1]] },
-      changed: true,
-    };
-  }
-
-  const right = reorientSiblingLeafSplit(
-    node.children[1],
-    sourcePaneId,
-    targetPaneId,
-    position,
-  );
-  if (right.changed) {
-    return {
-      node: { ...node, children: [node.children[0], right.node] },
-      changed: true,
-    };
+  for (let index = 0; index < node.children.length; index += 1) {
+    const next = reorientSiblingLeafSplit(
+      node.children[index],
+      sourcePaneId,
+      targetPaneId,
+      position,
+    );
+    if (next.changed) {
+      const children = [...node.children];
+      children[index] = next.node;
+      return {
+        node: { ...node, children },
+        changed: true,
+      };
+    }
   }
 
   return { node, changed: false };
@@ -153,38 +116,43 @@ function placeNewSessionByEdge(
 ): { node: PaneNode; changed: boolean } {
   if (node.type === "leaf") return { node, changed: false };
 
-  const [first, second] = node.children;
-  const isTargetSplit =
-    first.type === "leaf" &&
-    second.type === "leaf" &&
-    (first.id === paneId || second.id === paneId);
+  const paneIndex = node.children.findIndex(
+    (child) => child.type === "leaf" && child.id === paneId,
+  );
+  const isTargetSplit = paneIndex !== -1 && node.children.length >= 2;
 
   if (isTargetSplit) {
-    const targetFirst = position === "right" || position === "bottom";
-    const paneOnFirst = first.type === "leaf" && first.id === paneId;
-    if (targetFirst === paneOnFirst) {
+    const shouldMoveForward = position === "right" || position === "bottom";
+    const swapIndex = shouldMoveForward ? paneIndex + 1 : paneIndex - 1;
+    if (swapIndex < 0 || swapIndex >= node.children.length) {
       return { node, changed: true };
     }
+
+    const children = [...node.children];
+    [children[paneIndex], children[swapIndex]] = [
+      children[swapIndex],
+      children[paneIndex],
+    ];
     return {
-      node: { ...node, children: [second, first] },
+      node: { ...node, children },
       changed: true,
     };
   }
 
-  const left = placeNewSessionByEdge(node.children[0], paneId, position);
-  if (left.changed) {
-    return {
-      node: { ...node, children: [left.node, node.children[1]] },
-      changed: true,
-    };
-  }
-
-  const right = placeNewSessionByEdge(node.children[1], paneId, position);
-  if (right.changed) {
-    return {
-      node: { ...node, children: [node.children[0], right.node] },
-      changed: true,
-    };
+  for (let index = 0; index < node.children.length; index += 1) {
+    const next = placeNewSessionByEdge(
+      node.children[index],
+      paneId,
+      position,
+    );
+    if (next.changed) {
+      const children = [...node.children];
+      children[index] = next.node;
+      return {
+        node: { ...node, children },
+        changed: true,
+      };
+    }
   }
 
   return { node, changed: false };
@@ -290,13 +258,14 @@ export default function MultiTerminal({
         activePaneId?: string;
       };
 
-      if (!isPaneNode(parsed.tree)) {
+      const migratedTree = migrateLegacyTree(parsed.tree);
+      if (!migratedTree) {
         runtimeStateLoadedRef.current = true;
         return;
       }
 
-      const leafIds = collectLeafIds(parsed.tree);
-      setTree(parsed.tree);
+      const leafIds = collectLeafIds(migratedTree);
+      setTree(migratedTree);
       if (parsed.activePaneId && leafIds.includes(parsed.activePaneId)) {
         setActivePaneId(parsed.activePaneId);
       } else if (leafIds.length > 0) {
@@ -326,12 +295,13 @@ export default function MultiTerminal({
     (workspace: WorkspaceLayoutInfo) => {
       try {
         const parsed = JSON.parse(workspace.tree) as unknown;
-        if (!isPaneNode(parsed)) return;
+        const migratedTree = migrateLegacyTree(parsed);
+        if (!migratedTree) return;
 
         const activeSessionIds = new Set(
           sessions.filter((s) => s.status === "active").map((s) => s.id),
         );
-        const sanitizedTree = sanitizeTreeSessions(parsed, activeSessionIds);
+        const sanitizedTree = sanitizeTreeSessions(migratedTree, activeSessionIds);
         const leafIds = collectLeafIds(sanitizedTree);
         const nextActivePane =
           workspace.activePaneId && leafIds.includes(workspace.activePaneId)
@@ -508,9 +478,12 @@ export default function MultiTerminal({
     setExitedPanes((prev) => new Set(prev).add(paneId));
   }, []);
 
-  const handleRatioChange = useCallback((splitId: string, ratio: number) => {
-    setTree((prev) => updateSplitRatio(prev, splitId, ratio));
-  }, []);
+  const handleRatioChange = useCallback(
+    (splitId: string, index: number, delta: number) => {
+      setTree((prev) => updateSplitRatio(prev, splitId, index, delta));
+    },
+    [],
+  );
 
   const handleSwapPanes = useCallback(
     (sourcePaneId: string, targetPaneId: string) => {

@@ -456,7 +456,14 @@ export default function BorderlessWorkspace({
           {layoutMode === "split" ? (
             <SplitDivider
               direction={splitDirection}
-              onRatioChange={setSplitRatio}
+              onDeltaChange={(delta) => {
+                setSplitRatio((prev) =>
+                  Math.max(0.1, Math.min(0.9, prev + delta)),
+                );
+              }}
+              onReset={() => {
+                setSplitRatio(0.5);
+              }}
             />
           ) : null}
 

@@ -4,12 +4,14 @@ import { useCallback, useRef } from "react";
 
 interface SplitDividerProps {
   direction: "horizontal" | "vertical";
-  onRatioChange: (ratio: number) => void;
+  onDeltaChange: (delta: number) => void;
+  onReset?: () => void;
 }
 
 export default function SplitDivider({
   direction,
-  onRatioChange,
+  onDeltaChange,
+  onReset,
 }: SplitDividerProps) {
   const dividerRef = useRef<HTMLDivElement>(null);
 
@@ -20,15 +22,18 @@ export default function SplitDivider({
       if (!parent) return;
 
       const rect = parent.getBoundingClientRect();
+      let previousPosition =
+        direction === "horizontal" ? e.clientX : e.clientY;
 
       const onMouseMove = (ev: MouseEvent) => {
-        let ratio: number;
-        if (direction === "horizontal") {
-          ratio = (ev.clientX - rect.left) / rect.width;
-        } else {
-          ratio = (ev.clientY - rect.top) / rect.height;
-        }
-        onRatioChange(Math.max(0.1, Math.min(0.9, ratio)));
+        const nextPosition =
+          direction === "horizontal" ? ev.clientX : ev.clientY;
+        const size = direction === "horizontal" ? rect.width : rect.height;
+        if (size <= 0) return;
+
+        const delta = (nextPosition - previousPosition) / size;
+        previousPosition = nextPosition;
+        onDeltaChange(delta);
       };
 
       const onMouseUp = () => {
@@ -46,12 +51,12 @@ export default function SplitDivider({
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
     },
-    [direction, onRatioChange],
+    [direction, onDeltaChange],
   );
 
   const handleDoubleClick = useCallback(() => {
-    onRatioChange(0.5);
-  }, [onRatioChange]);
+    onReset?.();
+  }, [onReset]);
 
   const isHorizontal = direction === "horizontal";
 

@@ -3,6 +3,7 @@
 import type { PaneNode } from "@/lib/paneTree";
 import type { OrbitSocket } from "@/lib/socketClient";
 import type { SessionInfo, WorkspaceLayoutInfo } from "@/lib/types";
+import { Fragment } from "react";
 import SplitDivider from "./SplitDivider";
 import TerminalPane from "./TerminalPane";
 
@@ -40,7 +41,7 @@ interface PaneRendererProps {
     targetPaneId: string,
     position: "top" | "bottom" | "left" | "right",
   ) => void;
-  onRatioChange: (splitId: string, ratio: number) => void;
+  onRatioChange: (splitId: string, index: number, delta: number) => void;
   onPaneExit: (paneId: string) => void;
   onKillSession: (paneId: string, sessionId: string) => Promise<void> | void;
   workspace?: WorkspaceControls;
@@ -100,8 +101,6 @@ export default function PaneRenderer({
 
   // Split node
   const isHorizontal = node.direction === "horizontal";
-  const firstPercent = `${node.ratio * 100}%`;
-  const secondPercent = `${(1 - node.ratio) * 100}%`;
 
   const sharedProps = {
     activePaneId,
@@ -127,22 +126,30 @@ export default function PaneRenderer({
     <div
       className={`flex h-full w-full overflow-hidden ${isHorizontal ? "flex-row" : "flex-col"}`}
     >
-      <div
-        style={{ flex: `0 1 ${firstPercent}` }}
-        className="min-h-0 min-w-0 overflow-hidden"
-      >
-        <PaneRenderer node={node.children[0]} {...sharedProps} />
-      </div>
-      <SplitDivider
-        direction={node.direction}
-        onRatioChange={(ratio) => onRatioChange(node.id, ratio)}
-      />
-      <div
-        style={{ flex: `0 1 ${secondPercent}` }}
-        className="min-h-0 min-w-0 overflow-hidden"
-      >
-        <PaneRenderer node={node.children[1]} {...sharedProps} />
-      </div>
+      {node.children.map((child, index) => (
+        <Fragment key={child.id}>
+          <div
+            style={{ flex: `0 1 ${node.ratios[index] * 100}%` }}
+            className="min-h-0 min-w-0 overflow-hidden"
+          >
+            <PaneRenderer node={child} {...sharedProps} />
+          </div>
+          {index < node.children.length - 1 ? (
+            <SplitDivider
+              direction={node.direction}
+              onDeltaChange={(delta) => onRatioChange(node.id, index, delta)}
+              onReset={() => {
+                const combined = node.ratios[index] + node.ratios[index + 1];
+                onRatioChange(
+                  node.id,
+                  index,
+                  combined / 2 - node.ratios[index],
+                );
+              }}
+            />
+          ) : null}
+        </Fragment>
+      ))}
     </div>
   );
 }

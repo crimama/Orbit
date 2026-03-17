@@ -42,6 +42,7 @@ export default function ProjectList({
   const [editValue, setEditValue] = useState("");
   const [colorPickerId, setColorPickerId] = useState<string | null>(null);
   const [configEditingId, setConfigEditingId] = useState<string | null>(null);
+  const [editNameValue, setEditNameValue] = useState("");
   const [editPathValue, setEditPathValue] = useState("");
   const [editContainerValue, setEditContainerValue] = useState("");
   const [configContainers, setConfigContainers] = useState<DockerContainerInfo[]>([]);
@@ -97,6 +98,7 @@ export default function ProjectList({
 
   function startConfigEditing(p: ProjectInfo) {
     setConfigEditingId(p.id);
+    setEditNameValue(p.name);
     setEditPathValue(p.path);
     setEditContainerValue(p.dockerContainer ?? "");
     setConfigContainers([]);
@@ -107,9 +109,13 @@ export default function ProjectList({
   }
 
   function commitConfigEdit(project: ProjectInfo) {
+    const nextName = editNameValue.trim();
     const nextPath = editPathValue.trim();
     const nextContainer = editContainerValue.trim();
     if (!nextPath) return;
+    if (nextName && nextName !== project.name) {
+      onRename(project.id, nextName);
+    }
     const changedPath = nextPath !== project.path;
     const changedContainer =
       (project.dockerContainer ?? "") !== nextContainer &&
@@ -374,6 +380,13 @@ export default function ProjectList({
                 className="ml-5 mt-2 space-y-1 rounded border border-neutral-800 bg-neutral-900/80 p-2"
                 onClick={(e) => e.stopPropagation()}
               >
+                  <input
+                    type="text"
+                    value={editNameValue}
+                    onChange={(e) => setEditNameValue(e.target.value)}
+                    placeholder="Project name"
+                    className="w-full rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200"
+                  />
                   <input
                     type="text"
                     value={editPathValue}

@@ -46,7 +46,7 @@ export default function SidebarFileTree({
 
   // --- Context menu state ---
   const [ctxMenu, setCtxMenu] = useState<{
-    entry: FileEntry;
+    entry: FileEntry | null; // null = blank space right-click
     x: number;
     y: number;
   } | null>(null);
@@ -168,6 +168,43 @@ export default function SidebarFileTree({
     [currentDir, doFetch, navigateTo],
   );
 
+  const createFile = useCallback(async () => {
+    const name = window.prompt("New file name", "untitled.txt")?.trim();
+    if (!name) return;
+    const fullPath = currentDir ? `${currentDir}/${name}` : name;
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/files/write?${new URLSearchParams({ path: fullPath }).toString()}`,
+        {
+          method: "PUT",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ content: "", create: true }),
+        },
+      );
+      const json = (await res.json()) as ApiResponse<{ ok: true }> | ApiError;
+      if (!res.ok || "error" in json) {
+        throw new Error("error" in json ? json.error : "Failed to create file");
+      }
+      await navigateTo(currentDir);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create file");
+    }
+  }, [currentDir, projectId, navigateTo]);
+
+  const createFolder = useCallback(async () => {
+    const name = window.prompt("New folder name", "new-folder")?.trim();
+    if (!name) return;
+    const fullPath = currentDir ? `${currentDir}/${name}` : name;
+    setError(null);
+    try {
+      await doFetch("mkdir", { path: fullPath });
+      await navigateTo(currentDir);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create folder");
+    }
+  }, [currentDir, doFetch, navigateTo]);
+
   const openCopyPicker = useCallback((entry: FileEntry) => {
     setPicker({ mode: "copy", entry });
   }, []);
@@ -250,14 +287,18 @@ export default function SidebarFileTree({
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement | null;
       const row = target?.closest<HTMLElement>("[data-entry-path]");
-      if (!row) return;
-      const path = row.dataset.entryPath;
-      if (!path) return;
-      const entry = entryMapRef.current.get(path);
-      if (!entry) return;
       e.preventDefault();
       e.stopPropagation();
-      setCtxMenu({ entry, x: e.clientX, y: e.clientY });
+      if (row) {
+        const path = row.dataset.entryPath;
+        const entry = path ? entryMapRef.current.get(path) : null;
+        if (entry) {
+          setCtxMenu({ entry, x: e.clientX, y: e.clientY });
+          return;
+        }
+      }
+      // Blank space — show create menu
+      setCtxMenu({ entry: null, x: e.clientX, y: e.clientY });
     };
     el.addEventListener("contextmenu", handler);
     return () => el.removeEventListener("contextmenu", handler);
@@ -381,35 +422,56 @@ export default function SidebarFileTree({
           onMouseDown={(e) => e.stopPropagation()}
           onClick={() => setCtxMenu(null)}
         >
-          <button
-            onClick={() => openCopyPicker(ctxMenu.entry)}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
-            type="button"
-          >
-            Copy
-          </button>
-          <button
-            onClick={() => openMovePicker(ctxMenu.entry)}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
-            type="button"
-          >
-            Move
-          </button>
-          <button
-            onClick={() => void renameEntry(ctxMenu.entry)}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
-            type="button"
-          >
-            Rename
-          </button>
-          <div className="mx-2 my-1 border-t border-neutral-700" />
-          <button
-            onClick={() => void deleteEntry(ctxMenu.entry)}
-            className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-red-400 hover:bg-neutral-700"
-            type="button"
-          >
-            Delete
-          </button>
+          {ctxMenu.entry ? (
+            <>
+              <button
+                onClick={() => openCopyPicker(ctxMenu.entry!)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                Copy
+              </button>
+              <button
+                onClick={() => openMovePicker(ctxMenu.entry!)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                Move
+              </button>
+              <button
+                onClick={() => void renameEntry(ctxMenu.entry!)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                Rename
+              </button>
+              <div className="mx-2 my-1 border-t border-neutral-700" />
+              <button
+                onClick={() => void deleteEntry(ctxMenu.entry!)}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-red-400 hover:bg-neutral-700"
+                type="button"
+              >
+                Delete
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => void createFile()}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                New File
+              </button>
+              <button
+                onClick={() => void createFolder()}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                New Folder
+              </button>
+            </>
+          )}
         </div>
       ) : null}
 
