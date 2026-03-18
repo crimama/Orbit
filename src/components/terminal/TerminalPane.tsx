@@ -241,7 +241,7 @@ export default function TerminalPane({
           }`}
         />
       )}
-      {/* Mini header */}
+      {/* Compact pane toolbar — no session select/project/status (shown in tab bar above) */}
       <div
         draggable
         onDragStart={(e) => {
@@ -254,63 +254,10 @@ export default function TerminalPane({
           e.dataTransfer.setData("text/plain", `pane:${paneId}`);
           e.dataTransfer.effectAllowed = "move";
         }}
-        className="flex min-w-0 flex-shrink-0 items-center gap-1.5 overflow-hidden border-b border-neutral-800 bg-neutral-900 px-2.5 py-1.5"
+        className="flex min-w-0 flex-shrink-0 items-center gap-1 overflow-hidden bg-neutral-900 px-2 py-0.5"
       >
-        {/* Project color + status indicator */}
-        {sessionId ? (
-          <span
-            className="mr-1.5 inline-block h-2 w-2 flex-shrink-0 rounded-full"
-            style={{
-              backgroundColor: exited ? "var(--status-exited)" : (projectColor ?? "var(--status-active)"),
-            }}
-            title={
-              exited ? "Exited" : (currentSession?.projectName ?? "Active")
-            }
-          />
-        ) : (
-          <span
-            className="mr-1.5 inline-block h-2 w-2 flex-shrink-0 rounded-full bg-neutral-600"
-            title="No session"
-          />
-        )}
-
-        <select
-          value={sessionId ?? ""}
-          onChange={(e) => {
-            if (e.target.value) onSelectSession(e.target.value);
-          }}
-          className="min-w-0 flex-1 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2.5 py-1 text-sm font-medium text-neutral-100 outline-none focus:border-border-focus"
-        >
-          <option value="">Select session...</option>
-          {sessions
-            .filter((s) => s.status === "active")
-            .map((s) => (
-              <option key={s.id} value={s.id}>
-                {formatSessionLabel(s)}
-              </option>
-            ))}
-        </select>
-
-        {currentSession && (
-          <span
-            className="hidden max-w-36 truncate rounded-full border border-neutral-700 bg-neutral-800 px-2 py-0.5 text-xs font-medium text-neutral-300 sm:inline"
-            style={{ borderColor: projectColor ?? "var(--border)" }}
-            title={currentSession.projectName}
-          >
-            {currentSession.projectName}
-          </span>
-        )}
-
-        {sessionId && (
-          <span
-            className={`ml-1 hidden rounded-full px-1.5 py-0.5 text-xs sm:inline ${exited ? "bg-red-900/30 text-red-400" : "bg-emerald-900/30 text-emerald-400"}`}
-          >
-            {exited ? "Exited" : "Active"}
-          </span>
-        )}
-
         {workspace && (
-          <div className="ml-1 hidden items-center gap-1 border-l border-neutral-700 pl-2 sm:flex">
+          <div className="hidden items-center gap-1 sm:flex">
             <select
               value={workspace.selectedWorkspaceId}
               onChange={(e) => {
@@ -319,7 +266,7 @@ export default function TerminalPane({
                 const found = workspace.workspaces.find((w) => w.id === id);
                 if (found) workspace.onApplyWorkspace(found);
               }}
-              className="max-w-32 truncate rounded border border-neutral-700 bg-neutral-800 px-1.5 py-0.5 text-xs text-neutral-300"
+              className="max-w-28 truncate rounded border border-neutral-700 bg-neutral-800 px-1.5 py-0.5 text-[11px] text-neutral-400"
               title="Workspace"
             >
               <option value="">WS: unsaved</option>
@@ -337,7 +284,7 @@ export default function TerminalPane({
               }}
               disabled={workspace.savingWorkspace}
               title="Save Workspace"
-              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 disabled:opacity-50"
+              className="rounded px-1 py-0.5 text-[11px] text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200 disabled:opacity-40"
             >
               {workspace.savingWorkspace ? "..." : "\uD83D\uDCBE"}
             </button>
@@ -352,7 +299,7 @@ export default function TerminalPane({
               }}
               disabled={!workspace.selectedWorkspaceId}
               title="Reopen Workspace"
-              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200 disabled:opacity-50"
+              className="rounded px-1 py-0.5 text-[11px] text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200 disabled:opacity-40"
             >
               {"\uD83D\uDD04"}
             </button>
@@ -364,17 +311,17 @@ export default function TerminalPane({
               }}
               disabled={!workspace.selectedWorkspaceId}
               title="Delete Workspace"
-              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-rose-900/30 hover:text-rose-400 disabled:opacity-50"
+              className="rounded px-1 py-0.5 text-[11px] text-neutral-500 hover:bg-rose-900/30 hover:text-rose-400 disabled:opacity-40"
             >
               {"\uD83D\uDDD1\uFE0F"}
             </button>
           </div>
         )}
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex items-center gap-0.5">
           <span
-            title="Drag pane from header"
-            className="cursor-grab rounded px-1.5 py-0.5 text-sm text-neutral-500"
+            title="Drag pane"
+            className="cursor-grab rounded px-1 py-0.5 text-xs text-neutral-600"
           >
             ⠿
           </span>
@@ -384,7 +331,7 @@ export default function TerminalPane({
               onSplit("horizontal");
             }}
             title="Split Horizontal"
-            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+            className="rounded px-1 py-0.5 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ⎸
           </button>
@@ -394,7 +341,7 @@ export default function TerminalPane({
               onSplit("vertical");
             }}
             title="Split Vertical"
-            className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-neutral-700 hover:text-neutral-200"
+            className="rounded px-1 py-0.5 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
           >
             ⎯
           </button>
@@ -405,7 +352,7 @@ export default function TerminalPane({
                 onClose();
               }}
               title="Close Pane"
-              className="rounded px-1.5 py-0.5 text-sm text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+              className="rounded px-1 py-0.5 text-xs text-neutral-500 hover:bg-red-900/30 hover:text-red-400"
             >
               ✕
             </button>
@@ -419,7 +366,7 @@ export default function TerminalPane({
                   void onKillSession();
                 }}
                 title="Kill Session"
-                className="rounded px-2 py-0.5 text-xs font-medium text-neutral-400 hover:bg-red-900/30 hover:text-red-400"
+                className="rounded px-1.5 py-0.5 text-[11px] font-medium text-neutral-500 hover:bg-red-900/30 hover:text-red-400"
               >
                 Kill
               </button>

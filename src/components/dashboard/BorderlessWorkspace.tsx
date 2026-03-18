@@ -354,7 +354,7 @@ export default function BorderlessWorkspace({
     panelSide: PanelSide,
     activeTabId: string | null,
   ) => (
-    <div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900 px-2 py-1 text-xs">
+    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
         {layoutMode === "split"
           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
