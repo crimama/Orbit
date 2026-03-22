@@ -160,7 +160,7 @@ class SessionManager {
     agentType: string,
     resumeSessionRef: string | undefined,
     remoteProject: { path: string; dockerContainer: string | null },
-    options?: { cols?: number; rows?: number },
+    options?: { cols?: number; rows?: number; dangerouslySkipPermissions?: boolean },
   ): Promise<void> {
     const status = sshManager.getStatus(sshConfigId);
     if (status.state !== "connected") {
@@ -175,7 +175,7 @@ class SessionManager {
 
     this.bootstrapRemoteAgent(
       sessionId,
-      { agentType, resumeSessionRef },
+      { agentType, resumeSessionRef, dangerouslySkipPermissions: options?.dangerouslySkipPermissions },
       remoteProject,
     );
     this.registerExitHandler(sessionId, "remote");
@@ -233,7 +233,7 @@ class SessionManager {
             path: project.path,
             dockerContainer: project.dockerContainer,
           },
-          { cols: req.cols, rows: req.rows },
+          { cols: req.cols, rows: req.rows, dangerouslySkipPermissions: req.dangerouslySkipPermissions },
         );
       } else {
         if (isDocker && !project.dockerContainer) {
@@ -443,12 +443,18 @@ class SessionManager {
     }
 
     const resumeRef = req.resumeSessionRef?.trim();
+    const args: string[] = resumeRef
+      ? ["--resume", resumeRef, "--fork-session"]
+      : [];
+    if (req.dangerouslySkipPermissions) {
+      args.push("--dangerously-skip-permissions");
+    }
     return {
       cols: req.cols,
       rows: req.rows,
       cwd: project.path,
       command: "claude",
-      args: resumeRef ? ["--resume", resumeRef, "--fork-session"] : [],
+      args,
     };
   }
 
@@ -520,7 +526,7 @@ class SessionManager {
 
   private bootstrapRemoteAgent(
     sessionId: string,
-    req: Pick<CreateSessionRequest, "agentType" | "resumeSessionRef">,
+    req: Pick<CreateSessionRequest, "agentType" | "resumeSessionRef" | "dangerouslySkipPermissions">,
     remoteProject: { path: string; dockerContainer: string | null },
   ): void {
     const pathPart = remoteProject.path.trim() || "$HOME";
@@ -536,6 +542,7 @@ class SessionManager {
           pathPart,
           req.agentType,
           req.resumeSessionRef,
+          req.dangerouslySkipPermissions,
         );
     const timer = setTimeout(() => {
       this.bootstrapTimers.delete(sessionId);
@@ -549,6 +556,7 @@ class SessionManager {
     path: string,
     agentType: string,
     resumeSessionRef?: string,
+    dangerouslySkipPermissions?: boolean,
   ): string {
     const qPath = shellQuote(path);
     if (agentType === AGENT_TYPES.TERMINAL) {
@@ -560,10 +568,11 @@ class SessionManager {
     if (agentType === AGENT_TYPES.OPENCODE) {
       return `cd ${qPath} && ${READY_MARKER_CMD} && opencode\r`;
     }
+    const skipFlag = dangerouslySkipPermissions ? " --dangerously-skip-permissions" : "";
     if (resumeSessionRef?.trim()) {
-      return `cd ${qPath} && ${READY_MARKER_CMD} && claude --resume ${shellQuote(resumeSessionRef.trim())} --fork-session\r`;
+      return `cd ${qPath} && ${READY_MARKER_CMD} && claude --resume ${shellQuote(resumeSessionRef.trim())} --fork-session${skipFlag}\r`;
     }
-    return `cd ${qPath} && ${READY_MARKER_CMD} && claude\r`;
+    return `cd ${qPath} && ${READY_MARKER_CMD} && claude${skipFlag}\r`;
   }
 
   private getRemoteDockerBootstrapCommand(

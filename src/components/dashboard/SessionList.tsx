@@ -7,6 +7,7 @@ import type { SessionInfo } from "@/lib/types";
 interface SessionListProps {
   sessions: SessionInfo[];
   onTerminate: (id: string) => void;
+  onTerminateAndRestart?: (id: string, options: { dangerouslySkipPermissions: boolean }) => void;
   onResume: (sessionRef: string, agentType?: string) => void;
   onRename?: (id: string, newName: string) => void;
   onOpenSession?: (sessionId: string) => void;
@@ -16,6 +17,7 @@ interface SessionListProps {
 export default function SessionList({
   sessions,
   onTerminate,
+  onTerminateAndRestart,
   onResume,
   onRename,
   onOpenSession,
@@ -204,12 +206,23 @@ export default function SessionList({
                 </button>
               )}
               {s.status === "active" && (
-                <button
-                  onClick={() => onTerminate(s.id)}
-                  className="rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-red-400 sm:hidden sm:group-hover:block"
-                >
-                  Kill
-                </button>
+                <>
+                  <button
+                    onClick={() => onTerminate(s.id)}
+                    className="rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-red-400 sm:hidden sm:group-hover:block"
+                  >
+                    Kill
+                  </button>
+                  {onTerminateAndRestart && s.agentType === "claude-code" && (
+                    <button
+                      onClick={() => onTerminateAndRestart(s.id, { dangerouslySkipPermissions: true })}
+                      className="rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-amber-400 sm:hidden sm:group-hover:block"
+                      title="Kill and restart with --dangerously-skip-permissions"
+                    >
+                      YOLO
+                    </button>
+                  )}
+                </>
               )}
               {s.status !== "active" && (
                 <button

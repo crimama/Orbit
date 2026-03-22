@@ -233,6 +233,7 @@ export interface CreateSessionRequest {
   cols?: number;
   rows?: number;
   resumeSessionRef?: string;
+  dangerouslySkipPermissions?: boolean;
 }
 
 export interface ApiResponse<T> {

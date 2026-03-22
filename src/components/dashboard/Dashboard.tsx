@@ -289,6 +289,29 @@ export default function Dashboard() {
     [fetchSessions],
   );
 
+  const handleTerminateAndRestart = useCallback(
+    async (id: string, options: { dangerouslySkipPermissions: boolean }) => {
+      const session = sessions.find((s) => s.id === id);
+      if (!session) return;
+      await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectId: session.projectId,
+          agentType: session.agentType,
+          dangerouslySkipPermissions: options.dangerouslySkipPermissions,
+        }),
+      });
+      const json = (await res.json()) as ApiResponse<SessionInfo>;
+      if ("data" in json) {
+        setInlineSessionId(json.data.id);
+      }
+      fetchSessions();
+    },
+    [sessions, fetchSessions],
+  );
+
   const handleRenameSession = useCallback(
     async (id: string, newName: string) => {
       await fetch(`/api/sessions/${id}`, {
@@ -1088,6 +1111,7 @@ export default function Dashboard() {
                         <SessionList
                           sessions={selectedProjectSessions}
                           onTerminate={handleTerminateSession}
+                          onTerminateAndRestart={handleTerminateAndRestart}
                           onResume={handleResumeSession}
                           onRename={handleRenameSession}
                           onOpenSession={handleOpenSessionFromList}
