@@ -12,6 +12,9 @@ import InterceptorBanner from "./InterceptorBanner";
 import InterceptorModal from "./InterceptorModal";
 import BorderlessWorkspace from "./BorderlessWorkspace";
 import SshVaultPanel from "./SshVaultPanel";
+import CostDashboard from "./CostDashboard";
+import AuditLogPanel from "./AuditLogPanel";
+import TaskBoard from "./TaskBoard";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useSocket } from "@/lib/useSocket";
 import type {
@@ -32,7 +35,7 @@ type SshFormMode = "project" | "vault";
 type NewSessionAgent = "terminal" | "claude-code" | "codex" | "opencode";
 type SessionViewMode = "active" | "all";
 type ProjectPaneMode = "terminal" | "files" | "harness";
-type ProjectFocusTab = "sessions" | "files" | "harness";
+type ProjectFocusTab = "sessions" | "files" | "harness" | "tasks";
 
 type GlobalFileIndexEntry = {
   projectId: string;
@@ -1166,6 +1169,19 @@ export default function Dashboard() {
                       >
                         Files
                       </button>
+                      <button
+                        onClick={() => {
+                          setProjectFocusTab("tasks");
+                          setShowHarnessManager(false);
+                        }}
+                        className={`flex-1 rounded px-2 py-1 ${
+                          projectFocusTab === "tasks"
+                            ? "bg-neutral-700 text-neutral-100"
+                            : "text-neutral-400 hover:text-neutral-200"
+                        }`}
+                      >
+                        Tasks
+                      </button>
                       {false && (
                       <button
                         onClick={() => {
@@ -1282,6 +1298,12 @@ export default function Dashboard() {
                           setProjectDirMap((prev) => ({ ...prev, [selectedProject.id]: dir }))
                         }
                       />
+                    ) : null}
+
+                    {projectFocusTab === "tasks" && selectedProject ? (
+                      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+                        <TaskBoard projectId={selectedProject.id} />
+                      </div>
                     ) : null}
 
                     {false && projectFocusTab === "harness" ? (
@@ -1480,6 +1502,11 @@ export default function Dashboard() {
                   onEditProfile={(profileId) => openSshVaultForm(profileId)}
                   onAddProfile={() => openSshVaultForm()}
                 />
+
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <CostDashboard />
+                  <AuditLogPanel />
+                </div>
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                   <div className="mb-2 text-xs text-neutral-500">

@@ -1,0 +1,264 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import type { ApiError, ApiResponse, SessionTokenInfo } from "@/lib/types";
+
+type CostSessionEntry = SessionTokenInfo & {
+  sessionName?: string | null;
+  agentType?: string | null;
+  totalTokens?: number | null;
+};
+
+type CostApiPayload =
+  | CostSessionEntry[]
+  | {
+      totalCost?: number;
+      sessions?: CostSessionEntry[];
+    };
+
+interface DashboardState {
+  todayCost: number;
+  weekCost: number;
+  monthCost: number;
+  sessions: CostSessionEntry[];
+}
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
+const tokenFormatter = new Intl.NumberFormat("en-US");
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
+}
+
+function endOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
+}
+
+function startOfWeek(date: Date) {
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  return startOfDay(new Date(date.getFullYear(), date.getMonth(), date.getDate() + diff));
+}
+
+function startOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 0, 0, 0, 0);
+}
+
+function normalizePayload(payload: CostApiPayload): { totalCost: number; sessions: CostSessionEntry[] } {
+  if (Array.isArray(payload)) {
+    return {
+      totalCost: payload.reduce((sum, session) => sum + session.totalCost, 0),
+      sessions: payload,
+    };
+  }
+
+  return {
+    totalCost:
+      payload.totalCost ?? payload.sessions?.reduce((sum, session) => sum + session.totalCost, 0) ?? 0,
+    sessions: payload.sessions ?? [],
+  };
+}
+
+function buildQuery(params?: { from?: Date; to?: Date }) {
+  const searchParams = new URLSearchParams();
+
+  if (params?.from) {
+    searchParams.set("from", params.from.toISOString());
+  }
+
+  if (params?.to) {
+    searchParams.set("to", params.to.toISOString());
+  }
+
+  const query = searchParams.toString();
+  return query ? `/api/analytics/cost?${query}` : "/api/analytics/cost";
+}
+
+async function fetchCost(params?: { from?: Date; to?: Date }, signal?: AbortSignal) {
+  const response = await fetch(buildQuery(params), {
+    cache: "no-store",
+    signal,
+  });
+  const json = (await response.json()) as ApiResponse<CostApiPayload> | ApiError;
+
+  if (!response.ok || !("data" in json)) {
+    throw new Error("error" in json ? json.error : "Failed to load cost analytics");
+  }
+
+  return normalizePayload(json.data);
+}
+
+export default function CostDashboard() {
+  const [dashboard, setDashboard] = useState<DashboardState>({
+    todayCost: 0,
+    weekCost: 0,
+    monthCost: 0,
+    sessions: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadDashboard = useCallback(async (signal?: AbortSignal) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const now = new Date();
+      const [today, week, month, allSessions] = await Promise.all([
+        fetchCost({ from: startOfDay(now), to: endOfDay(now) }, signal),
+        fetchCost({ from: startOfWeek(now), to: endOfDay(now) }, signal),
+        fetchCost({ from: startOfMonth(now), to: endOfDay(now) }, signal),
+        fetchCost(undefined, signal),
+      ]);
+
+      setDashboard({
+        todayCost: today.totalCost,
+        weekCost: week.totalCost,
+        monthCost: month.totalCost,
+        sessions: allSessions.sessions,
+      });
+    } catch (loadError) {
+      if (signal?.aborted) {
+        return;
+      }
+
+      setDashboard({
+        todayCost: 0,
+        weekCost: 0,
+        monthCost: 0,
+        sessions: [],
+      });
+      setError(loadError instanceof Error ? loadError.message : "Failed to load cost analytics");
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadDashboard(controller.signal);
+    return () => controller.abort();
+  }, [loadDashboard]);
+
+  const hasSessions = dashboard.sessions.length > 0;
+  const summaryCards = [
+    { label: "오늘 비용", value: dashboard.todayCost },
+    { label: "이번 주 비용", value: dashboard.weekCost },
+    { label: "이번 달 비용", value: dashboard.monthCost },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-4 text-neutral-100 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-100">Cost Dashboard</h2>
+          <p className="mt-1 text-xs text-neutral-400">
+            세션별 토큰 사용량과 누적 비용을 확인합니다.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => void loadDashboard()}
+          className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-neutral-700"
+        >
+          새로고침
+        </button>
+      </div>
+
+      {error ? (
+        <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        {summaryCards.map((card) => (
+          <div
+            key={card.label}
+            className="rounded-xl border border-neutral-800 bg-neutral-950/70 p-4"
+          >
+            <div className="text-xs text-neutral-400">{card.label}</div>
+            <div className="mt-2 text-sm font-semibold text-amber-400">
+              {loading ? "Loading..." : currencyFormatter.format(card.value)}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/70 p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-100">세션별 비용</h3>
+            <p className="mt-1 text-xs text-neutral-500">
+              입력/출력 토큰 합계와 세션 누적 비용입니다.
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/60 px-4 py-6 text-sm text-neutral-400">
+            비용 데이터를 불러오는 중입니다...
+          </div>
+        ) : null}
+
+        {!loading && !hasSessions ? (
+          <div className="mt-4 rounded-xl border border-dashed border-neutral-700 bg-neutral-950/50 px-4 py-8 text-center text-sm text-neutral-300">
+            토큰 추적 데이터가 아직 없습니다
+          </div>
+        ) : null}
+
+        {!loading && hasSessions ? (
+          <div className="mt-4 overflow-x-auto">
+            <table className="min-w-full divide-y divide-neutral-800 text-left text-sm">
+              <thead className="text-xs uppercase tracking-wide text-neutral-500">
+                <tr>
+                  <th className="pb-3 pr-4 font-medium">세션명</th>
+                  <th className="pb-3 pr-4 font-medium">에이전트 타입</th>
+                  <th className="pb-3 pr-4 font-medium">토큰 수</th>
+                  <th className="pb-3 font-medium">비용</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-800">
+                {dashboard.sessions
+                  .slice()
+                  .sort((a, b) => b.totalCost - a.totalCost)
+                  .map((session) => {
+                    const totalTokens =
+                      session.totalTokens ??
+                      session.totalInputTokens + session.totalOutputTokens;
+                    const sessionName = session.sessionName?.trim() || session.sessionId;
+                    const agentType = session.agentType?.trim() || session.model?.trim() || "-";
+
+                    return (
+                      <tr key={session.sessionId} className="text-neutral-200">
+                        <td className="py-3 pr-4">
+                          <div className="max-w-[220px] truncate text-sm text-neutral-100">
+                            {sessionName}
+                          </div>
+                        </td>
+                        <td className="py-3 pr-4 text-xs text-neutral-400">{agentType}</td>
+                        <td className="py-3 pr-4 text-xs text-neutral-300">
+                          {tokenFormatter.format(totalTokens)}
+                        </td>
+                        <td className="py-3 text-xs font-medium text-amber-400">
+                          {currencyFormatter.format(session.totalCost)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
