@@ -24,6 +24,7 @@ import type {
   CreateSessionRequest,
   ProjectFileListResponse,
   SessionContext,
+  SessionNotification,
 } from "@/lib/types";
 
 type AddProjectMode = null | "local" | "ssh" | "docker";
@@ -88,6 +89,10 @@ export default function Dashboard() {
   const [projectSessionName, setProjectSessionName] = useState("");
   const [skipPermissions, setSkipPermissions] = useState(false);
   const [sessionContexts, setSessionContexts] = useState<Map<string, SessionContext>>(new Map());
+  const [notifications, setNotifications] = useState<SessionNotification[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notifBellRef = useRef<HTMLButtonElement>(null);
+  const notifPanelRef = useRef<HTMLDivElement>(null);
   const [globalFileIndex, setGlobalFileIndex] = useState<
     GlobalFileIndexEntry[]
   >([]);
@@ -146,6 +151,21 @@ export default function Dashboard() {
     fetchGlobalWorkspaces();
   }, [fetchProjects, fetchSessions, fetchGlobalWorkspaces]);
 
+  // Close notification panel on outside click
+  useEffect(() => {
+    if (!showNotifications) return;
+    function handleClick(e: MouseEvent) {
+      if (
+        notifPanelRef.current && !notifPanelRef.current.contains(e.target as Node) &&
+        notifBellRef.current && !notifBellRef.current.contains(e.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showNotifications]);
+
   useEffect(() => {
     if (typeof window === "undefined" || !("Notification" in window)) return;
     if (Notification.permission !== "default") return;
@@ -200,9 +220,15 @@ export default function Dashboard() {
     };
     socket.on("session-context" as never, handleSessionContext);
 
+    const handleSessionNotify = (n: SessionNotification) => {
+      setNotifications((prev) => [n, ...prev].slice(0, 50));
+    };
+    socket.on("session-notify" as never, handleSessionNotify);
+
     return () => {
       socket.off("session-update", handleSessionUpdate);
       socket.off("session-context" as never, handleSessionContext);
+      socket.off("session-notify" as never, handleSessionNotify);
     };
   }, [socket]);
 
@@ -841,7 +867,95 @@ export default function Dashboard() {
         <h1 className="text-sm font-bold tracking-wide text-neutral-300">
           Agent Orbit
         </h1>
-        <div className="flex flex-wrap gap-1 sm:gap-2"></div>
+        <div className="relative flex flex-wrap items-center gap-1 sm:gap-2">
+          <button
+            ref={notifBellRef}
+            onClick={() => setShowNotifications((v) => !v)}
+            className={`relative flex h-7 w-7 items-center justify-center rounded border transition ${
+              showNotifications
+                ? "border-neutral-600 bg-neutral-800 text-neutral-200"
+                : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+            }`}
+            title="Notifications"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+            </svg>
+            {notifications.length > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-black">
+                {notifications.length > 99 ? "99+" : notifications.length}
+              </span>
+            )}
+          </button>
+
+          {showNotifications && (
+            <div
+              ref={notifPanelRef}
+              className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-neutral-700 bg-neutral-900 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
+                <span className="text-xs font-medium text-neutral-300">Notifications</span>
+                {notifications.length > 0 && (
+                  <button
+                    onClick={() => setNotifications([])}
+                    className="text-[10px] text-neutral-500 hover:text-neutral-300"
+                  >
+                    Clear all
+                  </button>
+                )}
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="px-3 py-6 text-center text-xs text-neutral-500">
+                    No notifications yet
+                  </div>
+                ) : (
+                  notifications.map((n, i) => {
+                    const session = sessions.find((s) => s.id === n.sessionId);
+                    const timeAgo = (() => {
+                      const diff = Date.now() - new Date(n.timestamp).getTime();
+                      if (diff < 60000) return "just now";
+                      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+                      return `${Math.floor(diff / 3600000)}h ago`;
+                    })();
+                    return (
+                      <div
+                        key={`${n.sessionId}-${n.timestamp}-${i}`}
+                        className="cursor-pointer border-b border-neutral-800/50 px-3 py-2.5 transition hover:bg-neutral-800/50 last:border-b-0"
+                        onClick={() => {
+                          if (session) {
+                            const project = projects.find((p) => p.id === session.projectId);
+                            if (project) setSelectedProject(project);
+                            setInlineSessionId(session.id);
+                          }
+                          setShowNotifications(false);
+                        }}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              {session && (
+                                <span
+                                  className="inline-block h-2 w-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: session.projectColor }}
+                                />
+                              )}
+                              <span className="truncate text-xs font-medium text-neutral-200">{n.title}</span>
+                            </div>
+                            {n.body && (
+                              <div className="mt-0.5 truncate text-[11px] text-neutral-400">{n.body}</div>
+                            )}
+                          </div>
+                          <span className="shrink-0 text-[10px] text-neutral-600">{timeAgo}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div
