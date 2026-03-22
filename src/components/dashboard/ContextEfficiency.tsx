@@ -21,8 +21,8 @@ export default function ContextEfficiency() {
     setLoading(true);
     try {
       const res = await fetch("/api/analytics/cost");
-      const json = (await res.json()) as ApiResponse<CostEntry[]> | ApiError;
-      if ("data" in json) setData(json.data);
+      const json = (await res.json()) as ApiResponse<{ sessions: CostEntry[] }> | ApiError;
+      if ("data" in json) setData(json.data.sessions ?? []);
     } catch {
       /* ignore */
     } finally {
