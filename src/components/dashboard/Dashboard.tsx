@@ -466,6 +466,9 @@ export default function Dashboard() {
   const handleVaultQuickConnect = useCallback(
     (session: SessionInfo) => {
       setInlineSessionId(session.id);
+      setSessions((prev) =>
+        prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
+      );
     },
     [],
   );
