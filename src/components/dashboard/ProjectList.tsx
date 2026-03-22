@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, Fragment } from "react";
 import DirectoryPicker from "./DirectoryPicker";
 import RemoteDirectoryPicker from "./RemoteDirectoryPicker";
 import type {
@@ -216,6 +216,24 @@ export default function ProjectList({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configProject?.id, configProject?.sshConfigId, editContainerValue]);
 
+  const groups = useMemo(() => {
+    const map = new Map<string, { key: string; label: string; projects: ProjectInfo[] }>();
+    for (const p of projects) {
+      const key = p.sshConfigId ?? "__local__";
+      if (!map.has(key)) {
+        const label =
+          key === "__local__"
+            ? "Local"
+            : p.sshLabel || p.sshHost || "SSH";
+        map.set(key, { key, label, projects: [] });
+      }
+      map.get(key)!.projects.push(p);
+    }
+    return Array.from(map.values());
+  }, [projects]);
+
+  const showGroups = groups.length > 1 || (groups.length === 1 && groups[0].label !== "Local");
+
   if (projects.length === 0) {
     return (
       <div className="px-4 py-8 text-center text-sm text-neutral-500">
@@ -224,29 +242,11 @@ export default function ProjectList({
     );
   }
 
-  // Group projects by SSH connection
-  const groups = (() => {
-    const map = new Map<string, { label: string; projects: ProjectInfo[] }>();
-    for (const p of projects) {
-      const key = p.sshConfigId ?? "__local__";
-      if (!map.has(key)) {
-        const label =
-          key === "__local__"
-            ? "Local"
-            : p.sshLabel || p.sshHost || "SSH";
-        map.set(key, { label, projects: [] });
-      }
-      map.get(key)!.projects.push(p);
-    }
-    return Array.from(map.values());
-  })();
-
-  const showGroups = groups.length > 1 || (groups.length === 1 && groups[0].label !== "Local");
-
   return (
     <div className="space-y-1 p-2">
-      {groups.map((group) =>
-        group.projects.map((p, i) => {
+      {groups.map((group) => (
+        <Fragment key={group.key}>
+        {group.projects.map((p, i) => {
         const isSelected = selectedId === p.id;
         return (
           <div key={p.id}>
@@ -582,8 +582,9 @@ export default function ProjectList({
           </div>
           </div>
         );
-      }),
-      )}
+      })}
+        </Fragment>
+      ))}
     </div>
   );
 }

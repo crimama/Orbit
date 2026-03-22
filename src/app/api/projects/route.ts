@@ -75,7 +75,10 @@ export async function POST(request: Request) {
       ...(body.sshConfigId && { sshConfigId: body.sshConfigId }),
       ...(body.dockerContainer && { dockerContainer: body.dockerContainer }),
     },
-    include: { _count: { select: { sessions: true } } },
+    include: {
+      _count: { select: { sessions: true } },
+      sshConfig: { select: { label: true, host: true } },
+    },
   });
 
   const data: ProjectInfo = {
@@ -85,6 +88,8 @@ export async function POST(request: Request) {
     color: project.color,
     path: project.path,
     sshConfigId: project.sshConfigId,
+    sshLabel: project.sshConfig?.label ?? null,
+    sshHost: project.sshConfig?.host ?? null,
     dockerContainer: project.dockerContainer,
     sessionCount: project._count.sessions,
     createdAt: project.createdAt.toISOString(),

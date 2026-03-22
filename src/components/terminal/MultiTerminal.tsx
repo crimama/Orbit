@@ -178,8 +178,8 @@ export default function MultiTerminal({
     new Map(),
   );
 
-  // Per-pane exit tracking
-  const [, setExitedPanes] = useState<Set<string>>(new Set());
+  // Per-pane exit tracking (ref-only, no re-render needed)
+  const exitedPanesRef = useRef<Set<string>>(new Set());
 
   // Sessions list
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
@@ -399,14 +399,9 @@ export default function MultiTerminal({
   );
 
   const clearExitedPane = useCallback((paneIds: string[]) => {
-    setExitedPanes((prev) => {
-      if (!paneIds.some((id) => prev.has(id))) return prev;
-      const next = new Set(prev);
-      for (const id of paneIds) {
-        next.delete(id);
-      }
-      return next;
-    });
+    for (const id of paneIds) {
+      exitedPanesRef.current.delete(id);
+    }
   }, []);
 
   const handleClose = useCallback(
@@ -475,7 +470,7 @@ export default function MultiTerminal({
   );
 
   const handlePaneExit = useCallback((paneId: string) => {
-    setExitedPanes((prev) => new Set(prev).add(paneId));
+    exitedPanesRef.current.add(paneId);
   }, []);
 
   const handleRatioChange = useCallback(

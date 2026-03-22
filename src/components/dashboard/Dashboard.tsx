@@ -109,9 +109,7 @@ export default function Dashboard() {
     null,
   );
   const [sshFormMode, setSshFormMode] = useState<SshFormMode>("project");
-  const [editingSshProfileId, setEditingSshProfileId] = useState<string | null>(
-    null,
-  );
+  const editingSshProfileId = sshFormMode === "vault" ? prefillSshProfileId : null;
   const [showInterceptorModal, setShowInterceptorModal] = useState(false);
   const { socket } = useSocket();
   const { pendingApprovals, approve, deny, latestApproval } =
@@ -392,7 +390,7 @@ export default function Dashboard() {
       setAddProjectMode(null);
       setPrefillSshProfileId(null);
       setSshFormMode("project");
-      setEditingSshProfileId(null);
+
       handleSelectProject(project);
     },
     [handleSelectProject],
@@ -407,14 +405,12 @@ export default function Dashboard() {
 
   const openSshProjectForm = useCallback((profileId?: string | null) => {
     setPrefillSshProfileId(profileId ?? null);
-    setEditingSshProfileId(null);
     setSshFormMode("project");
     setAddProjectMode("ssh");
   }, []);
 
   const openSshVaultForm = useCallback((profileId?: string | null) => {
     setPrefillSshProfileId(profileId ?? null);
-    setEditingSshProfileId(profileId ?? null);
     setSshFormMode("vault");
     setAddProjectMode("ssh");
   }, []);
@@ -889,7 +885,7 @@ export default function Dashboard() {
                     setAddProjectMode(null);
                     setPrefillSshProfileId(null);
                     setSshFormMode("project");
-                    setEditingSshProfileId(null);
+              
                   }}
                   initialProfileId={prefillSshProfileId}
                   editingProfileId={editingSshProfileId}
