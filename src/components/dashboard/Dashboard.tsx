@@ -85,6 +85,7 @@ export default function Dashboard() {
   const [quickSessionProjectId, setQuickSessionProjectId] = useState("");
   const [quickSessionName, setQuickSessionName] = useState("");
   const [projectSessionName, setProjectSessionName] = useState("");
+  const [skipPermissions, setSkipPermissions] = useState(false);
   const [globalFileIndex, setGlobalFileIndex] = useState<
     GlobalFileIndexEntry[]
   >([]);
@@ -381,6 +382,7 @@ export default function Dashboard() {
       projectId,
       agentType: quickSessionAgent,
       name: quickSessionName.trim() || undefined,
+      ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
     });
     setQuickSessionName("");
   }, [
@@ -389,6 +391,7 @@ export default function Dashboard() {
     createSession,
     quickSessionAgent,
     quickSessionName,
+    skipPermissions,
   ]);
 
   const handleCreateSelectedProjectSession = useCallback(async () => {
@@ -401,11 +404,12 @@ export default function Dashboard() {
         projectId: selectedProject.id,
         agentType: quickSessionAgent,
         name: projectSessionName.trim() || undefined,
+        ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
       },
       { activateInWorkspace: false },
     );
     setProjectSessionName("");
-  }, [selectedProject, createSession, quickSessionAgent, projectSessionName]);
+  }, [selectedProject, createSession, quickSessionAgent, projectSessionName, skipPermissions]);
 
   const handleProjectCreated = useCallback(
     (project: ProjectInfo) => {
@@ -1097,6 +1101,19 @@ export default function Dashboard() {
                               <option value="codex">Codex</option>
                               <option value="opencode">OpenCode</option>
                             </select>
+                            {quickSessionAgent === "claude-code" && (
+                              <button
+                                onClick={() => setSkipPermissions((v) => !v)}
+                                className={`shrink-0 rounded border px-2 py-1 text-[10px] font-medium transition ${
+                                  skipPermissions
+                                    ? "border-amber-500/50 bg-amber-500/15 text-amber-400"
+                                    : "border-neutral-700 text-neutral-500 hover:text-neutral-300"
+                                }`}
+                                title="dangerously-skip-permissions"
+                              >
+                                YOLO
+                              </button>
+                            )}
                             <button
                               onClick={() => {
                                 void handleCreateSelectedProjectSession();
@@ -1301,6 +1318,19 @@ export default function Dashboard() {
                         <option value="codex">Codex</option>
                         <option value="opencode">OpenCode</option>
                       </select>
+                      {quickSessionAgent === "claude-code" && (
+                        <button
+                          onClick={() => setSkipPermissions((v) => !v)}
+                          className={`rounded border px-2 py-1.5 text-[10px] font-medium transition ${
+                            skipPermissions
+                              ? "border-amber-500/50 bg-amber-500/15 text-amber-400"
+                              : "border-neutral-700 text-neutral-500 hover:text-neutral-300"
+                          }`}
+                          title="dangerously-skip-permissions"
+                        >
+                          YOLO
+                        </button>
+                      )}
                       <button
                         onClick={handleQuickCreateSession}
                         disabled={creatingSession}
