@@ -4,6 +4,7 @@ import {
   getInterceptorMode,
 } from "@/server/pty/interceptorRules";
 import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
+import { auditLogger } from "@/server/audit/auditLogger";
 import type {
   PendingApproval,
   InterceptorWarning,
@@ -155,15 +156,22 @@ class CommandInterceptor {
    * Resolve a pending approval.
    * Returns the held data if approved, null if denied.
    */
-  resolve(
+  async resolve(
     approvalId: string,
     approved: boolean,
-  ): { sessionId: string; data: string } | null {
+  ): Promise<{ sessionId: string; data: string } | null> {
     const held = this.pendingApprovals.get(approvalId);
     if (!held) return null;
 
     clearTimeout(held.timer);
     this.pendingApprovals.delete(approvalId);
+
+    await auditLogger.log({
+      eventType: approved ? "interceptor_approve" : "interceptor_deny",
+      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
+      sessionId: held.sessionId,
+      detail: { approvalId, command: held.command, rule: held.matchedRule },
+    });
 
     if (approved) {
       return { sessionId: held.sessionId, data: held.heldData };
@@ -294,7 +302,7 @@ class CommandInterceptor {
     };
 
     const timer = setTimeout(() => {
-      this.resolve(approval.id, false);
+      void this.resolve(approval.id, false);
     }, INTERCEPTOR_AUTO_DENY_MS);
 
     this.pendingApprovals.set(approval.id, {

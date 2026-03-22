@@ -6,6 +6,7 @@ import { sshManager } from "@/server/ssh/sshManager";
 import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
 import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
 import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
+import { auditLogger } from "@/server/audit/auditLogger";
 import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
 import type { OrbitServer } from "@/server/socket/types";
 
@@ -261,6 +262,13 @@ class SessionManager {
       throw err;
     }
 
+    void auditLogger.log({
+      eventType: "session_create",
+      action: `Created session ${session.id}`,
+      sessionId: session.id,
+      projectId: session.projectId,
+    });
+
     return toSessionInfo({
       ...session,
       sessionRef: req.resumeSessionRef?.trim() || session.id,
@@ -287,6 +295,11 @@ class SessionManager {
     } catch {
       // Session may not exist in DB
     }
+    void auditLogger.log({
+      eventType: "session_terminate",
+      action: `Terminated session ${sessionId}`,
+      sessionId,
+    });
   }
 
   async sendInput(sessionId: string, input: string): Promise<void> {

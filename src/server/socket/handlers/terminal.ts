@@ -4,6 +4,7 @@ import { getPtyBackend } from "@/server/pty/ptyBackend";
 import { commandInterceptor } from "@/server/pty/interceptor";
 import { sessionManager } from "@/server/session/sessionManager";
 import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
+import { tokenTracker } from "@/server/observability/tokenTracker";
 import type { SessionInfo, SessionNotification, SessionContext } from "@/lib/types";
 
 // OSC 777 notify: \x1b]777;notify;title;body\x07
@@ -118,6 +119,7 @@ export function registerTerminalHandlers(
 
       unsubData = backend.onData(sessionId, (data) => {
         const cleaned = extractOscEvents(sessionId, data, socket);
+        void tokenTracker.processOutput(sessionId, cleaned);
         if (cleaned) batcher!.push(cleaned);
       });
 

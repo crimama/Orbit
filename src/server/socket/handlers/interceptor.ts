@@ -26,8 +26,8 @@ export function registerInterceptorHandlers(
       });
   }
 
-  socket.on("interceptor-approve", (approvalId) => {
-    const result = commandInterceptor.resolve(approvalId, true);
+  socket.on("interceptor-approve", async (approvalId) => {
+    const result = await commandInterceptor.resolve(approvalId, true);
     if (result) {
       // Forward the held data to the PTY
       const backend = getPtyBackend(result.sessionId);
@@ -40,9 +40,9 @@ export function registerInterceptorHandlers(
     socket.emit("interceptor-resolved", approvalId, true);
   });
 
-  socket.on("interceptor-deny", (approvalId) => {
+  socket.on("interceptor-deny", async (approvalId) => {
     const pending = commandInterceptor.getPendingById(approvalId);
-    commandInterceptor.resolve(approvalId, false);
+    await commandInterceptor.resolve(approvalId, false);
     if (pending) {
       io.to(`session:${pending.sessionId}`).emit(
         "interceptor-resolved",
