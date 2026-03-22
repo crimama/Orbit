@@ -224,13 +224,41 @@ export default function ProjectList({
     );
   }
 
+  // Group projects by SSH connection
+  const groups = (() => {
+    const map = new Map<string, { label: string; projects: ProjectInfo[] }>();
+    for (const p of projects) {
+      const key = p.sshConfigId ?? "__local__";
+      if (!map.has(key)) {
+        const label =
+          key === "__local__"
+            ? "Local"
+            : p.sshLabel || p.sshHost || "SSH";
+        map.set(key, { label, projects: [] });
+      }
+      map.get(key)!.projects.push(p);
+    }
+    return Array.from(map.values());
+  })();
+
+  const showGroups = groups.length > 1 || (groups.length === 1 && groups[0].label !== "Local");
+
   return (
     <div className="space-y-1 p-2">
-      {projects.map((p) => {
+      {groups.map((group) =>
+        group.projects.map((p, i) => {
         const isSelected = selectedId === p.id;
         return (
+          <div key={p.id}>
+          {showGroups && i === 0 && (
+            <div className="flex items-center gap-2 px-2 pb-1 pt-2 first:pt-0">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-500">
+                {group.label}
+              </span>
+              <div className="h-px flex-1 bg-neutral-800" />
+            </div>
+          )}
           <div
-            key={p.id}
             onClick={() => onSelect(p)}
             className={`project-item group relative cursor-pointer rounded-lg py-2 pl-5 pr-3 transition-colors ${
               isSelected ? "text-neutral-100" : "text-neutral-300"
@@ -552,8 +580,10 @@ export default function ProjectList({
               </div>
             )}
           </div>
+          </div>
         );
-      })}
+      }),
+      )}
     </div>
   );
 }

@@ -15,6 +15,7 @@ model Project {
   path        String
   sshConfigId String?
   dockerContainer String?
+  adhoc       Boolean        @default(false)
   sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
   sessions    AgentSession[]
   agents      ProjectAgent[]

@@ -136,6 +136,8 @@ export interface ProjectInfo {
   color: string;
   path: string;
   sshConfigId?: string | null;
+  sshLabel?: string | null;
+  sshHost?: string | null;
   dockerContainer?: string | null;
   sessionCount: number;
   createdAt: string;
@@ -317,6 +319,16 @@ export interface ProjectFileMoveRequest {
   to: string;
   overwrite?: boolean;
   destProjectId?: string;
+}
+
+export interface ProjectFileUploadedItem {
+  name: string;
+  path: string;
+  size: number;
+}
+
+export interface ProjectFileUploadResponse {
+  uploaded: ProjectFileUploadedItem[];
 }
 
 export interface DockerContainerInfo {

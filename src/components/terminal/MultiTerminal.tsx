@@ -179,7 +179,7 @@ export default function MultiTerminal({
   );
 
   // Per-pane exit tracking
-  const [exitedPanes, setExitedPanes] = useState<Set<string>>(new Set());
+  const [, setExitedPanes] = useState<Set<string>>(new Set());
 
   // Sessions list
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
@@ -613,7 +613,6 @@ export default function MultiTerminal({
           socketStates={socketStates}
           sessions={sessions}
           leafCount={leafCount}
-          exitedPanes={exitedPanes}
           onActivate={setActivePaneId}
           onSplit={handleSplit}
           onClose={handleClose}

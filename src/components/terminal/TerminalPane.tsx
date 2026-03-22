@@ -23,7 +23,6 @@ interface TerminalPaneProps {
   socket: OrbitSocket | undefined;
   connected: boolean;
   isActive: boolean;
-  exited: boolean;
   sessions: SessionInfo[];
   onActivate: () => void;
   onSplit: (direction: "horizontal" | "vertical") => void;
@@ -50,7 +49,6 @@ export default function TerminalPane({
   socket,
   connected,
   isActive,
-  exited,
   sessions,
   onActivate,
   onSplit,
@@ -74,11 +72,6 @@ export default function TerminalPane({
   const [keyboardInset, setKeyboardInset] = useState(0);
   const { isMobile } = useMobile();
   const projectColor = currentSession?.projectColor;
-  const formatSessionLabel = (session: SessionInfo) => {
-    const sessionName =
-      session.name ?? `${session.agentType} (${session.id.slice(0, 8)})`;
-    return `${session.projectName} / ${sessionName} · ${session.status}`;
-  };
 
   const readDraggedSessionId = (e: DragEvent<HTMLDivElement>) => {
     const custom = e.dataTransfer.getData("application/x-orbit-session-id");

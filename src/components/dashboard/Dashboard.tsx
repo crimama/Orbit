@@ -11,6 +11,7 @@ import AddDockerProjectForm from "./AddDockerProjectForm";
 import InterceptorBanner from "./InterceptorBanner";
 import InterceptorModal from "./InterceptorModal";
 import BorderlessWorkspace from "./BorderlessWorkspace";
+import SshVaultPanel from "./SshVaultPanel";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useSocket } from "@/lib/useSocket";
 import type {
@@ -22,10 +23,10 @@ import type {
   ApiError,
   CreateSessionRequest,
   ProjectFileListResponse,
-  InterceptorMode,
 } from "@/lib/types";
 
 type AddProjectMode = null | "local" | "ssh" | "docker";
+type SshFormMode = "project" | "vault";
 type NewSessionAgent = "terminal" | "claude-code" | "codex" | "opencode";
 type SessionViewMode = "active" | "all";
 type ProjectPaneMode = "terminal" | "files" | "harness";
@@ -107,35 +108,14 @@ export default function Dashboard() {
   const [prefillSshProfileId, setPrefillSshProfileId] = useState<string | null>(
     null,
   );
+  const [sshFormMode, setSshFormMode] = useState<SshFormMode>("project");
+  const [editingSshProfileId, setEditingSshProfileId] = useState<string | null>(
+    null,
+  );
   const [showInterceptorModal, setShowInterceptorModal] = useState(false);
   const { socket } = useSocket();
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
-  const [yoloMode, setYoloMode] = useState(false);
-
-  // Fetch interceptor mode on mount
-  useEffect(() => {
-    fetch("/api/interceptor/mode")
-      .then((r) => r.json())
-      .then((json: ApiResponse<{ mode: InterceptorMode }>) => {
-        if ("data" in json) setYoloMode(json.data.mode === "yolo");
-      })
-      .catch(() => {});
-  }, []);
-
-  const toggleYoloMode = useCallback(async () => {
-    const nextMode = yoloMode ? "hybrid" : "yolo";
-    try {
-      const res = await fetch("/api/interceptor/mode", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: nextMode }),
-      });
-      const json = (await res.json()) as ApiResponse<{ mode: InterceptorMode }>;
-      if ("data" in json) setYoloMode(json.data.mode === "yolo");
-    } catch {}
-  }, [yoloMode]);
-
   // Fetch projects
   const fetchProjects = useCallback(async () => {
     const res = await fetch("/api/projects");
@@ -411,24 +391,33 @@ export default function Dashboard() {
       setProjects((prev) => [project, ...prev]);
       setAddProjectMode(null);
       setPrefillSshProfileId(null);
+      setSshFormMode("project");
+      setEditingSshProfileId(null);
       handleSelectProject(project);
     },
     [handleSelectProject],
   );
 
-  const handleGoHome = useCallback(() => {
-    setSelectedProject(null);
-    setProjectFocusTab("sessions");
-    setIsProjectsListCollapsed(false);
-    setAddProjectMode(null);
-    setPrefillSshProfileId(null);
-    setSessionViewMode("all");
-    setShowHarnessManager(false);
-    setProjectPaneMode("terminal");
-    setInlineSessionId(null);
-    setInlineWorkspaceId(null);
-    fetchSessions();
-  }, [fetchSessions]);
+  const handleVaultQuickConnect = useCallback(
+    (session: SessionInfo) => {
+      setInlineSessionId(session.id);
+    },
+    [],
+  );
+
+  const openSshProjectForm = useCallback((profileId?: string | null) => {
+    setPrefillSshProfileId(profileId ?? null);
+    setEditingSshProfileId(null);
+    setSshFormMode("project");
+    setAddProjectMode("ssh");
+  }, []);
+
+  const openSshVaultForm = useCallback((profileId?: string | null) => {
+    setPrefillSshProfileId(profileId ?? null);
+    setEditingSshProfileId(profileId ?? null);
+    setSshFormMode("vault");
+    setAddProjectMode("ssh");
+  }, []);
 
   const extractFirstActiveSessionId = useCallback(
     (workspace: WorkspaceLayoutInfo): string | null => {
@@ -896,7 +885,15 @@ export default function Dashboard() {
               {addProjectMode === "ssh" ? (
                 <AddSshProjectForm
                   onCreated={handleProjectCreated}
+                  onSaved={() => {
+                    setAddProjectMode(null);
+                    setPrefillSshProfileId(null);
+                    setSshFormMode("project");
+                    setEditingSshProfileId(null);
+                  }}
                   initialProfileId={prefillSshProfileId}
+                  editingProfileId={editingSshProfileId}
+                  mode={sshFormMode}
                 />
               ) : null}
               {addProjectMode === "docker" ? (
@@ -1177,9 +1174,9 @@ export default function Dashboard() {
         {/* Right Panel — Sessions */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-hidden">
-            {selectedProject ? (
+            {selectedProject || inlineSessionId ? (
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                {false && projectPaneMode === "harness" && (
+                {false && projectPaneMode === "harness" && selectedProject && (
                   <div className="border-b border-neutral-800 p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-xs text-neutral-500">
@@ -1294,6 +1291,13 @@ export default function Dashboard() {
                     </div>
                   )}
                 </div>
+
+                <SshVaultPanel
+                  onQuickConnect={handleVaultQuickConnect}
+                  onNewProject={(profileId) => openSshProjectForm(profileId)}
+                  onEditProfile={(profileId) => openSshVaultForm(profileId)}
+                  onAddProfile={() => openSshVaultForm()}
+                />
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                   <div className="mb-2 text-xs text-neutral-500">

@@ -9,7 +9,11 @@ function isValidHexColor(value: string): boolean {
 
 export async function GET() {
   const projects = await prisma.project.findMany({
-    include: { _count: { select: { sessions: true } } },
+    where: { adhoc: false },
+    include: {
+      _count: { select: { sessions: true } },
+      sshConfig: { select: { label: true, host: true } },
+    },
     orderBy: { updatedAt: "desc" },
   });
 
@@ -20,6 +24,8 @@ export async function GET() {
     color: p.color,
     path: p.path,
     sshConfigId: p.sshConfigId,
+    sshLabel: p.sshConfig?.label ?? null,
+    sshHost: p.sshConfig?.host ?? null,
     dockerContainer: p.dockerContainer,
     sessionCount: p._count.sessions,
     createdAt: p.createdAt.toISOString(),

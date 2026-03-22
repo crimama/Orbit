@@ -8,6 +8,7 @@ import {
   PROJECT_FILES_MAX_EDIT_BYTES,
   PROJECT_FILES_MAX_ENTRIES,
   PROJECT_FILES_MAX_READ_BYTES,
+  PROJECT_FILES_MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
 import type {
   ProjectFileCopyRequest,
@@ -1372,5 +1373,108 @@ export async function moveProjectPath(
       await sftpDeleteRecursive(sftp, fromResolved.absPath);
     });
     return { ok: true };
+  });
+}
+
+export async function uploadProjectFile(
+  project: ProjectRecord,
+  rawPath: string,
+  data: Buffer,
+): Promise<{ path: string; size: number }> {
+  const backend = pathByType(project);
+  if (data.length > PROJECT_FILES_MAX_UPLOAD_BYTES) {
+    fail(
+      `File exceeds upload limit (${PROJECT_FILES_MAX_UPLOAD_BYTES} bytes)`,
+      413,
+    );
+  }
+
+  if (backend === "DOCKER") {
+    const relPath = normalizeSshRelative(rawPath);
+    if (!relPath) fail("Path is required", 400);
+    const payloadB64 = data.toString("base64");
+    const script = [
+      'ROOT="$1"',
+      'REL="$2"',
+      'PAYLOAD_B64="$3"',
+      'resolve_root() { cd "$ROOT" 2>/dev/null && pwd -P; }',
+      'CANON_ROOT=$(resolve_root) || { echo "__ERR__:ROOT"; exit 1; }',
+      'RAW="$CANON_ROOT/$REL"',
+      'CANON_PARENT=$(cd "$(dirname "$RAW")" 2>/dev/null && pwd -P) || { echo "__ERR__:PARENT"; exit 1; }',
+      'CANON_FILE="$CANON_PARENT/$(basename "$RAW")"',
+      'case "$CANON_FILE" in "$CANON_ROOT"/*) ;; *) echo "__ERR__:OUTSIDE"; exit 1 ;; esac',
+      '[ -L "$CANON_FILE" ] && { echo "__ERR__:SYMLINK"; exit 1; }',
+      'TMP="$CANON_FILE.orbit-tmp-$$"',
+      'printf "%s" "$PAYLOAD_B64" | base64 -d > "$TMP" || { rm -f "$TMP" 2>/dev/null; echo "__ERR__:WRITE_FAIL"; exit 1; }',
+      'mv "$TMP" "$CANON_FILE" || { rm -f "$TMP" 2>/dev/null; echo "__ERR__:PERMISSION"; exit 1; }',
+      'SIZE=$(wc -c < "$CANON_FILE" | tr -d " ")',
+      'echo "__OK__"',
+      'echo "$SIZE"',
+    ].join("; ");
+    const stdout = await dockerExec(project, script, [
+      project.path,
+      relPath,
+      payloadB64,
+    ]).catch((error) => {
+      dockerErrorFromText(dockerExecErrorText(error));
+    });
+    const lines = stdout.split("\n");
+    if (lines[0]?.trim() !== "__OK__") dockerErrorFromText(stdout);
+    const size = Number((lines[1] ?? "0").trim());
+    return { path: relPath, size };
+  }
+
+  if (backend === "LOCAL") {
+    const { targetAbs, relPath } = await resolveLocalParentForCreate(
+      project.path,
+      rawPath,
+    );
+    const existingLst = await fs.lstat(targetAbs).catch(() => null);
+    if (existingLst?.isSymbolicLink())
+      fail("Symlink operations are not allowed", 400);
+    if (existingLst?.isDirectory())
+      fail("Cannot overwrite a directory", 400);
+
+    const tmpPath = `${targetAbs}.orbit-tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    try {
+      await fs.writeFile(tmpPath, data);
+      await fs.rename(tmpPath, targetAbs);
+    } catch {
+      await fs.unlink(tmpPath).catch(() => undefined);
+      fail("Permission denied while writing file", 403);
+    }
+    const st = await fs.stat(targetAbs);
+    return { path: relPath, size: Number(st.size) };
+  }
+
+  return withSshRoot(project, async (sftp, rootReal) => {
+    const { targetAbsPath, relPath } = await resolveSshParentForCreate(
+      sftp,
+      rootReal,
+      rawPath,
+    );
+    const existingAttrs = await sftpLstat(sftp, targetAbsPath).catch(
+      () => null,
+    );
+    if (existingAttrs && attrsIsSymlink(existingAttrs))
+      fail("Symlink operations are not allowed", 400);
+    if (existingAttrs && attrsIsDirectory(existingAttrs))
+      fail("Cannot overwrite a directory", 400);
+
+    const tmpPath = `${targetAbsPath}.orbit-tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    await sftpWriteFile(sftp, tmpPath, data).catch((error) => {
+      fromSftpError(error, "Failed to write file");
+    });
+    if (existingAttrs) {
+      await sftpUnlink(sftp, targetAbsPath).catch(() => {});
+    }
+    await sftpRename(sftp, tmpPath, targetAbsPath).catch(async (error) => {
+      await sftpUnlink(sftp, tmpPath).catch(() => {});
+      fromSftpError(error, "Failed to finalize file upload");
+    });
+    const nextAttrs = await sftpStat(sftp, targetAbsPath).catch((error) => {
+      fromSftpError(error, "Failed to stat file after upload");
+    });
+    return { path: relPath, size: Number(nextAttrs.size ?? data.length) };
   });
 }
