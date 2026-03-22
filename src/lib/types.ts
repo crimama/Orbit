@@ -25,6 +25,9 @@ export interface ServerToClientEvents {
   // OSC 777 notifications
   "session-notify": (notification: SessionNotification) => void;
   "session-context": (ctx: SessionContext) => void;
+  // Multi-agent coordination
+  "task-update": (task: AgentTaskInfo) => void;
+  "file-lock-change": (event: FileLockEvent) => void;
 }
 
 export interface ClientToServerEvents {
@@ -555,3 +558,80 @@ export interface SessionMetricsSnapshot {
   metrics: SessionMetrics;
   recentEvents: SessionEvent[];
 }
+
+// --- Token/Cost Tracking ---
+
+export interface SessionTokenInfo {
+  sessionId: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCost: number;
+  model?: string;
+}
+
+// --- Audit Log ---
+
+export type AuditEventType =
+  | "interceptor_approve"
+  | "interceptor_deny"
+  | "session_create"
+  | "session_terminate"
+  | "session_fork"
+  | "ssh_connect"
+  | "ssh_disconnect"
+  | "mode_change";
+
+export interface AuditLogInfo {
+  id: string;
+  sessionId: string | null;
+  projectId: string | null;
+  eventType: AuditEventType;
+  action: string;
+  detail: string | null;
+  createdAt: string;
+}
+
+// --- Session Checkpoint ---
+
+export interface SessionCheckpointInfo {
+  id: string;
+  sessionId: string;
+  name: string;
+  cwd: string | null;
+  metadata: string | null;
+  createdAt: string;
+}
+
+// --- Multi-Agent Coordination ---
+
+export type AgentTaskStatus = "pending" | "in_progress" | "done" | "blocked";
+
+export interface AgentTaskInfo {
+  id: string;
+  projectId: string;
+  sessionId: string | null;
+  title: string;
+  description: string | null;
+  status: AgentTaskStatus;
+  priority: number;
+  assignee: string | null;
+  deps: string | null;
+  files: string | null;
+  result: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FileLockInfo {
+  id: string;
+  projectId: string;
+  filePath: string;
+  sessionId: string;
+  lineRange: string;
+  description: string | null;
+  createdAt: string;
+}
+
+export type FileLockEvent =
+  | { type: "acquired"; lock: FileLockInfo }
+  | { type: "released"; projectId: string; filePath: string };

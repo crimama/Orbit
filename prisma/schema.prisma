@@ -20,6 +20,8 @@ model Project {
   sessions    AgentSession[]
   agents      ProjectAgent[]
   skills      Skill[]
+  tasks       AgentTask[]
+  fileLocks   FileLock[]
   harnessConfig ProjectHarnessConfig?
   workspaces  WorkspaceLayout[]
   createdAt   DateTime       @default(now())
@@ -94,6 +96,8 @@ model AgentSession {
   lastContext String?  // 마지막 대화 맥락 요약
   status      String   @default("active") // "active", "paused", "terminated"
   chatMessages SessionChatMessage[]
+  tokenLogs   SessionTokenLog[]
+  checkpoints SessionCheckpoint[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -146,6 +150,8 @@ model InterceptorRule {
   pattern     String
   description String
   severity    String   @default("block") // "warn" | "block" | "allow"
+  riskTier    String   @default("WRITE") // "READ" | "WRITE" | "DESTRUCTIVE"
+  riskScore   Int      @default(50)      // 0-100
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -154,4 +160,79 @@ model InterceptorRule {
 model InterceptorConfig {
   id    String @id @default("singleton")
   mode  String @default("hybrid")  // "blacklist" | "allowlist" | "hybrid"
+}
+
+// --- Agent Intelligence: Token/Cost Tracking ---
+
+model SessionTokenLog {
+  id           String       @id @default(uuid())
+  sessionId    String
+  inputTokens  Int          @default(0)
+  outputTokens Int          @default(0)
+  estimatedCost Float       @default(0)
+  model        String?
+  session      AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime     @default(now())
+  @@index([sessionId, createdAt])
+}
+
+// --- Audit Logging ---
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  sessionId String?
+  projectId String?
+  eventType String   // "interceptor_approve" | "interceptor_deny" | "session_create" | "session_terminate" | "ssh_connect" | "mode_change"
+  action    String
+  detail    String?  // JSON
+  createdAt DateTime @default(now())
+  @@index([sessionId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([eventType, createdAt])
+}
+
+// --- Session Checkpointing & Forking ---
+
+model SessionCheckpoint {
+  id         String       @id @default(uuid())
+  sessionId  String
+  name       String
+  cwd        String?
+  scrollback Bytes?
+  metadata   String?      // JSON: { gitBranch, env, etc. }
+  session    AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+  @@index([sessionId, createdAt])
+}
+
+// --- Multi-Agent Coordination ---
+
+model AgentTask {
+  id          String   @id @default(uuid())
+  projectId   String
+  sessionId   String?
+  title       String
+  description String?
+  status      String   @default("pending") // "pending" | "in_progress" | "done" | "blocked"
+  priority    Int      @default(0)
+  assignee    String?
+  deps        String?  // JSON array of task IDs
+  files       String?  // JSON array of file paths
+  result      String?
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([projectId, status])
+}
+
+model FileLock {
+  id          String   @id @default(uuid())
+  projectId   String
+  filePath    String
+  sessionId   String
+  lineRange   String   @default("all")
+  description String?
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  @@unique([projectId, filePath])
 }
