@@ -23,6 +23,7 @@ interface TerminalPaneProps {
   socket: OrbitSocket | undefined;
   connected: boolean;
   isActive: boolean;
+  needsAttention: boolean;
   sessions: SessionInfo[];
   onActivate: () => void;
   onSplit: (direction: "horizontal" | "vertical") => void;
@@ -49,6 +50,7 @@ export default function TerminalPane({
   socket,
   connected,
   isActive,
+  needsAttention,
   sessions,
   onActivate,
   onSplit,
@@ -167,15 +169,21 @@ export default function TerminalPane({
 
   return (
     <div
-      className={`relative flex h-full w-full flex-col rounded-2xl border border-neutral-800 bg-neutral-950 ${
-        isActive || isDropTarget ? "ring-1 ring-inset" : ""
+      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
+        needsAttention && !isActive
+          ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+          : isActive || isDropTarget
+            ? "border-neutral-800 ring-1 ring-inset"
+            : "border-neutral-800"
       }`}
       style={
         isDropTarget
           ? { boxShadow: "inset 0 0 0 2px #38bdf8" }
-          : isActive && projectColor
-            ? { boxShadow: `inset 0 0 0 1px ${projectColor}50` }
-            : undefined
+          : needsAttention && !isActive
+            ? { boxShadow: "inset 0 0 0 1px rgba(245,158,11,0.4), 0 0 8px rgba(245,158,11,0.15)" }
+            : isActive && projectColor
+              ? { boxShadow: `inset 0 0 0 1px ${projectColor}50` }
+              : undefined
       }
       onClick={onActivate}
       onDragOver={(e) => {

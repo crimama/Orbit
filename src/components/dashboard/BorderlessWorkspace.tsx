@@ -39,6 +39,12 @@ type WorkspaceTab =
       projectColor: string;
       filePath: string;
       fileContent: string;
+    }
+  | {
+      id: string;
+      kind: "browser";
+      title: string;
+      url: string;
     };
 
 export interface ViewedFile {
@@ -338,6 +344,23 @@ export default function BorderlessWorkspace({
       );
     }
 
+    if (tab.kind === "browser") {
+      return (
+        <div key={tab.id} className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
+          <div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900/80 px-3 py-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">Browser</span>
+            <span className="truncate text-xs text-neutral-400">{tab.url}</span>
+          </div>
+          <iframe
+            src={tab.url}
+            className="min-h-0 flex-1 bg-white"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+            title={tab.title}
+          />
+        </div>
+      );
+    }
+
     return <ProjectHarnessPanel key={tab.id} projectId={tab.projectId} />;
   };
 
@@ -373,10 +396,12 @@ export default function BorderlessWorkspace({
                   : "text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
               }`}
             >
-              <span
-                className="inline-block h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: tab.projectColor }}
-              />
+              {"projectColor" in tab && (
+                <span
+                  className="inline-block h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: tab.projectColor }}
+                />
+              )}
               <button
                 type="button"
                 draggable
@@ -385,8 +410,10 @@ export default function BorderlessWorkspace({
                 onClick={() => assignTabToPanel(tab.id, panelSide)}
                 className="cursor-grab py-1 pr-0.5 active:cursor-grabbing"
               >
-                <span className="font-medium">{tab.projectName}</span>
-                <span className="ml-1 text-neutral-500">{tab.title}</span>
+                {"projectName" in tab && (
+                  <span className="font-medium">{tab.projectName}</span>
+                )}
+                <span className={`${"projectName" in tab ? "ml-1 " : ""}text-neutral-500`}>{tab.title}</span>
               </button>
               <button
                 type="button"

@@ -25,6 +25,7 @@ interface PaneRendererProps {
   socketStates: Map<string, boolean>;
   sessions: SessionInfo[];
   leafCount: number;
+  attentionPanes: Set<string>;
   onActivate: (paneId: string) => void;
   onSplit: (paneId: string, direction: "horizontal" | "vertical") => void;
   onClose: (paneId: string) => void;
@@ -53,6 +54,7 @@ export default function PaneRenderer({
   socketStates,
   sessions,
   leafCount,
+  attentionPanes,
   onActivate,
   onSplit,
   onClose,
@@ -74,6 +76,7 @@ export default function PaneRenderer({
         socket={sockets.get(node.id)}
         connected={socketStates.get(node.id) ?? false}
         isActive={node.id === activePaneId}
+        needsAttention={attentionPanes.has(node.id)}
         sessions={sessions}
         onActivate={() => onActivate(node.id)}
         onSplit={(dir) => onSplit(node.id, dir)}
@@ -105,6 +108,7 @@ export default function PaneRenderer({
     socketStates,
     sessions,
     leafCount,
+    attentionPanes,
     onActivate,
     onSplit,
     onClose,

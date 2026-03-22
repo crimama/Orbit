@@ -2,10 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { SessionInfo } from "@/lib/types";
+import type { SessionInfo, SessionContext } from "@/lib/types";
 
 interface SessionListProps {
   sessions: SessionInfo[];
+  sessionContexts?: Map<string, SessionContext>;
   onTerminate: (id: string) => void;
   onTerminateAndRestart?: (id: string, options: { dangerouslySkipPermissions: boolean }) => void;
   onResume: (sessionRef: string, agentType?: string) => void;
@@ -18,6 +19,7 @@ export default function SessionList({
   sessions,
   onTerminate,
   onTerminateAndRestart,
+  sessionContexts,
   onResume,
   onRename,
   onOpenSession,
@@ -149,7 +151,17 @@ export default function SessionList({
                     </div>
                     <div className="mt-0.5 text-[11px] text-neutral-500">
                       {s.id.slice(0, 8)}
+                      {sessionContexts?.get(s.id)?.gitBranch && (
+                        <span className="ml-1.5 text-cyan-400/70">
+                          {sessionContexts.get(s.id)!.gitBranch}
+                        </span>
+                      )}
                     </div>
+                    {sessionContexts?.get(s.id)?.cwd && (
+                      <div className="mt-0.5 max-w-[200px] truncate text-[10px] text-neutral-600" title={sessionContexts.get(s.id)!.cwd}>
+                        {sessionContexts.get(s.id)!.cwd}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

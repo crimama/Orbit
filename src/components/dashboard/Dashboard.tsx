@@ -23,6 +23,7 @@ import type {
   ApiError,
   CreateSessionRequest,
   ProjectFileListResponse,
+  SessionContext,
 } from "@/lib/types";
 
 type AddProjectMode = null | "local" | "ssh" | "docker";
@@ -67,7 +68,7 @@ export default function Dashboard() {
   );
   const [addProjectMode, setAddProjectMode] = useState<AddProjectMode>(null);
   const [isProjectsListCollapsed, setIsProjectsListCollapsed] = useState(false);
-  const [leftPanelWidth, setLeftPanelWidth] = useState(220);
+  const [leftPanelWidth, setLeftPanelWidth] = useState(280);
   const [creatingSession, setCreatingSession] = useState(false);
   const [sessionViewMode, setSessionViewMode] =
     useState<SessionViewMode>("active");
@@ -86,6 +87,7 @@ export default function Dashboard() {
   const [quickSessionName, setQuickSessionName] = useState("");
   const [projectSessionName, setProjectSessionName] = useState("");
   const [skipPermissions, setSkipPermissions] = useState(false);
+  const [sessionContexts, setSessionContexts] = useState<Map<string, SessionContext>>(new Map());
   const [globalFileIndex, setGlobalFileIndex] = useState<
     GlobalFileIndexEntry[]
   >([]);
@@ -187,8 +189,20 @@ export default function Dashboard() {
     socket.emit("dashboard-join");
     socket.on("session-update", handleSessionUpdate);
 
+    const handleSessionContext = (ctx: SessionContext) => {
+      setSessionContexts((prev) => {
+        const existing = prev.get(ctx.sessionId);
+        if (existing?.cwd === ctx.cwd && existing?.gitBranch === ctx.gitBranch) return prev;
+        const next = new Map(prev);
+        next.set(ctx.sessionId, { ...existing, ...ctx });
+        return next;
+      });
+    };
+    socket.on("session-context" as never, handleSessionContext);
+
     return () => {
       socket.off("session-update", handleSessionUpdate);
+      socket.off("session-context" as never, handleSessionContext);
     };
   }, [socket]);
 
@@ -1127,6 +1141,7 @@ export default function Dashboard() {
                         </div>
                         <SessionList
                           sessions={selectedProjectSessions}
+                          sessionContexts={sessionContexts}
                           onTerminate={handleTerminateSession}
                           onTerminateAndRestart={handleTerminateAndRestart}
                           onResume={handleResumeSession}

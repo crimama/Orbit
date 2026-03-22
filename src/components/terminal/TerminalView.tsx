@@ -80,6 +80,15 @@ export default function TerminalView({
     };
     socket.on("session-ready", onSessionReady);
 
+    // OSC 777 notify → browser Notification
+    const onSessionNotify = (n: { sessionId: string; title: string; body: string }) => {
+      if (n.sessionId !== sessionId) return;
+      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        new Notification(n.title, { body: n.body, icon: "/icon-192x192.png" });
+      }
+    };
+    socket.on("session-notify", onSessionNotify);
+
     // Fallback: force ready after 5s
     const readyFallback = setTimeout(() => setReady(true), 5_000);
 
@@ -362,6 +371,7 @@ export default function TerminalView({
       socket.off("terminal-data-compressed", onCompressedData);
       socket.off("session-exit", onSessionExit);
       socket.off("session-ready", onSessionReady);
+      socket.off("session-notify", onSessionNotify);
       socket.emit("session-detach");
       onInputReady?.(null);
 

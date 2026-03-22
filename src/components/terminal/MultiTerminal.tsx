@@ -181,6 +181,9 @@ export default function MultiTerminal({
   // Per-pane exit tracking (ref-only, no re-render needed)
   const exitedPanesRef = useRef<Set<string>>(new Set());
 
+  // Notification ring: panes needing attention
+  const [attentionPanes, setAttentionPanes] = useState<Set<string>>(new Set());
+
   // Sessions list
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
   const [workspaces, setWorkspaces] = useState<WorkspaceLayoutInfo[]>([]);
@@ -344,6 +347,19 @@ export default function MultiTerminal({
     });
     sock.on("disconnect", () => {
       setSocketStates((prev) => new Map(prev).set(paneId, false));
+    });
+    // Notification ring: mark pane when agent needs attention
+    sock.on("session-notify", () => {
+      setAttentionPanes((prev) => {
+        if (prev.has(paneId)) return prev;
+        return new Set(prev).add(paneId);
+      });
+    });
+    sock.on("interceptor-pending", () => {
+      setAttentionPanes((prev) => {
+        if (prev.has(paneId)) return prev;
+        return new Set(prev).add(paneId);
+      });
     });
     if (sock.connected) {
       setSocketStates((prev) => new Map(prev).set(paneId, true));
@@ -608,7 +624,16 @@ export default function MultiTerminal({
           socketStates={socketStates}
           sessions={sessions}
           leafCount={leafCount}
-          onActivate={setActivePaneId}
+          attentionPanes={attentionPanes}
+          onActivate={(paneId) => {
+            setActivePaneId(paneId);
+            setAttentionPanes((prev) => {
+              if (!prev.has(paneId)) return prev;
+              const next = new Set(prev);
+              next.delete(paneId);
+              return next;
+            });
+          }}
           onSplit={handleSplit}
           onClose={handleClose}
           onSelectSession={handleSelectSession}

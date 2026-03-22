@@ -22,6 +22,9 @@ export interface ServerToClientEvents {
   // Observability
   "session-event": (event: SessionEvent) => void;
   "session-metrics": (snapshot: SessionMetricsSnapshot) => void;
+  // OSC 777 notifications
+  "session-notify": (notification: SessionNotification) => void;
+  "session-context": (ctx: SessionContext) => void;
 }
 
 export interface ClientToServerEvents {
@@ -85,6 +88,21 @@ export interface SocketData {
   attachedSessionId: string | null;
   subscribedGraphProjectId?: string | null;
   subscribedMetricsSessionId?: string | null;
+}
+
+// --- OSC 777 Notifications ---
+
+export interface SessionNotification {
+  sessionId: string;
+  title: string;
+  body: string;
+  timestamp: string;
+}
+
+export interface SessionContext {
+  sessionId: string;
+  cwd?: string;
+  gitBranch?: string;
 }
 
 // --- Session Info (API response) ---

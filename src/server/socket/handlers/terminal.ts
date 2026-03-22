@@ -4,7 +4,44 @@ import { getPtyBackend } from "@/server/pty/ptyBackend";
 import { commandInterceptor } from "@/server/pty/interceptor";
 import { sessionManager } from "@/server/session/sessionManager";
 import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
-import type { SessionInfo } from "@/lib/types";
+import type { SessionInfo, SessionNotification, SessionContext } from "@/lib/types";
+
+// OSC 777 notify: \x1b]777;notify;title;body\x07
+const OSC_NOTIFY_RE = /\x1b\]777;notify;([^;]*);([^\x07]*)\x07/g;
+// OSC 7 cwd: \x1b]7;file://host/path\x07
+const OSC_CWD_RE = /\x1b\]7;file:\/\/[^/]*([^\x07]*)\x07/g;
+
+function extractOscEvents(
+  sessionId: string,
+  data: string,
+  socket: OrbitSocket,
+): string {
+  let cleaned = data;
+
+  // Extract notifications
+  let match: RegExpExecArray | null;
+  while ((match = OSC_NOTIFY_RE.exec(data)) !== null) {
+    const notification: SessionNotification = {
+      sessionId,
+      title: match[1] || "Notification",
+      body: match[2] || "",
+      timestamp: new Date().toISOString(),
+    };
+    socket.emit("session-notify", notification);
+  }
+  OSC_NOTIFY_RE.lastIndex = 0;
+  cleaned = cleaned.replace(OSC_NOTIFY_RE, "");
+
+  // Extract cwd
+  while ((match = OSC_CWD_RE.exec(data)) !== null) {
+    const ctx: SessionContext = { sessionId, cwd: decodeURIComponent(match[1]) };
+    socket.emit("session-context", ctx);
+  }
+  OSC_CWD_RE.lastIndex = 0;
+  cleaned = cleaned.replace(OSC_CWD_RE, "");
+
+  return cleaned;
+}
 
 export function registerTerminalHandlers(
   io: OrbitServer,
@@ -80,7 +117,8 @@ export function registerTerminalHandlers(
       });
 
       unsubData = backend.onData(sessionId, (data) => {
-        batcher!.push(data);
+        const cleaned = extractOscEvents(sessionId, data, socket);
+        if (cleaned) batcher!.push(cleaned);
       });
 
       socket.emit("session-ready", sessionId);
