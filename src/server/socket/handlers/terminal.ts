@@ -11,6 +11,10 @@ import type { SessionInfo, SessionNotification, SessionContext } from "@/lib/typ
 const OSC_NOTIFY_RE = /\x1b\]777;notify;([^;]*);([^\x07]*)\x07/g;
 // OSC 7 cwd: \x1b]7;file://host/path\x07
 const OSC_CWD_RE = /\x1b\]7;file:\/\/[^/]*([^\x07]*)\x07/g;
+// Agent Teams: detect teammate idle/completion/elicitation patterns
+const AGENT_TEAMS_IDLE_RE = /\[Agent Teams?\]\s*(?:teammate|agent)\s+(\S+)\s+is idle/gi;
+const AGENT_TEAMS_COMPLETE_RE = /\[Agent Teams?\]\s*(?:task|work)\s+completed/gi;
+const AGENT_TEAMS_QUESTION_RE = /\[Agent Teams?\]\s*(?:question|elicitation|waiting for input)/gi;
 
 function extractOscEvents(
   sessionId: string,
@@ -40,6 +44,31 @@ function extractOscEvents(
   }
   OSC_CWD_RE.lastIndex = 0;
   cleaned = cleaned.replace(OSC_CWD_RE, "");
+
+  // Agent Teams pattern detection (non-destructive — don't strip from output)
+  if (AGENT_TEAMS_IDLE_RE.test(data)) {
+    socket.emit("session-notify", {
+      sessionId, title: "Agent Idle", body: "A teammate has finished and is waiting for work",
+      timestamp: new Date().toISOString(),
+    });
+  }
+  AGENT_TEAMS_IDLE_RE.lastIndex = 0;
+
+  if (AGENT_TEAMS_COMPLETE_RE.test(data)) {
+    socket.emit("session-notify", {
+      sessionId, title: "Task Completed", body: "An agent task has been completed",
+      timestamp: new Date().toISOString(),
+    });
+  }
+  AGENT_TEAMS_COMPLETE_RE.lastIndex = 0;
+
+  if (AGENT_TEAMS_QUESTION_RE.test(data)) {
+    socket.emit("session-notify", {
+      sessionId, title: "Agent Question", body: "An agent is waiting for your input",
+      timestamp: new Date().toISOString(),
+    });
+  }
+  AGENT_TEAMS_QUESTION_RE.lastIndex = 0;
 
   return cleaned;
 }

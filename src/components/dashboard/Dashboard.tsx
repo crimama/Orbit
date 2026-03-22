@@ -15,6 +15,8 @@ import SshVaultPanel from "./SshVaultPanel";
 import CostDashboard from "./CostDashboard";
 import AuditLogPanel from "./AuditLogPanel";
 import TaskBoard from "./TaskBoard";
+import ContextEfficiency from "./ContextEfficiency";
+import McpHub from "./McpHub";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useSocket } from "@/lib/useSocket";
 import type {
@@ -1506,6 +1508,11 @@ export default function Dashboard() {
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   <CostDashboard />
                   <AuditLogPanel />
+                </div>
+
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <ContextEfficiency />
+                  <McpHub />
                 </div>
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
