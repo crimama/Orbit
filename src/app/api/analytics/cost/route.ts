@@ -12,6 +12,7 @@ export async function GET() {
       cs.slug ??
       cs.id.slice(0, 8),
     projectId: cs.project_id,
+    projectName: cs.project_name,
     agentType: "claude-code",
     totalInputTokens: cs.input_tokens ?? 0,
     totalOutputTokens: cs.output_tokens ?? 0,

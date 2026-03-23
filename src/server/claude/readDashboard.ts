@@ -2,9 +2,10 @@ import { existsSync } from "fs";
 import { execFileSync } from "child_process";
 import { join } from "path";
 
-interface ClaudeSessionRow {
+export interface ClaudeSessionRow {
   id: string;
   project_id: string | null;
+  project_name: string | null;
   slug: string | null;
   first_prompt: string | null;
   summary: string | null;
@@ -35,8 +36,8 @@ export function readClaudeSessions(): ClaudeSessionRow[] {
       "import sqlite3, json",
       `conn = sqlite3.connect("${dbPath}")`,
       "c = conn.cursor()",
-      "rows = c.execute('SELECT id, project_id, slug, first_prompt, summary, input_tokens, output_tokens, cache_read_tokens, total_cost, created_at, modified_at FROM sessions ORDER BY modified_at DESC LIMIT 200').fetchall()",
-      "cols = ['id','project_id','slug','first_prompt','summary','input_tokens','output_tokens','cache_read_tokens','total_cost','created_at','modified_at']",
+      "rows = c.execute('SELECT s.id, s.project_id, p.name as project_name, s.slug, s.first_prompt, s.summary, s.input_tokens, s.output_tokens, s.cache_read_tokens, s.total_cost, s.created_at, s.modified_at FROM sessions s LEFT JOIN projects p ON s.project_id = p.id ORDER BY s.modified_at DESC LIMIT 200').fetchall()",
+      "cols = ['id','project_id','project_name','slug','first_prompt','summary','input_tokens','output_tokens','cache_read_tokens','total_cost','created_at','modified_at']",
       "print(json.dumps([dict(zip(cols,r)) for r in rows]))",
       "conn.close()",
     ].join("; ");

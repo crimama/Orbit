@@ -254,8 +254,9 @@ export default function CostDashboard() {
               <thead className="text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
                   <th className="pb-3 pr-4 font-medium">세션명</th>
-                  <th className="pb-3 pr-4 font-medium">에이전트 타입</th>
-                  <th className="pb-3 pr-4 font-medium">토큰 수</th>
+                  <th className="pb-3 pr-4 font-medium">프로젝트</th>
+                  <th className="pb-3 pr-4 font-medium">날짜</th>
+                  <th className="pb-3 pr-4 font-medium">토큰</th>
                   <th className="pb-3 font-medium">비용</th>
                 </tr>
               </thead>
@@ -271,7 +272,10 @@ export default function CostDashboard() {
                           session.totalTokens ??
                           session.totalInputTokens + session.totalOutputTokens;
                         const sessionName = session.sessionName?.trim() || session.sessionId;
-                        const agentType = session.agentType?.trim() || session.model?.trim() || "-";
+                        const raw = session as unknown as { projectName?: string; modifiedAt?: string; createdAt?: string };
+                        const projectName = raw.projectName || "-";
+                        const dateStr = raw.modifiedAt || raw.createdAt || "";
+                        const dateFormatted = dateStr ? new Date(dateStr).toLocaleDateString("ko-KR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
 
                         return (
                           <tr key={session.sessionId} className="text-neutral-200">
@@ -280,7 +284,8 @@ export default function CostDashboard() {
                                 {sessionName}
                               </div>
                             </td>
-                            <td className="py-2 pr-4 text-[11px] text-neutral-400">{agentType}</td>
+                            <td className="py-2 pr-4 text-[11px] text-neutral-400">{projectName}</td>
+                            <td className="py-2 pr-4 text-[10px] text-neutral-500">{dateFormatted}</td>
                             <td className="py-2 pr-4 text-[11px] text-neutral-300">
                               {tokenFormatter.format(totalTokens)}
                             </td>
