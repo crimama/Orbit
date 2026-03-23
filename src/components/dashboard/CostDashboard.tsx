@@ -276,7 +276,7 @@ export default function CostDashboard() {
                         return (
                           <tr key={session.sessionId} className="text-neutral-200">
                             <td className="py-2 pr-4">
-                              <div className="max-w-[220px] truncate text-xs text-neutral-100">
+                              <div className="max-w-[400px] truncate text-xs text-neutral-100">
                                 {sessionName}
                               </div>
                             </td>

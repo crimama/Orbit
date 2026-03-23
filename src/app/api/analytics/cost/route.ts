@@ -7,8 +7,8 @@ export async function GET() {
   const mapped = sessions.map((cs) => ({
     sessionId: cs.id,
     sessionName:
-      cs.summary?.slice(0, 60) ??
-      cs.first_prompt?.slice(0, 60) ??
+      cs.summary?.slice(0, 120) ??
+      cs.first_prompt?.slice(0, 120) ??
       cs.slug ??
       cs.id.slice(0, 8),
     projectId: cs.project_id,
