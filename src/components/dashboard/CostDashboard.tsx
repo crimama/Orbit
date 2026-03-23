@@ -153,7 +153,6 @@ export default function CostDashboard() {
 
   const [showAll, setShowAll] = useState(false);
   const [period, setPeriod] = useState<PeriodFilter>("all");
-  const hasSessions = dashboard.sessions.length > 0;
   const summaryCards = [
     { label: "Today", value: dashboard.todayCost },
     { label: "Week", value: dashboard.weekCost },
