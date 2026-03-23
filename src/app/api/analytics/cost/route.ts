@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { readFileSync, existsSync } from "fs";
+import { existsSync } from "fs";
 import { join } from "path";
 import { prisma } from "@/lib/prisma";
 
@@ -48,7 +48,7 @@ function readClaudeSessions(): ClaudeSession[] {
   } catch {
     // Fallback: try reading via child_process + python
     try {
-      const { execSync } = require("child_process");
+      const { execSync } = await import("child_process");
       const result = execSync(
         `python3 -c "
 import sqlite3, json
@@ -74,9 +74,6 @@ conn.close()
 }
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const source = searchParams.get("source") ?? "auto";
-
   // Read from Claude Code's dashboard.db
   const claudeSessions = readClaudeSessions();
 

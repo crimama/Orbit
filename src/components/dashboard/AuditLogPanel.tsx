@@ -5,38 +5,55 @@ import type { AuditLogInfo, ApiResponse, ApiError } from "@/lib/types";
 
 type AuditFilterValue =
   | "all"
-  | "interceptor_approve"
-  | "interceptor_deny"
-  | "session_create"
-  | "session_terminate";
+  | "interceptor"
+  | "session"
+  | "agent_activity";
 
 const FILTER_OPTIONS: Array<{ value: AuditFilterValue; label: string }> = [
-  { value: "all", label: "All events" },
-  { value: "interceptor_approve", label: "Interceptor approve" },
-  { value: "interceptor_deny", label: "Interceptor deny" },
-  { value: "session_create", label: "Session create" },
-  { value: "session_terminate", label: "Session terminate" },
+  { value: "all", label: "All" },
+  { value: "interceptor", label: "Permissions" },
+  { value: "session", label: "Sessions" },
+  { value: "agent_activity", label: "Agent Activity" },
 ];
 
-const EVENT_STYLES: Record<
-  Exclude<AuditFilterValue, "all">,
-  { dotClassName: string; symbol: string }
-> = {
+const FILTER_EVENT_TYPES: Record<Exclude<AuditFilterValue, "all">, string[]> = {
+  interceptor: ["interceptor_approve", "interceptor_deny", "interceptor_pending"],
+  session: ["session_create", "session_terminate", "session_fork"],
+  agent_activity: ["session_event_error", "session_event_tool", "session_event_command"],
+};
+
+const EVENT_STYLES: Record<string, { dotClassName: string; symbol: string }> = {
   interceptor_approve: {
     dotClassName: "border-emerald-500/40 bg-emerald-500/20 text-emerald-300",
-    symbol: "+",
+    symbol: "✓",
   },
   interceptor_deny: {
     dotClassName: "border-red-500/40 bg-red-500/20 text-red-300",
-    symbol: "x",
+    symbol: "✕",
+  },
+  interceptor_pending: {
+    dotClassName: "border-amber-500/40 bg-amber-500/20 text-amber-300",
+    symbol: "?",
   },
   session_create: {
     dotClassName: "border-sky-500/40 bg-sky-500/20 text-sky-300",
-    symbol: ">",
+    symbol: "▶",
   },
   session_terminate: {
     dotClassName: "border-neutral-600 bg-neutral-800 text-neutral-300",
-    symbol: "-",
+    symbol: "■",
+  },
+  session_event_error: {
+    dotClassName: "border-red-500/40 bg-red-500/20 text-red-300",
+    symbol: "!",
+  },
+  session_event_tool: {
+    dotClassName: "border-purple-500/40 bg-purple-500/20 text-purple-300",
+    symbol: "⚡",
+  },
+  session_event_command: {
+    dotClassName: "border-cyan-500/40 bg-cyan-500/20 text-cyan-300",
+    symbol: "$",
   },
 };
 
@@ -71,12 +88,8 @@ function formatTimeAgo(input: string): string {
   return "just now";
 }
 
-function getEventStyle(eventType: AuditLogInfo["eventType"]) {
-  if (eventType in EVENT_STYLES) {
-    return EVENT_STYLES[eventType as keyof typeof EVENT_STYLES];
-  }
-
-  return {
+function getEventStyle(eventType: string) {
+  return EVENT_STYLES[eventType] ?? {
     dotClassName: "border-neutral-700 bg-neutral-800 text-neutral-300",
     symbol: "•",
   };
@@ -100,11 +113,7 @@ export default function AuditLogPanel({ onNavigateSession }: AuditLogPanelProps 
       setError(null);
 
       try {
-        const params = new URLSearchParams({ limit: "30" });
-
-        if (filter !== "all") {
-          params.set("eventType", filter);
-        }
+        const params = new URLSearchParams({ limit: "100" });
 
         const response = await fetch(`/api/audit?${params.toString()}`, {
           cache: "no-store",
@@ -119,7 +128,7 @@ export default function AuditLogPanel({ onNavigateSession }: AuditLogPanelProps 
           return;
         }
 
-        setLogs(json.data);
+        setLogs(json.data as AuditLogInfo[]);
       } catch {
         if (!cancelled) {
           setLogs([]);
@@ -176,16 +185,25 @@ export default function AuditLogPanel({ onNavigateSession }: AuditLogPanelProps 
           </div>
         ) : null}
 
-        {!loading && logs.length === 0 ? (
-          <div className="px-4 py-6 text-sm text-neutral-400">
-            감사 로그가 없습니다
-          </div>
-        ) : null}
+        {(() => {
+          const filtered = filter === "all"
+            ? logs
+            : logs.filter((l) => FILTER_EVENT_TYPES[filter]?.includes(l.eventType));
 
-        {!loading && logs.length > 0 ? (
+          if (!loading && filtered.length === 0) {
+            return (
+              <div className="px-4 py-6 text-sm text-neutral-400">
+                감사 로그가 없습니다
+              </div>
+            );
+          }
+
+          if (loading || filtered.length === 0) return null;
+
+          return (
           <div className="relative">
             <div className="pointer-events-none absolute bottom-0 left-7 top-0 w-px bg-neutral-800/80" />
-            {logs.map((log) => {
+            {filtered.map((log) => {
               const eventStyle = getEventStyle(log.eventType);
 
               return (
@@ -245,7 +263,8 @@ export default function AuditLogPanel({ onNavigateSession }: AuditLogPanelProps 
               );
             })}
           </div>
-        ) : null}
+          );
+        })()}
       </div>
     </section>
   );

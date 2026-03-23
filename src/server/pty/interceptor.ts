@@ -312,6 +312,14 @@ class CommandInterceptor {
     });
 
     onPending(approval);
+
+    void auditLogger.log({
+      eventType: "interceptor_pending",
+      action: `Permission requested: ${command}`,
+      sessionId,
+      detail: { rule: rule.description, command },
+    });
+
     return false;
   }
 

@@ -577,6 +577,10 @@ export type AuditEventType =
   | "session_create"
   | "session_terminate"
   | "session_fork"
+  | "session_event_error"
+  | "session_event_tool"
+  | "session_event_command"
+  | "interceptor_pending"
   | "ssh_connect"
   | "ssh_disconnect"
   | "mode_change";

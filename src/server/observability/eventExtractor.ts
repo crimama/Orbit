@@ -15,10 +15,11 @@ interface EventPattern {
 
 const EVENT_PATTERNS: EventPattern[] = [
   { type: "file_edit", regex: /Writ(?:e|ing|ten)\s+\S+/i },
-  { type: "tool_call", regex: /⚡|Using tool:|ToolCall:/i },
+  { type: "tool_call", regex: /⚡|Using tool:|ToolCall:|Read\(|Edit\(|Bash\(|Glob\(|Grep\(/i },
   { type: "command_run", regex: /^\$\s+|Running:|Executing:/m },
   { type: "test_result", regex: /\d+ tests? passed|PASS|FAIL/i },
   { type: "error", regex: /Error:|ERROR:|FATAL:|panic:/i },
+  { type: "info", regex: /completed|finished|done|✓|✔|saved/i },
 ];
 
 /** Strip ANSI escape sequences from terminal output */

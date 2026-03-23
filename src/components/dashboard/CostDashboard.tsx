@@ -36,10 +36,6 @@ function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0);
 }
 
-function endOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999);
-}
-
 function startOfWeek(date: Date) {
   const day = date.getDay();
   const diff = day === 0 ? -6 : 1 - day;

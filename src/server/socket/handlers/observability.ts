@@ -1,7 +1,15 @@
 import type { OrbitServer, OrbitSocket } from "@/server/socket/types";
 import { startEventExtraction } from "@/server/observability/eventExtractor";
 import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
+import { auditLogger } from "@/server/audit/auditLogger";
 import { OBS_METRICS_BROADCAST_INTERVAL_MS } from "@/lib/constants";
+import type { SessionEventType, AuditEventType } from "@/lib/types";
+
+const AUDIT_EVENT_MAP: Partial<Record<SessionEventType, AuditEventType>> = {
+  error: "session_event_error",
+  tool_call: "session_event_tool",
+  command_run: "session_event_command",
+};
 
 export function registerObservabilityHandlers(
   io: OrbitServer,
@@ -28,6 +36,16 @@ export function registerObservabilityHandlers(
       const snapshot = sessionMetricsManager.record(event);
       io.to(`metrics:${sessionId}`).emit("session-event", event);
       io.to(`metrics:${sessionId}`).emit("session-metrics", snapshot);
+
+      // Log significant events to audit trail
+      const auditType = AUDIT_EVENT_MAP[event.type];
+      if (auditType) {
+        void auditLogger.log({
+          eventType: auditType,
+          action: event.summary.slice(0, 120),
+          sessionId,
+        });
+      }
     });
 
     // Periodic broadcast for duration updates
