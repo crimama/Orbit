@@ -111,16 +111,24 @@ export default function CostDashboard() {
     try {
       const allData = await fetchCost(undefined, signal);
       const sessions = allData.sessions;
-      const now = new Date();
-      const todayStart = startOfDay(now).getTime();
-      const weekStart = startOfWeek(now).getTime();
-      const monthStart = startOfMonth(now).getTime();
+
+      // Find the latest session date as reference point
+      // (Claude dashboard.db may not have today's data if running via Orbit PTY)
+      let latestMs = 0;
+      for (const s of sessions) {
+        const ms = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
+        if (!Number.isNaN(ms) && ms > latestMs) latestMs = ms;
+      }
+      const ref = latestMs > 0 ? new Date(latestMs) : new Date();
+      const dayStart = startOfDay(ref).getTime();
+      const weekStart = startOfWeek(ref).getTime();
+      const monthStart = startOfMonth(ref).getTime();
 
       let todayCost = 0, weekCost = 0, monthCost = 0;
       for (const s of sessions) {
         const mod = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
         if (Number.isNaN(mod)) continue;
-        if (mod >= todayStart) todayCost += s.totalCost;
+        if (mod >= dayStart) todayCost += s.totalCost;
         if (mod >= weekStart) weekCost += s.totalCost;
         if (mod >= monthStart) monthCost += s.totalCost;
       }
@@ -156,18 +164,24 @@ export default function CostDashboard() {
   const totalCost = dashboard.sessions.reduce((s, e) => s + e.totalCost, 0);
   const summaryCards = [
     { label: "Total", value: totalCost },
-    { label: "Today", value: dashboard.todayCost },
-    { label: "Week", value: dashboard.weekCost },
-    { label: "Month", value: dashboard.monthCost },
+    { label: "Daily", value: dashboard.todayCost },
+    { label: "Weekly", value: dashboard.weekCost },
+    { label: "Monthly", value: dashboard.monthCost },
   ];
 
   const filteredSessions = (() => {
     if (period === "all") return dashboard.sessions;
-    const now = new Date();
+    // Use latest session date as reference (same as summary cards)
+    let latestMs = 0;
+    for (const s of dashboard.sessions) {
+      const ms = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
+      if (!Number.isNaN(ms) && ms > latestMs) latestMs = ms;
+    }
+    const ref = latestMs > 0 ? new Date(latestMs) : new Date();
     const cutoff =
-      period === "today" ? startOfDay(now).getTime()
-      : period === "week" ? startOfWeek(now).getTime()
-      : startOfMonth(now).getTime();
+      period === "today" ? startOfDay(ref).getTime()
+      : period === "week" ? startOfWeek(ref).getTime()
+      : startOfMonth(ref).getTime();
     return dashboard.sessions.filter((s) => {
       const mod = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
       return !Number.isNaN(mod) && mod >= cutoff;
