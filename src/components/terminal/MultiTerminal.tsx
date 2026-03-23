@@ -10,6 +10,7 @@ import {
   findLeaf,
   collectLeafIds,
   migrateLegacyTree,
+  syncCounterFromTree,
   type PaneNode,
 } from "@/lib/paneTree";
 import { createTerminalSocket, type OrbitSocket } from "@/lib/socketClient";
@@ -125,7 +126,7 @@ function placeNewSessionByEdge(
     const shouldMoveForward = position === "right" || position === "bottom";
     const swapIndex = shouldMoveForward ? paneIndex + 1 : paneIndex - 1;
     if (swapIndex < 0 || swapIndex >= node.children.length) {
-      return { node, changed: true };
+      return { node, changed: false };
     }
 
     const children = [...node.children];
@@ -186,6 +187,7 @@ export default function MultiTerminal({
 
   // Sessions list
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const sessionsLoadedRef = useRef(false);
   const [workspaces, setWorkspaces] = useState<WorkspaceLayoutInfo[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
@@ -202,6 +204,7 @@ export default function MultiTerminal({
         const res = await fetch(url);
         const json = (await res.json()) as ApiResponse<SessionInfo[]>;
         if (!cancelled && "data" in json) {
+          sessionsLoadedRef.current = true;
           setSessions((prev) => {
             const next = json.data;
             if (
@@ -300,6 +303,7 @@ export default function MultiTerminal({
         const parsed = JSON.parse(workspace.tree) as unknown;
         const migratedTree = migrateLegacyTree(parsed);
         if (!migratedTree) return;
+        syncCounterFromTree(migratedTree);
 
         const activeSessionIds = new Set(
           sessions.filter((s) => s.status === "active").map((s) => s.id),
@@ -323,6 +327,7 @@ export default function MultiTerminal({
 
   useEffect(() => {
     if (workspaces.length === 0) return;
+    if (!sessionsLoadedRef.current) return; // Wait until sessions are loaded
     const pinnedId =
       initialWorkspaceId?.trim() ||
       (autoRestoreWorkspace
@@ -333,6 +338,7 @@ export default function MultiTerminal({
     if (found) {
       applyWorkspace(found);
     }
+    // sessions is in deps via applyWorkspace — re-runs when sessions load
   }, [workspaces, applyWorkspace, initialWorkspaceId, autoRestoreWorkspace]);
 
   // Ensure sockets exist for all leaves
@@ -369,6 +375,7 @@ export default function MultiTerminal({
   const destroySocket = useCallback((paneId: string) => {
     const sock = socketsRef.current.get(paneId);
     if (sock) {
+      sock.removeAllListeners();
       sock.disconnect();
       socketsRef.current.delete(paneId);
       setSocketStates((prev) => {
@@ -422,8 +429,6 @@ export default function MultiTerminal({
 
   const handleClose = useCallback(
     (paneId: string) => {
-      let nextActivePaneId: string | null = null;
-
       setTree((prev) => {
         let updated = prev;
         if (collectLeafIds(prev).length === 1) {
@@ -432,24 +437,33 @@ export default function MultiTerminal({
           const result = closePane(prev, paneId);
           updated = result ?? prev;
         }
-
-        if (paneId === activePaneId) {
-          const leaves = collectLeafIds(updated);
-          if (leaves.length > 0 && !leaves.includes(activePaneId)) {
-            nextActivePaneId = leaves[0];
-          }
-        }
-
         return updated;
       });
 
-      if (nextActivePaneId) {
-        setActivePaneId(nextActivePaneId);
-      }
+      // Use functional updater to read latest activePaneId without stale closure
+      setActivePaneId((prevActive) => {
+        if (prevActive !== paneId) return prevActive;
+        // Active pane was closed — pick another leaf
+        // We need the updated tree; read from ref or re-derive
+        return prevActive; // Will be corrected by the effect below
+      });
+
+      // Post-close: ensure activePaneId points to an existing leaf
+      // Using setTimeout(0) to run after setTree has been applied
+      setTimeout(() => {
+        setTree((currentTree) => {
+          const leaves = collectLeafIds(currentTree);
+          setActivePaneId((prev) => {
+            if (leaves.includes(prev)) return prev;
+            return leaves[0] ?? prev;
+          });
+          return currentTree; // no mutation
+        });
+      }, 0);
 
       clearExitedPane([paneId]);
     },
-    [activePaneId, clearExitedPane],
+    [clearExitedPane],
   );
 
   const handleSelectSession = useCallback(
@@ -574,8 +588,12 @@ export default function MultiTerminal({
         workspaceName.trim() ||
         window.prompt("Workspace name:", defaultName)?.trim() ||
         defaultName;
-      const method = "POST";
-      const url = "/api/workspaces";
+
+      const isUpdate = !!selectedWorkspaceId;
+      const method = isUpdate ? "PATCH" : "POST";
+      const url = isUpdate
+        ? `/api/workspaces/${selectedWorkspaceId}`
+        : "/api/workspaces";
 
       const body = {
         name,
@@ -599,7 +617,7 @@ export default function MultiTerminal({
     } finally {
       setSavingWorkspace(false);
     }
-  }, [workspaceName, tree, activePaneId, fetchWorkspaces]);
+  }, [workspaceName, selectedWorkspaceId, tree, activePaneId, fetchWorkspaces]);
 
   const deleteWorkspace = useCallback(async () => {
     if (!selectedWorkspaceId) return;

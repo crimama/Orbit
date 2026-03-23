@@ -32,6 +32,16 @@ function syncCounterFromId(id: string): void {
   }
 }
 
+/** Sync the ID counter from all IDs in a tree to prevent collisions after restore */
+export function syncCounterFromTree(node: PaneNode): void {
+  syncCounterFromId(node.id);
+  if (node.type === "split") {
+    for (const child of node.children) {
+      syncCounterFromTree(child);
+    }
+  }
+}
+
 function createEqualRatios(count: number): number[] {
   return Array.from({ length: count }, () => 1 / count);
 }
