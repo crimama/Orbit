@@ -109,20 +109,23 @@ export default function CostDashboard() {
     setError(null);
 
     try {
+      const allData = await fetchCost(undefined, signal);
+      const sessions = allData.sessions;
       const now = new Date();
-      const [today, week, month, allSessions] = await Promise.all([
-        fetchCost({ from: startOfDay(now), to: endOfDay(now) }, signal),
-        fetchCost({ from: startOfWeek(now), to: endOfDay(now) }, signal),
-        fetchCost({ from: startOfMonth(now), to: endOfDay(now) }, signal),
-        fetchCost(undefined, signal),
-      ]);
+      const todayStart = startOfDay(now).getTime();
+      const weekStart = startOfWeek(now).getTime();
+      const monthStart = startOfMonth(now).getTime();
 
-      setDashboard({
-        todayCost: today.totalCost,
-        weekCost: week.totalCost,
-        monthCost: month.totalCost,
-        sessions: allSessions.sessions,
-      });
+      let todayCost = 0, weekCost = 0, monthCost = 0;
+      for (const s of sessions) {
+        const raw = s as unknown as { modifiedAt?: string; createdAt?: string };
+        const mod = new Date(raw.modifiedAt ?? raw.createdAt ?? "").getTime();
+        if (mod >= todayStart) todayCost += s.totalCost;
+        if (mod >= weekStart) weekCost += s.totalCost;
+        if (mod >= monthStart) monthCost += s.totalCost;
+      }
+
+      setDashboard({ todayCost, weekCost, monthCost, sessions });
     } catch (loadError) {
       if (signal?.aborted) {
         return;

@@ -1,122 +1,126 @@
 import { NextResponse } from "next/server";
+import { readFileSync, existsSync } from "fs";
+import { join } from "path";
 import { prisma } from "@/lib/prisma";
 
-function parseIsoDate(value: string | null, field: string): Date | null {
-  if (!value) {
-    return null;
-  }
+interface ClaudeSession {
+  id: string;
+  project_id: string | null;
+  slug: string | null;
+  first_prompt: string | null;
+  summary: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  total_cost: number;
+  model_usage: string | null;
+  created_at: string;
+  modified_at: string;
+}
 
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(`${field} must be a valid ISO date`);
-  }
+function getClaudeDashboardDb(): string | null {
+  const home = process.env.HOME ?? "/root";
+  const dbPath = join(home, ".claude", "dashboard.db");
+  return existsSync(dbPath) ? dbPath : null;
+}
 
-  return parsed;
+function readClaudeSessions(): ClaudeSession[] {
+  const dbPath = getClaudeDashboardDb();
+  if (!dbPath) return [];
+
+  try {
+    // Use better-sqlite3 if available, otherwise fallback
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const Database = require("better-sqlite3");
+    const db = new Database(dbPath, { readonly: true });
+    const rows = db
+      .prepare(
+        `SELECT id, project_id, slug, first_prompt, summary,
+                input_tokens, output_tokens, cache_read_tokens, total_cost,
+                model_usage, created_at, modified_at
+         FROM sessions
+         ORDER BY modified_at DESC
+         LIMIT 200`,
+      )
+      .all() as ClaudeSession[];
+    db.close();
+    return rows;
+  } catch {
+    // Fallback: try reading via child_process + python
+    try {
+      const { execSync } = require("child_process");
+      const result = execSync(
+        `python3 -c "
+import sqlite3, json
+conn = sqlite3.connect('${dbPath}')
+c = conn.cursor()
+rows = c.execute('''
+  SELECT id, project_id, slug, first_prompt, summary,
+         input_tokens, output_tokens, cache_read_tokens, total_cost,
+         model_usage, created_at, modified_at
+  FROM sessions ORDER BY modified_at DESC LIMIT 200
+''').fetchall()
+cols = ['id','project_id','slug','first_prompt','summary','input_tokens','output_tokens','cache_read_tokens','total_cost','model_usage','created_at','modified_at']
+print(json.dumps([dict(zip(cols,r)) for r in rows]))
+conn.close()
+"`,
+        { encoding: "utf-8", timeout: 5000 },
+      );
+      return JSON.parse(result.trim()) as ClaudeSession[];
+    } catch {
+      return [];
+    }
+  }
 }
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const projectId = searchParams.get("projectId")?.trim() || undefined;
+  const source = searchParams.get("source") ?? "auto";
 
-  let from: Date | null;
-  let to: Date | null;
+  // Read from Claude Code's dashboard.db
+  const claudeSessions = readClaudeSessions();
 
-  try {
-    from = parseIsoDate(searchParams.get("from"), "from");
-    to = parseIsoDate(searchParams.get("to"), "to");
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Invalid date" },
-      { status: 400 },
-    );
-  }
-
-  if (from && to && from > to) {
-    return NextResponse.json(
-      { error: "from must be earlier than or equal to to" },
-      { status: 400 },
-    );
-  }
-
-  const sessions = await prisma.agentSession.findMany({
-    where: projectId ? { projectId } : undefined,
-    select: {
-      id: true,
-      name: true,
-      projectId: true,
-      project: {
-        select: {
-          name: true,
-        },
-      },
-    },
-  });
-
-  if (projectId && sessions.length === 0) {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { id: true },
-    });
-    if (!project) {
-      return NextResponse.json({ error: "Project not found" }, { status: 404 });
-    }
-  }
-
-  if (sessions.length === 0) {
-    return NextResponse.json({
-      data: {
-        projectId: projectId ?? null,
-        from: from?.toISOString() ?? null,
-        to: to?.toISOString() ?? null,
-        totalCost: 0,
-        sessions: [],
-      },
-    });
-  }
-
-  const grouped = await prisma.sessionTokenLog.groupBy({
+  // Also read from Orbit's own SessionTokenLog
+  const orbitLogs = await prisma.sessionTokenLog.groupBy({
     by: ["sessionId"],
-    where: {
-      sessionId: { in: sessions.map((session) => session.id) },
-      ...(from || to
-        ? {
-            createdAt: {
-              ...(from ? { gte: from } : {}),
-              ...(to ? { lte: to } : {}),
-            },
-          }
-        : {}),
-    },
-    _sum: {
-      estimatedCost: true,
-      inputTokens: true,
-      outputTokens: true,
-    },
+    _sum: { estimatedCost: true, inputTokens: true, outputTokens: true },
   });
+  const orbitMap = new Map(
+    orbitLogs.map((l) => [
+      l.sessionId,
+      {
+        cost: l._sum.estimatedCost ?? 0,
+        input: l._sum.inputTokens ?? 0,
+        output: l._sum.outputTokens ?? 0,
+      },
+    ]),
+  );
 
-  const sessionMap = new Map(sessions.map((session) => [session.id, session]));
-  const sessionTotals = grouped.map((entry) => {
-    const session = sessionMap.get(entry.sessionId);
-
+  // Merge: Claude sessions as primary, Orbit logs as supplement
+  const sessions = claudeSessions.map((cs) => {
+    const orbitData = orbitMap.get(cs.id);
     return {
-      sessionId: entry.sessionId,
-      sessionName: session?.name ?? null,
-      projectId: session?.projectId ?? null,
-      projectName: session?.project.name ?? null,
-      totalCost: entry._sum.estimatedCost ?? 0,
-      totalInputTokens: entry._sum.inputTokens ?? 0,
-      totalOutputTokens: entry._sum.outputTokens ?? 0,
-      totalTokens: (entry._sum.inputTokens ?? 0) + (entry._sum.outputTokens ?? 0),
+      sessionId: cs.id,
+      sessionName: cs.summary?.slice(0, 60) ?? cs.first_prompt?.slice(0, 60) ?? cs.slug ?? cs.id.slice(0, 8),
+      projectId: cs.project_id,
+      agentType: "claude-code",
+      totalInputTokens: cs.input_tokens ?? 0,
+      totalOutputTokens: cs.output_tokens ?? 0,
+      cacheReadTokens: cs.cache_read_tokens ?? 0,
+      totalCost: cs.total_cost ?? orbitData?.cost ?? 0,
+      totalTokens: (cs.input_tokens ?? 0) + (cs.output_tokens ?? 0),
+      createdAt: cs.created_at,
+      modifiedAt: cs.modified_at,
     };
   });
 
+  const totalCost = sessions.reduce((s, e) => s + e.totalCost, 0);
+
   return NextResponse.json({
     data: {
-      projectId: projectId ?? null,
-      from: from?.toISOString() ?? null,
-      to: to?.toISOString() ?? null,
-      totalCost: sessionTotals.reduce((sum, entry) => sum + entry.totalCost, 0),
-      sessions: sessionTotals,
+      source: claudeSessions.length > 0 ? "claude-dashboard" : "orbit",
+      totalCost,
+      sessions,
     },
   });
 }
