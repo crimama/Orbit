@@ -157,52 +157,38 @@ export default function CostDashboard() {
   ];
 
   return (
-    <section className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-4 text-neutral-100 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-neutral-100">Cost Dashboard</h2>
-          <p className="mt-1 text-xs text-neutral-400">
-            세션별 토큰 사용량과 누적 비용을 확인합니다.
-          </p>
+    <section className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-3 text-neutral-100 shadow-sm">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <h2 className="text-sm font-semibold text-neutral-100">Cost</h2>
+          {!loading && (
+            <div className="flex items-center gap-3 text-[11px]">
+              {summaryCards.map((card) => (
+                <span key={card.label} className="text-neutral-400">
+                  {card.label} <span className="font-medium text-amber-400">{currencyFormatter.format(card.value)}</span>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
         <button
           type="button"
-          onClick={() => void loadDashboard()}
-          className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-neutral-700"
+          onClick={() => setShowAll((v) => !v)}
+          className="text-[10px] text-neutral-500 hover:text-neutral-300"
         >
-          새로고침
+          {showAll ? "Hide" : "Detail"}
         </button>
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs text-red-200">
           {error}
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-3 md:grid-cols-3">
-        {summaryCards.map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl border border-neutral-800 bg-neutral-950/70 p-4"
-          >
-            <div className="text-xs text-neutral-400">{card.label}</div>
-            <div className="mt-2 text-sm font-semibold text-amber-400">
-              {loading ? "Loading..." : currencyFormatter.format(card.value)}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/70 p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold text-neutral-100">세션별 비용</h3>
-            <p className="mt-1 text-xs text-neutral-500">
-              입력/출력 토큰 합계와 세션 누적 비용입니다.
-            </p>
-          </div>
-        </div>
+      {showAll && (
+      <div className="mt-2">
+        <div />
 
         {loading ? (
           <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/60 px-4 py-6 text-sm text-neutral-400">
@@ -230,8 +216,7 @@ export default function CostDashboard() {
               <tbody className="divide-y divide-neutral-800">
                 {(() => {
                   const sorted = dashboard.sessions.slice().sort((a, b) => b.totalCost - a.totalCost);
-                  const visible = showAll ? sorted : sorted.slice(0, VISIBLE_COUNT);
-                  const remaining = sorted.length - VISIBLE_COUNT;
+                  const visible = sorted.slice(0, 10);
 
                   return (
                     <>
@@ -259,30 +244,6 @@ export default function CostDashboard() {
                           </tr>
                         );
                       })}
-                      {!showAll && remaining > 0 && (
-                        <tr>
-                          <td colSpan={4} className="py-2">
-                            <button
-                              onClick={() => setShowAll(true)}
-                              className="w-full text-center text-[11px] text-neutral-500 hover:text-neutral-300"
-                            >
-                              ··· {remaining} more
-                            </button>
-                          </td>
-                        </tr>
-                      )}
-                      {showAll && remaining > 0 && (
-                        <tr>
-                          <td colSpan={4} className="py-2">
-                            <button
-                              onClick={() => setShowAll(false)}
-                              className="w-full text-center text-[11px] text-neutral-500 hover:text-neutral-300"
-                            >
-                              Show less
-                            </button>
-                          </td>
-                        </tr>
-                      )}
                     </>
                   );
                 })()}
@@ -291,6 +252,7 @@ export default function CostDashboard() {
           </div>
         ) : null}
       </div>
+      )}
     </section>
   );
 }
