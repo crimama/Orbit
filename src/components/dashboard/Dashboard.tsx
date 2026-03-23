@@ -1328,6 +1328,8 @@ export default function Dashboard() {
               </div>
             ) : (
               <div className="space-y-4 overflow-y-auto p-4">
+                <CostDashboard />
+
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                   <div className="mb-2 text-xs text-neutral-500">
                     Quick Session Launch
@@ -1402,9 +1404,7 @@ export default function Dashboard() {
                   onAddProfile={() => openSshVaultForm()}
                 />
 
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  <CostDashboard />
-                  <AuditLogPanel
+                <AuditLogPanel
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
@@ -1414,7 +1414,6 @@ export default function Dashboard() {
                       }
                     }}
                   />
-                </div>
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                   <div className="mb-2 text-xs text-neutral-500">
