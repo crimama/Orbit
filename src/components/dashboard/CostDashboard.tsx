@@ -153,11 +153,13 @@ export default function CostDashboard() {
 
   const [showAll, setShowAll] = useState(false);
   const [period, setPeriod] = useState<PeriodFilter>("all");
+  const totalCost = dashboard.sessions.reduce((s, e) => s + e.totalCost, 0);
   const summaryCards = [
+    { label: "Total", value: totalCost },
     { label: "Today", value: dashboard.todayCost },
     { label: "Week", value: dashboard.weekCost },
     { label: "Month", value: dashboard.monthCost },
-  ];
+  ].filter((c) => c.value > 0 || c.label === "Total");
 
   const filteredSessions = (() => {
     if (period === "all") return dashboard.sessions;
