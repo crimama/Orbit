@@ -1,9 +1,13 @@
+import { readdir, realpath, stat } from "fs/promises";
+import { homedir } from "os";
+import { basename, join } from "path";
 import { prisma } from "@/lib/prisma";
 import { shellQuote } from "@/lib/shellQuote";
 import { ptyManager } from "@/server/pty/ptyManager";
 import { remotePtyManager } from "@/server/ssh/remotePty";
 import { sshManager } from "@/server/ssh/sshManager";
 import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+import { toClaudeProjectKey } from "@/server/session/claudeHistory";
 import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
 import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
 import { auditLogger } from "@/server/audit/auditLogger";
@@ -11,6 +15,7 @@ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
 import type { OrbitServer } from "@/server/socket/types";
 
 const AGENT_TYPES = {
+  CLAUDE: "claude-code",
   TERMINAL: "terminal",
   CODEX: "codex",
   OPENCODE: "opencode",
@@ -34,7 +39,7 @@ function dockerInnerCommand(
     return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; if command -v opencode >/dev/null 2>&1; then exec opencode; else echo "[Agent Orbit] opencode not found in container PATH."; exec /bin/bash -il; fi`;
   }
   const resumeArgs = resumeSessionRef?.trim()
-    ? ` --resume ${shellQuote(resumeSessionRef.trim())} --fork-session`
+    ? ` --resume ${shellQuote(resumeSessionRef.trim())}`
     : "";
   const claudeCmd =
     `if command -v claude >/dev/null 2>&1; then exec claude${resumeArgs}; ` +
@@ -217,12 +222,99 @@ class SessionManager {
       where: { projectId, agentType },
     });
     const label =
-      agentType === "claude-code"
+      agentType === AGENT_TYPES.CLAUDE
         ? "Claude"
         : agentType === "terminal"
           ? "Terminal"
           : agentType.charAt(0).toUpperCase() + agentType.slice(1);
     return `${label} #${count + 1}`;
+  }
+
+  private async getClaudeProjectDirs(projectPath: string): Promise<string[]> {
+    const dirs = new Set<string>();
+    const raw = projectPath.trim();
+    if (!raw) return [];
+
+    dirs.add(join(homedir(), ".claude", "projects", toClaudeProjectKey(raw)));
+
+    try {
+      const resolved = await realpath(raw);
+      if (resolved.trim().length > 0) {
+        dirs.add(join(homedir(), ".claude", "projects", toClaudeProjectKey(resolved)));
+      }
+    } catch {
+      // Project path may not resolve locally; keep the raw key only.
+    }
+
+    return Array.from(dirs);
+  }
+
+  private async resolveClaudeResumeRef(
+    sessionRef: string,
+    dbSessionId: string,
+    projectPath: string,
+  ): Promise<string | undefined> {
+    const ref = sessionRef.trim();
+    if (!ref || ref === dbSessionId) return undefined;
+
+    const dirs = await this.getClaudeProjectDirs(projectPath);
+    for (const dir of dirs) {
+      try {
+        const info = await stat(join(dir, `${ref}.jsonl`));
+        if (info.isFile()) {
+          return ref;
+        }
+      } catch {
+        // Keep checking aliases.
+      }
+    }
+
+    return undefined;
+  }
+
+  private async captureClaudeSessionRef(
+    sessionId: string,
+    projectPath: string,
+  ): Promise<void> {
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 3000);
+    });
+
+    const projectKey = toClaudeProjectKey(projectPath);
+    const claudeDir = join(homedir(), ".claude", "projects", projectKey);
+
+    try {
+      const files = await readdir(claudeDir, { withFileTypes: true });
+      const jsonlFiles = files.filter((file) => file.isFile() && file.name.endsWith(".jsonl"));
+      if (jsonlFiles.length === 0) return;
+
+      const entries = await Promise.all(
+        jsonlFiles.map(async (file) => {
+          const filePath = join(claudeDir, file.name);
+          const info = await stat(filePath);
+          return { filePath, mtimeMs: info.mtimeMs };
+        }),
+      );
+
+      const newest = entries.reduce((latest, entry) =>
+        entry.mtimeMs > latest.mtimeMs ? entry : latest,
+      );
+      const claudeSessionId = basename(newest.filePath, ".jsonl");
+      if (!claudeSessionId) return;
+
+      const current = await prisma.agentSession.findUnique({
+        where: { id: sessionId },
+        select: { sessionRef: true },
+      });
+      if (!current || current.sessionRef === claudeSessionId) return;
+
+      await prisma.agentSession.update({
+        where: { id: sessionId },
+        data: { sessionRef: claudeSessionId },
+      });
+    } catch {
+      // Best-effort capture only; session creation must not fail here.
+    }
   }
 
   async createSession(req: CreateSessionRequest): Promise<SessionInfo> {
@@ -296,6 +388,10 @@ class SessionManager {
         where: { id: session.id },
         data: { sessionRef: nextSessionRef },
       });
+
+      if (req.agentType === AGENT_TYPES.CLAUDE && !req.resumeSessionRef?.trim()) {
+        void this.captureClaudeSessionRef(session.id, project.path);
+      }
     } catch (err) {
       // Rollback: delete the DB record if PTY creation fails
       await prisma.agentSession.delete({ where: { id: session.id } });
@@ -410,12 +506,23 @@ class SessionManager {
       !!row.project.sshConfigId;
 
     try {
+      const resumeSessionRef =
+        row.agentType === AGENT_TYPES.CLAUDE
+          ? await this.resolveClaudeResumeRef(
+              row.sessionRef,
+              sessionId,
+              row.project.path,
+            )
+          : row.sessionRef !== sessionId
+            ? row.sessionRef
+            : undefined;
+
       if (isRemote) {
         await this.startRemotePty(
           sessionId,
           row.project.sshConfigId!,
           row.agentType,
-          row.sessionRef !== sessionId ? row.sessionRef : undefined,
+          resumeSessionRef,
           {
             path: row.project.path,
             dockerContainer: row.project.dockerContainer,
@@ -426,8 +533,7 @@ class SessionManager {
           sessionId,
           this.getPtyOptionsForRecover(
             row.agentType,
-            row.sessionRef,
-            sessionId,
+            resumeSessionRef,
             {
               type: row.project.type,
               path: row.project.path,
@@ -497,7 +603,7 @@ class SessionManager {
 
     const resumeRef = req.resumeSessionRef?.trim();
     const args: string[] = resumeRef
-      ? ["--resume", resumeRef, "--fork-session"]
+      ? ["--resume", resumeRef]
       : [];
     if (req.dangerouslySkipPermissions) {
       args.push("--dangerously-skip-permissions");
@@ -513,13 +619,10 @@ class SessionManager {
 
   private getPtyOptionsForRecover(
     agentType: string,
-    sessionRef: string,
-    dbSessionId: string,
+    resumeSessionRef: string | undefined,
     project: { type: string; path: string; dockerContainer: string | null },
   ) {
     if (project.type === "DOCKER") {
-      const canResume =
-        sessionRef.trim().length > 0 && sessionRef !== dbSessionId;
       return {
         cwd: process.env.HOME ?? "/",
         command: "docker",
@@ -527,7 +630,7 @@ class SessionManager {
           project.dockerContainer!,
           project.path,
           agentType,
-          canResume ? sessionRef : undefined,
+          resumeSessionRef,
         ),
       };
     }
@@ -552,12 +655,10 @@ class SessionManager {
       };
     }
 
-    const canResume =
-      sessionRef.trim().length > 0 && sessionRef !== dbSessionId;
     return {
       cwd: project.path,
       command: "claude",
-      args: canResume ? ["--resume", sessionRef, "--fork-session"] : [],
+      args: resumeSessionRef ? ["--resume", resumeSessionRef] : [],
     };
   }
 
@@ -623,7 +724,7 @@ class SessionManager {
     }
     const skipFlag = dangerouslySkipPermissions ? " --dangerously-skip-permissions" : "";
     if (resumeSessionRef?.trim()) {
-      return `cd ${qPath} && ${READY_MARKER_CMD} && claude --resume ${shellQuote(resumeSessionRef.trim())} --fork-session${skipFlag}\r`;
+      return `cd ${qPath} && ${READY_MARKER_CMD} && claude --resume ${shellQuote(resumeSessionRef.trim())}${skipFlag}\r`;
     }
     return `cd ${qPath} && ${READY_MARKER_CMD} && claude${skipFlag}\r`;
   }

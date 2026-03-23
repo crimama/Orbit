@@ -5,7 +5,7 @@ import { basename, join } from "path";
 import readline from "readline";
 import type { SessionInfo } from "@/lib/types";
 
-function toClaudeProjectKey(projectPath: string): string {
+export function toClaudeProjectKey(projectPath: string): string {
   return projectPath.replace(/[\\/]/g, "-");
 }
 
