@@ -112,17 +112,10 @@ export default function CostDashboard() {
       const allData = await fetchCost(undefined, signal);
       const sessions = allData.sessions;
 
-      // Find the latest session date as reference point
-      // (Claude dashboard.db may not have today's data if running via Orbit PTY)
-      let latestMs = 0;
-      for (const s of sessions) {
-        const ms = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
-        if (!Number.isNaN(ms) && ms > latestMs) latestMs = ms;
-      }
-      const ref = latestMs > 0 ? new Date(latestMs) : new Date();
-      const dayStart = startOfDay(ref).getTime();
-      const weekStart = startOfWeek(ref).getTime();
-      const monthStart = startOfMonth(ref).getTime();
+      const now = new Date();
+      const dayStart = startOfDay(now).getTime();
+      const weekStart = startOfWeek(now).getTime();
+      const monthStart = startOfMonth(now).getTime();
 
       let todayCost = 0, weekCost = 0, monthCost = 0;
       for (const s of sessions) {
@@ -171,17 +164,11 @@ export default function CostDashboard() {
 
   const filteredSessions = (() => {
     if (period === "all") return dashboard.sessions;
-    // Use latest session date as reference (same as summary cards)
-    let latestMs = 0;
-    for (const s of dashboard.sessions) {
-      const ms = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
-      if (!Number.isNaN(ms) && ms > latestMs) latestMs = ms;
-    }
-    const ref = latestMs > 0 ? new Date(latestMs) : new Date();
+    const now = new Date();
     const cutoff =
-      period === "today" ? startOfDay(ref).getTime()
-      : period === "week" ? startOfWeek(ref).getTime()
-      : startOfMonth(ref).getTime();
+      period === "today" ? startOfDay(now).getTime()
+      : period === "week" ? startOfWeek(now).getTime()
+      : startOfMonth(now).getTime();
     return dashboard.sessions.filter((s) => {
       const mod = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
       return !Number.isNaN(mod) && mod >= cutoff;
