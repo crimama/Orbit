@@ -1418,6 +1418,7 @@ export default function Dashboard() {
                 />
 
                 <AuditLogPanel
+                    activeSessions={activeSessions}
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
@@ -1427,35 +1428,6 @@ export default function Dashboard() {
                       }
                     }}
                   />
-
-                <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
-                  <div className="mb-2 text-xs text-neutral-500">
-                    Active Sessions (All)
-                  </div>
-                  {activeSessions.length === 0 ? (
-                    <p className="text-sm text-neutral-600">
-                      No active sessions.
-                    </p>
-                  ) : (
-                    <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
-                      {activeSessions.map((s) => (
-                        <button
-                          key={s.id}
-                          onClick={() => openSessionInDashboard(s)}
-                          className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-neutral-300 hover:bg-neutral-800"
-                          style={{
-                            borderLeft: `2px solid ${s.projectColor}`,
-                          }}
-                        >
-                          <span className="flex-1 truncate">
-                            {s.projectName} / {s.name ?? s.id.slice(0, 8)}
-                          </span>
-                          <span className="text-green-400">active</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
 
               </div>
             )}
