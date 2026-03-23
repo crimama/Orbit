@@ -71,6 +71,20 @@ function toSessionInfo(row: {
   };
 }
 
+/** Trivial commands that should not trigger an auto-rename */
+const TRIVIAL_COMMANDS = new Set([
+  "ls", "ll", "la", "pwd", "cd", "clear", "cls", "exit", "quit",
+  "echo", "cat", "head", "tail", "less", "more", "man", "help",
+  "history", "whoami", "date", "uptime", "top", "htop", "df", "du",
+  "which", "where", "true", "false", "yes", "no", "",
+]);
+
+/** Minimum interval (ms) between auto-renames for the same session */
+const AUTO_RENAME_DEBOUNCE_MS = 10_000;
+
+/** Max display length for auto-generated session names */
+const AUTO_RENAME_MAX_LEN = 50;
+
 class SessionManager {
   private gcTimer: ReturnType<typeof setInterval> | null = null;
   private bootstrapTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -79,6 +93,7 @@ class SessionManager {
   private socketServer: OrbitServer | null = null;
   private pendingSessionUpdates = new Map<string, SessionInfo>();
   private sessionUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private lastAutoRename = new Map<string, number>();
 
   bindSocketServer(io: OrbitServer): void {
     this.socketServer = io;
@@ -621,6 +636,49 @@ class SessionManager {
   ): string {
     const inner = dockerInnerCommand(workdir, agentType, resumeSessionRef);
     return `docker exec -it ${shellQuote(container.trim())} /bin/bash -ilc ${shellQuote(inner)}\r`;
+  }
+
+  /**
+   * Auto-rename a session based on the latest user input.
+   * Skips trivial shell commands, debounces, and respects userRenamed flag.
+   */
+  async autoRenameFromInput(sessionId: string, rawInput: string): Promise<void> {
+    const command = rawInput.replace(/[\r\n]+$/, "").trim();
+    if (!command) return;
+
+    // Extract first word to check triviality
+    const firstWord = command.split(/\s+/)[0].toLowerCase().replace(/^.*\//, "");
+    if (TRIVIAL_COMMANDS.has(firstWord)) return;
+
+    // Debounce
+    const now = Date.now();
+    const lastTs = this.lastAutoRename.get(sessionId) ?? 0;
+    if (now - lastTs < AUTO_RENAME_DEBOUNCE_MS) return;
+    this.lastAutoRename.set(sessionId, now);
+
+    // Check userRenamed flag
+    const row = await prisma.agentSession.findUnique({
+      where: { id: sessionId },
+      select: { userRenamed: true },
+    });
+    if (!row || row.userRenamed) return;
+
+    // Truncate for display
+    const newName =
+      command.length > AUTO_RENAME_MAX_LEN
+        ? command.slice(0, AUTO_RENAME_MAX_LEN - 1) + "…"
+        : command;
+
+    await prisma.agentSession.update({
+      where: { id: sessionId },
+      data: { name: newName },
+    });
+
+    // Broadcast update to dashboard
+    const session = await this.getSession(sessionId);
+    if (session) {
+      this.queueSessionUpdate(session);
+    }
   }
 
   startGC(): void {

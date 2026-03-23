@@ -206,6 +206,11 @@ export function registerTerminalHandlers(
     if (forwarded) {
       sessionManager.bufferActivity(sid);
       backend.write(sid, data);
+
+      // Auto-rename session based on user input (fire-and-forget)
+      if (data.includes("\r") || data.includes("\n")) {
+        void sessionManager.autoRenameFromInput(sid, data);
+      }
     }
   });
 

@@ -149,7 +149,6 @@ export default function CostDashboard() {
 
   const [showAll, setShowAll] = useState(false);
   const hasSessions = dashboard.sessions.length > 0;
-  const VISIBLE_COUNT = 5;
   const summaryCards = [
     { label: "오늘 비용", value: dashboard.todayCost },
     { label: "이번 주 비용", value: dashboard.weekCost },

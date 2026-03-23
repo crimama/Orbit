@@ -20,7 +20,7 @@ export async function PATCH(
   try {
     await prisma.agentSession.update({
       where: { id: params.id },
-      data: { name: name },
+      data: { name: name, userRenamed: name !== null },
     });
   } catch {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
