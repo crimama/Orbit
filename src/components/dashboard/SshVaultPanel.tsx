@@ -20,6 +20,7 @@ export default function SshVaultPanel({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connectingId, setConnectingId] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadProfiles = useCallback(async () => {
@@ -100,34 +101,45 @@ export default function SshVaultPanel({
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-4 text-neutral-100 shadow-sm">
       <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold text-neutral-100">SSH Vault</h2>
-          <p className="mt-1 text-xs text-neutral-400">
-            Reuse saved SSH profiles for fast connections and project setup.
-          </p>
-        </div>
         <button
           type="button"
-          onClick={onAddProfile}
-          className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-xs font-medium text-neutral-100 transition hover:bg-neutral-700"
+          onClick={() => setCollapsed((v) => !v)}
+          className="flex items-center gap-2 text-left"
         >
-          + Add SSH Profile
+          <span className="text-[10px] text-neutral-500">{collapsed ? "▶" : "▼"}</span>
+          <div>
+            <h2 className="text-sm font-semibold text-neutral-100">
+              SSH Vault
+              {!loading && profiles.length > 0 && (
+                <span className="ml-1.5 text-xs font-normal text-neutral-500">{profiles.length}</span>
+              )}
+            </h2>
+          </div>
         </button>
+        {!collapsed && (
+          <button
+            type="button"
+            onClick={onAddProfile}
+            className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-xs font-medium text-neutral-100 transition hover:bg-neutral-700"
+          >
+            + Add
+          </button>
+        )}
       </div>
 
-      {error ? (
+      {!collapsed && error ? (
         <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
           {error}
         </div>
       ) : null}
 
-      {loading ? (
+      {!collapsed && loading ? (
         <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/60 px-4 py-6 text-sm text-neutral-400">
           Loading SSH profiles...
         </div>
       ) : null}
 
-      {!loading && profiles.length === 0 ? (
+      {!collapsed && !loading && profiles.length === 0 ? (
         <div className="mt-4 rounded-xl border border-dashed border-neutral-700 bg-neutral-950/50 px-4 py-8 text-center">
           <div className="text-sm text-neutral-300">No SSH profiles saved yet.</div>
           <div className="mt-1 text-xs text-neutral-500">
@@ -136,7 +148,7 @@ export default function SshVaultPanel({
         </div>
       ) : null}
 
-      {!loading && profiles.length > 0 ? (
+      {!collapsed && !loading && profiles.length > 0 ? (
         <div className="mt-4 space-y-2">
           {profiles.map((config) => {
             const title = config.label || config.host;
