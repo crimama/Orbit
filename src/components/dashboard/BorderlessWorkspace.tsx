@@ -192,11 +192,15 @@ export default function BorderlessWorkspace({
     upsertTab,
   ]);
 
+  const prevTabCountRef = useRef(tabs.length);
   useEffect(() => {
+    const wasNonEmpty = prevTabCountRef.current > 0;
+    prevTabCountRef.current = tabs.length;
+
     if (tabs.length === 0) {
       if (leftTabId !== null) setLeftTabId(null);
       if (rightTabId !== null) setRightTabId(null);
-      onEmpty?.();
+      if (wasNonEmpty) onEmpty?.();
       return;
     }
 
