@@ -1,33 +1,38 @@
 import { NextResponse } from "next/server";
-import { readClaudeSessions } from "@/server/claude/readDashboard";
+import { readJsonlSessions, estimateCost } from "@/server/claude/readJsonlSessions";
 
 export async function GET() {
-  const sessions = readClaudeSessions();
+  const sessions = readJsonlSessions();
 
-  const mapped = sessions.map((cs) => ({
-    sessionId: cs.id,
-    sessionName:
-      cs.summary?.slice(0, 120) ??
-      cs.first_prompt?.slice(0, 120) ??
-      cs.slug ??
-      cs.id.slice(0, 8),
-    projectId: cs.project_id,
-    projectName: cs.project_name,
+  const mapped = sessions.map((s) => ({
+    sessionId: s.sessionId,
+    sessionName: s.firstPrompt || s.sessionId.slice(0, 8),
+    projectId: s.projectId,
+    projectName: s.projectName,
     agentType: "claude-code",
-    totalInputTokens: cs.input_tokens ?? 0,
-    totalOutputTokens: cs.output_tokens ?? 0,
-    cacheReadTokens: cs.cache_read_tokens ?? 0,
-    totalCost: cs.total_cost ?? 0,
-    totalTokens: (cs.input_tokens ?? 0) + (cs.output_tokens ?? 0),
-    createdAt: cs.created_at,
-    modifiedAt: cs.modified_at,
+    model: s.model,
+    totalInputTokens: s.inputTokens,
+    totalOutputTokens: s.outputTokens,
+    cacheReadTokens: s.cacheReadTokens,
+    cacheWriteTokens: s.cacheWriteTokens,
+    totalTokens: s.inputTokens + s.outputTokens,
+    totalCost: estimateCost(
+      s.model,
+      s.inputTokens,
+      s.outputTokens,
+      s.cacheReadTokens,
+      s.cacheWriteTokens,
+    ),
+    messageCount: s.messageCount,
+    createdAt: s.createdAt,
+    modifiedAt: s.modifiedAt,
   }));
 
-  const totalCost = mapped.reduce((s, e) => s + e.totalCost, 0);
+  const totalCost = mapped.reduce((sum, e) => sum + e.totalCost, 0);
 
   return NextResponse.json({
     data: {
-      source: sessions.length > 0 ? "claude-dashboard" : "none",
+      source: "jsonl",
       totalCost,
       sessions: mapped,
     },
