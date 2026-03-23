@@ -15,14 +15,11 @@ import SshVaultPanel from "./SshVaultPanel";
 import CostDashboard from "./CostDashboard";
 import AuditLogPanel from "./AuditLogPanel";
 import TaskBoard from "./TaskBoard";
-import ContextEfficiency from "./ContextEfficiency";
-import McpHub from "./McpHub";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useSocket } from "@/lib/useSocket";
 import type {
   ProjectInfo,
   SessionInfo,
-  WorkspaceLayoutInfo,
   GraphState,
   ApiResponse,
   ApiError,
@@ -115,9 +112,6 @@ export default function Dashboard() {
   const [projectDirMap, setProjectDirMap] = useState<Record<string, string>>({});
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingProjectNameValue, setEditingProjectNameValue] = useState("");
-  const [globalWorkspaces, setGlobalWorkspaces] = useState<
-    WorkspaceLayoutInfo[]
-  >([]);
   const [prefillSshProfileId, setPrefillSshProfileId] = useState<string | null>(
     null,
   );
@@ -144,17 +138,10 @@ export default function Dashboard() {
     if ("data" in json) setSessions(json.data);
   }, []);
 
-  const fetchGlobalWorkspaces = useCallback(async () => {
-    const res = await fetch("/api/workspaces");
-    const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo[]>;
-    if ("data" in json) setGlobalWorkspaces(json.data);
-  }, []);
-
   useEffect(() => {
     fetchProjects();
     fetchSessions();
-    fetchGlobalWorkspaces();
-  }, [fetchProjects, fetchSessions, fetchGlobalWorkspaces]);
+  }, [fetchProjects, fetchSessions]);
 
   // Close notification panel on outside click
   useEffect(() => {
@@ -492,77 +479,6 @@ export default function Dashboard() {
     setAddProjectMode("ssh");
   }, []);
 
-  const extractFirstActiveSessionId = useCallback(
-    (workspace: WorkspaceLayoutInfo): string | null => {
-      try {
-        const parsed = JSON.parse(workspace.tree) as unknown;
-        const candidateIds: string[] = [];
-
-        const walk = (node: unknown): void => {
-          if (!node || typeof node !== "object") return;
-          const value = node as {
-            type?: string;
-            sessionId?: string | null;
-            children?: unknown[];
-          };
-          if (value.type === "leaf") {
-            if (typeof value.sessionId === "string" && value.sessionId.trim()) {
-              candidateIds.push(value.sessionId);
-            }
-            return;
-          }
-          if (value.type === "split" && Array.isArray(value.children)) {
-            for (const child of value.children) {
-              walk(child);
-            }
-          }
-        };
-
-        walk(parsed);
-
-        const activeSet = new Set(
-          sessions.filter((s) => s.status === "active").map((s) => s.id),
-        );
-        return candidateIds.find((id) => activeSet.has(id)) ?? null;
-      } catch {
-        return null;
-      }
-    },
-    [sessions],
-  );
-
-  const handleOpenGlobalWorkspace = useCallback(
-    (workspace: WorkspaceLayoutInfo) => {
-      const targetSessionId = extractFirstActiveSessionId(workspace);
-      if (!targetSessionId) return;
-
-      const targetSession = sessions.find(
-        (session) => session.id === targetSessionId,
-      );
-      if (!targetSession) return;
-
-      const project = projects.find((p) => p.id === targetSession.projectId);
-      if (project) {
-        setSelectedProject(project);
-      }
-
-      setSessionViewMode("active");
-      setProjectFocusTab("sessions");
-      setShowHarnessManager(false);
-      setProjectPaneMode("terminal");
-      setInlineSessionId(targetSession.id);
-      setInlineWorkspaceId(workspace.id);
-      void fetchSessions();
-    },
-    [extractFirstActiveSessionId, sessions, projects, fetchSessions],
-  );
-
-  const getWorkspaceLaunchSessionId = useCallback(
-    (workspace: WorkspaceLayoutInfo): string | null => {
-      return extractFirstActiveSessionId(workspace);
-    },
-    [extractFirstActiveSessionId],
-  );
 
   const visibleSessions = useMemo(() => {
     if (sessionViewMode === "all") return sessions;
@@ -1402,6 +1318,10 @@ export default function Dashboard() {
                       viewedFile={viewedFile}
                       onCloseFile={() => setViewedFile(null)}
                       onKillSession={handleTerminateSession}
+                      onEmpty={() => {
+                        setInlineSessionId(null);
+                        setSelectedProject(null);
+                      }}
                     />
                   )}
                 </div>
@@ -1521,11 +1441,6 @@ export default function Dashboard() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-                  <ContextEfficiency />
-                  <McpHub />
-                </div>
-
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                   <div className="mb-2 text-xs text-neutral-500">
                     Active Sessions (All)
@@ -1555,44 +1470,6 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
-                  <div className="mb-2 text-xs text-neutral-500">
-                    Saved Workspaces (Global)
-                  </div>
-                  {globalWorkspaces.length === 0 ? (
-                    <p className="text-sm text-neutral-600">
-                      No saved workspace yet.
-                    </p>
-                  ) : (
-                    <div className="max-h-72 space-y-1 overflow-y-auto pr-1">
-                      {globalWorkspaces.map((workspace) => {
-                        const launchSessionId =
-                          getWorkspaceLaunchSessionId(workspace);
-                        return (
-                          <button
-                            key={workspace.id}
-                            onClick={() => handleOpenGlobalWorkspace(workspace)}
-                            disabled={!launchSessionId}
-                            className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-40"
-                            title={
-                              launchSessionId
-                                ? "Open workspace"
-                                : "No active session found in this workspace"
-                            }
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate">{workspace.name}</p>
-                              <p className="text-[11px] text-neutral-500">
-                                Updated{" "}
-                                {new Date(workspace.updatedAt).toLocaleString()}
-                              </p>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
               </div>
             )}
           </div>

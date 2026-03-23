@@ -62,6 +62,7 @@ interface BorderlessWorkspaceProps {
   viewedFile?: ViewedFile | null;
   onCloseFile?: () => void;
   onKillSession: (sessionId: string) => Promise<void> | void;
+  onEmpty?: () => void;
 }
 
 function buildSessionTab(session: SessionInfo): WorkspaceTab {
@@ -99,6 +100,7 @@ export default function BorderlessWorkspace({
   viewedFile,
   onCloseFile,
   onKillSession,
+  onEmpty,
 }: BorderlessWorkspaceProps) {
   const [tabs, setTabs] = useState<WorkspaceTab[]>([]);
   const [activePanel, setActivePanel] = useState<PanelSide>("left");
@@ -194,6 +196,7 @@ export default function BorderlessWorkspace({
     if (tabs.length === 0) {
       if (leftTabId !== null) setLeftTabId(null);
       if (rightTabId !== null) setRightTabId(null);
+      onEmpty?.();
       return;
     }
 
