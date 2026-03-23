@@ -1405,7 +1405,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4 p-4">
+              <div className="space-y-4 overflow-y-auto p-4">
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
                   <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                     <div className="text-xs text-neutral-500">Projects</div>
