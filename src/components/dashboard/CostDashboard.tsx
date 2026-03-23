@@ -151,7 +151,9 @@ export default function CostDashboard() {
     return () => controller.abort();
   }, [loadDashboard]);
 
+  const [showAll, setShowAll] = useState(false);
   const hasSessions = dashboard.sessions.length > 0;
+  const VISIBLE_COUNT = 5;
   const summaryCards = [
     { label: "오늘 비용", value: dashboard.todayCost },
     { label: "이번 주 비용", value: dashboard.weekCost },
@@ -230,33 +232,64 @@ export default function CostDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-800">
-                {dashboard.sessions
-                  .slice()
-                  .sort((a, b) => b.totalCost - a.totalCost)
-                  .map((session) => {
-                    const totalTokens =
-                      session.totalTokens ??
-                      session.totalInputTokens + session.totalOutputTokens;
-                    const sessionName = session.sessionName?.trim() || session.sessionId;
-                    const agentType = session.agentType?.trim() || session.model?.trim() || "-";
+                {(() => {
+                  const sorted = dashboard.sessions.slice().sort((a, b) => b.totalCost - a.totalCost);
+                  const visible = showAll ? sorted : sorted.slice(0, VISIBLE_COUNT);
+                  const remaining = sorted.length - VISIBLE_COUNT;
 
-                    return (
-                      <tr key={session.sessionId} className="text-neutral-200">
-                        <td className="py-3 pr-4">
-                          <div className="max-w-[220px] truncate text-sm text-neutral-100">
-                            {sessionName}
-                          </div>
-                        </td>
-                        <td className="py-3 pr-4 text-xs text-neutral-400">{agentType}</td>
-                        <td className="py-3 pr-4 text-xs text-neutral-300">
-                          {tokenFormatter.format(totalTokens)}
-                        </td>
-                        <td className="py-3 text-xs font-medium text-amber-400">
-                          {currencyFormatter.format(session.totalCost)}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  return (
+                    <>
+                      {visible.map((session) => {
+                        const totalTokens =
+                          session.totalTokens ??
+                          session.totalInputTokens + session.totalOutputTokens;
+                        const sessionName = session.sessionName?.trim() || session.sessionId;
+                        const agentType = session.agentType?.trim() || session.model?.trim() || "-";
+
+                        return (
+                          <tr key={session.sessionId} className="text-neutral-200">
+                            <td className="py-2 pr-4">
+                              <div className="max-w-[220px] truncate text-xs text-neutral-100">
+                                {sessionName}
+                              </div>
+                            </td>
+                            <td className="py-2 pr-4 text-[11px] text-neutral-400">{agentType}</td>
+                            <td className="py-2 pr-4 text-[11px] text-neutral-300">
+                              {tokenFormatter.format(totalTokens)}
+                            </td>
+                            <td className="py-2 text-[11px] font-medium text-amber-400">
+                              {currencyFormatter.format(session.totalCost)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {!showAll && remaining > 0 && (
+                        <tr>
+                          <td colSpan={4} className="py-2">
+                            <button
+                              onClick={() => setShowAll(true)}
+                              className="w-full text-center text-[11px] text-neutral-500 hover:text-neutral-300"
+                            >
+                              ··· {remaining} more
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                      {showAll && remaining > 0 && (
+                        <tr>
+                          <td colSpan={4} className="py-2">
+                            <button
+                              onClick={() => setShowAll(false)}
+                              className="w-full text-center text-[11px] text-neutral-500 hover:text-neutral-300"
+                            >
+                              Show less
+                            </button>
+                          </td>
+                        </tr>
+                      )}
+                    </>
+                  );
+                })()}
               </tbody>
             </table>
           </div>
