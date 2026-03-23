@@ -48,7 +48,8 @@ function readClaudeSessions(): ClaudeSession[] {
   } catch {
     // Fallback: try reading via child_process + python
     try {
-      const { execSync } = await import("child_process");
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { execSync } = require("child_process");
       const result = execSync(
         `python3 -c "
 import sqlite3, json
@@ -73,7 +74,7 @@ conn.close()
   }
 }
 
-export async function GET(request: Request) {
+export async function GET() {
   // Read from Claude Code's dashboard.db
   const claudeSessions = readClaudeSessions();
 
