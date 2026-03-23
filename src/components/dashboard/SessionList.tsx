@@ -66,17 +66,17 @@ export default function SessionList({
   }
 
   return (
-    <div className="space-y-2 p-2">
+    <div className="space-y-0.5 p-1">
       {sessions.map((s) => {
-        const displayName = s.name || s.id.slice(0, 8);
+        const displayName = s.name || `${s.agentType} ${s.id.slice(0, 6)}`;
         const isYoloSession = yoloMode && s.status === "active";
-        const statusBadgeClass = isYoloSession
-          ? "border border-red-500/40 bg-red-500/15 text-red-300"
+        const statusDot = isYoloSession
+          ? "bg-red-400"
           : s.status === "active"
-            ? "border border-green-500/30 bg-green-500/10 text-green-300"
+            ? "bg-green-400"
             : s.status === "paused"
-              ? "border border-yellow-500/30 bg-yellow-500/10 text-yellow-300"
-              : "border border-neutral-700 bg-neutral-900 text-neutral-500";
+              ? "bg-yellow-400"
+              : "bg-neutral-600";
 
         return (
           <div
@@ -88,28 +88,11 @@ export default function SessionList({
               e.dataTransfer.setData("text/plain", `session:${s.id}`);
               e.dataTransfer.effectAllowed = "move";
             }}
-            className="session-item group relative overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950/70 p-3 text-neutral-300 transition-colors"
-            style={
-              {
-                "--project-color": s.projectColor,
-                borderLeft: `4px solid ${s.projectColor}`,
-              } as React.CSSProperties
-            }
+            className="session-item group flex items-center gap-2 rounded-lg px-2 py-1.5 text-neutral-300 transition-colors hover:bg-neutral-800/60"
+            style={{ borderLeft: `3px solid ${s.projectColor}` } as React.CSSProperties}
           >
-            <div className="absolute right-3 top-3 flex items-center gap-1.5">
-              {isYoloSession ? (
-                <span className="rounded-full border border-red-500/40 bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-300">
-                  YOLO
-                </span>
-              ) : null}
-              <span
-                className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusBadgeClass}`}
-              >
-                {s.status}
-              </span>
-            </div>
             <div
-              className="min-w-0 flex-1 cursor-pointer pr-24"
+              className="min-w-0 flex-1 cursor-pointer"
               onClick={() => {
                 if (onOpenSession) {
                   onOpenSession(s.id);
@@ -118,117 +101,60 @@ export default function SessionList({
                 }
               }}
             >
-              <div className="flex items-start gap-2">
-                {editingId === s.id ? (
-                  <input
-                    ref={inputRef}
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    onBlur={commitEdit}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") commitEdit();
-                      if (e.key === "Escape") cancelEdit();
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    placeholder={s.id.slice(0, 8)}
-                    className="w-40 rounded border border-neutral-600 bg-neutral-900 px-1.5 py-0.5 font-mono text-xs text-neutral-100 outline-none focus:border-border-focus"
-                  />
-                ) : (
-                  <div className="min-w-0">
-                    <div
-                      className="truncate font-mono text-xs text-neutral-200"
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        startEditing(s);
-                      }}
-                      title={
-                        s.name
-                          ? `${s.name} (${s.id.slice(0, 8)})`
-                          : s.id.slice(0, 8)
-                      }
-                    >
-                      {displayName}
-                    </div>
-                    <div className="mt-0.5 text-[11px] text-neutral-500">
-                      {s.id.slice(0, 8)}
-                      {sessionContexts?.get(s.id)?.gitBranch && (
-                        <span className="ml-1.5 text-cyan-400/70">
-                          {sessionContexts.get(s.id)!.gitBranch}
-                        </span>
-                      )}
-                    </div>
-                    {sessionContexts?.get(s.id)?.cwd && (
-                      <div className="mt-0.5 max-w-[200px] truncate text-[10px] text-neutral-600" title={sessionContexts.get(s.id)!.cwd}>
-                        {sessionContexts.get(s.id)!.cwd}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-neutral-500">
-                <span
-                  className="inline-block h-2 w-2 rounded-full"
-                  style={{ backgroundColor: s.projectColor }}
-                  aria-hidden
+              {editingId === s.id ? (
+                <input
+                  ref={inputRef}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onBlur={commitEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitEdit();
+                    if (e.key === "Escape") cancelEdit();
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  placeholder={s.id.slice(0, 8)}
+                  className="w-full rounded border border-neutral-600 bg-neutral-900 px-1.5 py-0.5 font-mono text-xs text-neutral-100 outline-none focus:border-border-focus"
                 />
-                <span
-                  className="max-w-[180px] truncate text-neutral-400"
-                  title={s.projectName}
-                >
-                  {s.projectName}
-                </span>
-                <span>&middot;</span>
-                <span>{s.agentType}</span>
-                <span>&middot;</span>
-                <span>{new Date(s.updatedAt).toLocaleTimeString()}</span>
-                {s.source === "claude-history" && (
-                  <span className="ml-2 text-neutral-600">history</span>
-                )}
-              </div>
-              {s.lastContext && (
-                <div className="mt-3 line-clamp-2 rounded-lg border border-neutral-800 bg-neutral-900/80 px-3 py-2 font-mono text-xs leading-5 text-neutral-400">
-                  {s.lastContext}
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${statusDot}`} />
+                  <span
+                    className="truncate text-xs text-neutral-200"
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      startEditing(s);
+                    }}
+                    title={`${displayName} · ${s.agentType} · ${s.id.slice(0, 8)}`}
+                  >
+                    {displayName}
+                  </span>
+                  {isYoloSession && (
+                    <span className="shrink-0 text-[9px] font-bold text-red-400">YOLO</span>
+                  )}
+                  {sessionContexts?.get(s.id)?.gitBranch && (
+                    <span className="shrink-0 truncate text-[10px] text-cyan-400/60">
+                      {sessionContexts.get(s.id)!.gitBranch}
+                    </span>
+                  )}
+                  <span className="ml-auto shrink-0 text-[10px] text-neutral-600">
+                    {new Date(s.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </span>
                 </div>
               )}
             </div>
-            <div className="ml-3 flex items-center gap-1 self-end sm:self-center">
-              {/* Rename button */}
-              {onRename && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditing(s);
-                  }}
-                  className="rounded p-1 text-neutral-600 hover:bg-neutral-700 hover:text-neutral-300 sm:hidden sm:group-hover:block"
-                  title="Rename"
-                >
-                  <svg
-                    className="h-3 w-3"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487z"
-                    />
-                  </svg>
-                </button>
-              )}
+            <div className="hidden shrink-0 items-center gap-0.5 group-hover:flex">
               {s.status === "active" && (
                 <>
                   <button
                     onClick={() => onTerminate(s.id)}
-                    className="rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-red-400 sm:hidden sm:group-hover:block"
+                    className="rounded px-1.5 py-0.5 text-[10px] text-neutral-500 hover:bg-neutral-700 hover:text-red-400"
                   >
                     Kill
                   </button>
                   {onTerminateAndRestart && s.agentType === "claude-code" && (
                     <button
                       onClick={() => onTerminateAndRestart(s.id, { dangerouslySkipPermissions: true })}
-                      className="rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-amber-400 sm:hidden sm:group-hover:block"
+                      className="rounded px-1.5 py-0.5 text-[10px] text-neutral-500 hover:bg-neutral-700 hover:text-amber-400"
                       title="Kill and restart with --dangerously-skip-permissions"
                     >
                       YOLO
@@ -239,7 +165,7 @@ export default function SessionList({
               {s.status !== "active" && (
                 <button
                   onClick={() => onResume(s.sessionRef, s.agentType)}
-                  className="rounded px-2 py-1 text-xs text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200 sm:hidden sm:group-hover:block"
+                  className="rounded px-1.5 py-0.5 text-[10px] text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
                 >
                   Resume
                 </button>

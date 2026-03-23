@@ -194,6 +194,22 @@ class SessionManager {
     }
   }
 
+  private async generateSessionName(
+    projectId: string,
+    agentType: string,
+  ): Promise<string> {
+    const count = await prisma.agentSession.count({
+      where: { projectId, agentType },
+    });
+    const label =
+      agentType === "claude-code"
+        ? "Claude"
+        : agentType === "terminal"
+          ? "Terminal"
+          : agentType.charAt(0).toUpperCase() + agentType.slice(1);
+    return `${label} #${count + 1}`;
+  }
+
   async createSession(req: CreateSessionRequest): Promise<SessionInfo> {
     const project = await prisma.project.findUnique({
       where: { id: req.projectId },
@@ -207,10 +223,19 @@ class SessionManager {
       !!project.sshConfigId;
     const isDocker = project.type === "DOCKER";
 
+    // Auto-generate a readable name if not provided
+    let sessionName = req.name ?? null;
+    if (!sessionName) {
+      sessionName = await this.generateSessionName(
+        req.projectId,
+        req.agentType,
+      );
+    }
+
     const session = await prisma.agentSession.create({
       data: {
         projectId: req.projectId,
-        name: req.name ?? null,
+        name: sessionName,
         agentType: req.agentType,
         sessionRef: "",
         status: "active",

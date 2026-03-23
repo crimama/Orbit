@@ -423,10 +423,11 @@ export default function Dashboard() {
     setShowHarnessManager(false);
     setProjectPaneMode("terminal");
 
+    const autoName = quickSessionName.trim() || `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     await createSession({
       projectId,
       agentType: quickSessionAgent,
-      name: quickSessionName.trim() || undefined,
+      name: autoName,
       ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
     });
     setQuickSessionName("");
@@ -444,11 +445,12 @@ export default function Dashboard() {
 
     setSessionViewMode("active");
 
+    const autoName = projectSessionName.trim() || `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     await createSession(
       {
         projectId: selectedProject.id,
         agentType: quickSessionAgent,
-        name: projectSessionName.trim() || undefined,
+        name: autoName,
         ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
       },
       { activateInWorkspace: false },
