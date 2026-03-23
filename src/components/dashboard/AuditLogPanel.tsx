@@ -82,7 +82,11 @@ function getEventStyle(eventType: AuditLogInfo["eventType"]) {
   };
 }
 
-export default function AuditLogPanel() {
+interface AuditLogPanelProps {
+  onNavigateSession?: (sessionId: string) => void;
+}
+
+export default function AuditLogPanel({ onNavigateSession }: AuditLogPanelProps = {}) {
   const [logs, setLogs] = useState<AuditLogInfo[]>([]);
   const [filter, setFilter] = useState<AuditFilterValue>("all");
   const [loading, setLoading] = useState(true);
@@ -187,7 +191,16 @@ export default function AuditLogPanel() {
               return (
                 <article
                   key={log.id}
-                  className="relative flex gap-3 border-b border-neutral-800/50 px-3 py-2"
+                  className={`relative flex gap-3 border-b border-neutral-800/50 px-3 py-2 ${
+                    log.sessionId && onNavigateSession
+                      ? "cursor-pointer transition hover:bg-neutral-800/40"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    if (log.sessionId && onNavigateSession) {
+                      onNavigateSession(log.sessionId);
+                    }
+                  }}
                 >
                   <div className="relative z-10 flex w-8 shrink-0 justify-center pt-0.5">
                     <span
@@ -200,9 +213,20 @@ export default function AuditLogPanel() {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="min-w-0 text-sm text-neutral-100">
-                        {log.action}
-                      </p>
+                      <div className="min-w-0">
+                        {log.projectName && (
+                          <span className="mr-1.5 inline-flex items-center gap-1 text-[10px] text-neutral-400">
+                            <span
+                              className="inline-block h-1.5 w-1.5 rounded-full"
+                              style={{ backgroundColor: log.projectColor ?? "#64748b" }}
+                            />
+                            {log.projectName}
+                          </span>
+                        )}
+                        <span className="text-sm text-neutral-100">
+                          {log.action}
+                        </span>
+                      </div>
                       <time
                         dateTime={log.createdAt}
                         className="shrink-0 text-[11px] text-neutral-500"

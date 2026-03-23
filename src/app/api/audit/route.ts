@@ -28,15 +28,30 @@ export async function GET(request: Request) {
     skip: offset,
   });
 
-  const data: AuditLogInfo[] = logs.map((log) => ({
-    id: log.id,
-    sessionId: log.sessionId,
-    projectId: log.projectId,
-    eventType: log.eventType as AuditEventType,
-    action: log.action,
-    detail: log.detail,
-    createdAt: log.createdAt.toISOString(),
-  }));
+  // Resolve project names for logs that have sessionId
+  const sessionIds = Array.from(new Set(logs.map((l) => l.sessionId).filter(Boolean))) as string[];
+  const sessions = sessionIds.length > 0
+    ? await prisma.agentSession.findMany({
+        where: { id: { in: sessionIds } },
+        select: { id: true, projectId: true, project: { select: { name: true, color: true } } },
+      })
+    : [];
+  const sessionMap = new Map(sessions.map((s) => [s.id, s]));
+
+  const data: AuditLogInfo[] = logs.map((log) => {
+    const session = log.sessionId ? sessionMap.get(log.sessionId) : undefined;
+    return {
+      id: log.id,
+      sessionId: log.sessionId,
+      projectId: log.projectId ?? session?.projectId ?? null,
+      projectName: session?.project.name ?? null,
+      projectColor: session?.project.color ?? null,
+      eventType: log.eventType as AuditEventType,
+      action: log.action,
+      detail: log.detail,
+      createdAt: log.createdAt.toISOString(),
+    };
+  });
 
   return NextResponse.json({ data });
 }

@@ -1507,7 +1507,16 @@ export default function Dashboard() {
 
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   <CostDashboard />
-                  <AuditLogPanel />
+                  <AuditLogPanel
+                    onNavigateSession={(sessionId) => {
+                      const session = sessions.find((s) => s.id === sessionId);
+                      if (session) {
+                        const project = projects.find((p) => p.id === session.projectId);
+                        if (project) setSelectedProject(project);
+                        setInlineSessionId(sessionId);
+                      }
+                    }}
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">

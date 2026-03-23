@@ -585,6 +585,8 @@ export interface AuditLogInfo {
   id: string;
   sessionId: string | null;
   projectId: string | null;
+  projectName: string | null;
+  projectColor: string | null;
   eventType: AuditEventType;
   action: string;
   detail: string | null;
