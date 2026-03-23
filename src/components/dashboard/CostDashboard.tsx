@@ -159,7 +159,7 @@ export default function CostDashboard() {
     { label: "Today", value: dashboard.todayCost },
     { label: "Week", value: dashboard.weekCost },
     { label: "Month", value: dashboard.monthCost },
-  ].filter((c) => c.value > 0 || c.label === "Total");
+  ];
 
   const filteredSessions = (() => {
     if (period === "all") return dashboard.sessions;
