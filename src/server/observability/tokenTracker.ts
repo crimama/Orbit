@@ -23,10 +23,18 @@ class TokenTracker {
   private lastCost = new Map<string, number>();
   private lastTokens = new Map<string, number>();
 
+  private sampleCounter = 0;
+
   async processOutput(sessionId: string, data: string): Promise<void> {
     const previous = this.buffers.get(sessionId) ?? "";
     const stripped = stripAnsi(data);
     const buffer = `${previous}${stripped}`.slice(-BUFFER_LIMIT);
+
+    // DEBUG: sample every 100th chunk to see what data looks like
+    if (++this.sampleCounter % 100 === 0) {
+      const preview = stripped.slice(0, 200).replace(/\n/g, "\\n");
+      console.log(`[TokenTracker:sample] ${sessionId.slice(0, 8)}: "${preview}"`);
+    }
 
     let costFound: number | null = null;
     let inputTokens = 0;
