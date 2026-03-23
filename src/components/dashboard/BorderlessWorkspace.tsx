@@ -384,7 +384,7 @@ export default function BorderlessWorkspace({
     panelSide: PanelSide,
     activeTabId: string | null,
   ) => (
-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
+    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
         {layoutMode === "split"
           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
@@ -455,7 +455,7 @@ export default function BorderlessWorkspace({
   const isHorizontalSplit = splitDirection === "horizontal";
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
       <div className="min-h-0 flex-1 overflow-hidden">
         <div className={`flex h-full w-full overflow-hidden ${
           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
@@ -465,7 +465,7 @@ export default function BorderlessWorkspace({
               className={`min-h-0 min-w-0 overflow-hidden border ${
                 activePanel === "left"
                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
-                  : "border-neutral-800"
+                  : "border-transparent"
               }`}
               style={{
                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",

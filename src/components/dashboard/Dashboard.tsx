@@ -789,7 +789,7 @@ export default function Dashboard() {
       )}
 
       {/* Top Navigation Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 px-3 py-2 sm:px-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 px-3 py-1 sm:px-4">
         <h1 className="text-sm font-bold tracking-wide text-neutral-300">
           Agent Orbit
         </h1>
@@ -797,7 +797,7 @@ export default function Dashboard() {
           <button
             ref={notifBellRef}
             onClick={() => setShowNotifications((v) => !v)}
-            className={`relative flex h-7 w-7 items-center justify-center rounded border transition ${
+            className={`relative flex h-6 w-6 items-center justify-center rounded border transition ${
               showNotifications
                 ? "border-neutral-600 bg-neutral-800 text-neutral-200"
                 : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
@@ -886,13 +886,17 @@ export default function Dashboard() {
 
       <div
         ref={layoutSplitRef}
-        className="flex flex-1 flex-col md:min-h-0 md:flex-row md:overflow-hidden"
+        className="relative flex flex-1 flex-col md:min-h-0 md:flex-row md:overflow-hidden"
       >
         {/* Left Panel — Projects */}
         <div
-          className="flex min-h-[260px] w-full flex-col border-b border-neutral-800 md:min-h-0 md:flex-none md:border-b-0 md:border-r"
+          className={`flex min-h-[260px] w-full flex-col border-b border-neutral-800 md:min-h-0 md:flex-none md:border-b-0 ${
+            isProjectsListCollapsed
+              ? "overflow-hidden md:border-r-0"
+              : "md:border-r"
+          }`}
           style={{
-            width: isProjectsListCollapsed ? "5rem" : `${leftPanelWidth}px`,
+            width: isProjectsListCollapsed ? "0px" : `${leftPanelWidth}px`,
           }}
         >
           <div
@@ -910,7 +914,7 @@ export default function Dashboard() {
             <div className="flex shrink-0 items-center gap-1">
               <button
                 onClick={() => setIsProjectsListCollapsed((prev) => !prev)}
-                className="flex h-7 w-7 items-center justify-center rounded border border-neutral-700 bg-neutral-900 text-sm font-semibold text-neutral-200 hover:bg-neutral-800"
+                className="flex h-6 w-6 items-center justify-center rounded border border-neutral-700 bg-neutral-900 text-sm font-semibold text-neutral-200 hover:bg-neutral-800"
                 title={
                   isProjectsListCollapsed
                     ? "Expand projects"
@@ -1284,6 +1288,15 @@ export default function Dashboard() {
 
         {/* Right Panel — Sessions */}
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          {isProjectsListCollapsed ? (
+            <button
+              onClick={() => setIsProjectsListCollapsed(false)}
+              className="absolute left-0 top-3 z-10 hidden h-8 w-6 items-center justify-center rounded-r border border-l-0 border-neutral-700 bg-neutral-900 text-sm font-semibold text-neutral-200 transition hover:bg-neutral-800 md:flex"
+              title="Expand projects"
+            >
+              ▶
+            </button>
+          ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto">
             {selectedProject || inlineSessionId ? (
               <div className="flex h-full min-h-0 flex-col overflow-hidden">
@@ -1303,7 +1316,7 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                <div className="min-h-0 flex-1 overflow-hidden p-2 sm:p-3">
+                <div className="min-h-0 flex-1 overflow-hidden p-0">
                   {!inlineSessionId && !viewedFile ? (
                     <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
                       Select a session or file from the left panel.

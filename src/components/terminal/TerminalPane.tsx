@@ -169,7 +169,7 @@ export default function TerminalPane({
 
   return (
     <div
-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
+      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
         needsAttention && !isActive
           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
           : isActive || isDropTarget
@@ -229,7 +229,7 @@ export default function TerminalPane({
     >
       {isDropTarget && dropRegion && (
         <div
-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
+          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
             dropRegion === "center"
               ? "inset-2"
               : dropRegion === "top"
