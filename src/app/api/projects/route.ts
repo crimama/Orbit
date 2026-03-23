@@ -11,7 +11,9 @@ export async function GET() {
   const projects = await prisma.project.findMany({
     where: { adhoc: false },
     include: {
-      _count: { select: { sessions: true } },
+      _count: {
+        select: { sessions: { where: { status: "active" } } },
+      },
       sshConfig: { select: { label: true, host: true } },
     },
     orderBy: { updatedAt: "desc" },
@@ -76,7 +78,9 @@ export async function POST(request: Request) {
       ...(body.dockerContainer && { dockerContainer: body.dockerContainer }),
     },
     include: {
-      _count: { select: { sessions: true } },
+      _count: {
+        select: { sessions: { where: { status: "active" } } },
+      },
       sshConfig: { select: { label: true, host: true } },
     },
   });
