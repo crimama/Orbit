@@ -7,7 +7,11 @@ type CostSessionEntry = SessionTokenInfo & {
   sessionName?: string | null;
   agentType?: string | null;
   totalTokens?: number | null;
+  createdAt?: string | null;
+  modifiedAt?: string | null;
 };
+
+type PeriodFilter = "all" | "today" | "week" | "month";
 
 type CostApiPayload =
   | CostSessionEntry[]
@@ -114,8 +118,8 @@ export default function CostDashboard() {
 
       let todayCost = 0, weekCost = 0, monthCost = 0;
       for (const s of sessions) {
-        const raw = s as unknown as { modifiedAt?: string; createdAt?: string };
-        const mod = new Date(raw.modifiedAt ?? raw.createdAt ?? "").getTime();
+        const mod = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
+        if (Number.isNaN(mod)) continue;
         if (mod >= todayStart) todayCost += s.totalCost;
         if (mod >= weekStart) weekCost += s.totalCost;
         if (mod >= monthStart) monthCost += s.totalCost;
@@ -148,12 +152,26 @@ export default function CostDashboard() {
   }, [loadDashboard]);
 
   const [showAll, setShowAll] = useState(false);
+  const [period, setPeriod] = useState<PeriodFilter>("all");
   const hasSessions = dashboard.sessions.length > 0;
   const summaryCards = [
-    { label: "오늘 비용", value: dashboard.todayCost },
-    { label: "이번 주 비용", value: dashboard.weekCost },
-    { label: "이번 달 비용", value: dashboard.monthCost },
+    { label: "Today", value: dashboard.todayCost },
+    { label: "Week", value: dashboard.weekCost },
+    { label: "Month", value: dashboard.monthCost },
   ];
+
+  const filteredSessions = (() => {
+    if (period === "all") return dashboard.sessions;
+    const now = new Date();
+    const cutoff =
+      period === "today" ? startOfDay(now).getTime()
+      : period === "week" ? startOfWeek(now).getTime()
+      : startOfMonth(now).getTime();
+    return dashboard.sessions.filter((s) => {
+      const mod = new Date(s.modifiedAt ?? s.createdAt ?? "").getTime();
+      return !Number.isNaN(mod) && mod >= cutoff;
+    });
+  })();
 
   return (
     <section className="rounded-2xl border border-neutral-800 bg-neutral-900/90 p-3 text-neutral-100 shadow-sm">
@@ -187,7 +205,21 @@ export default function CostDashboard() {
 
       {showAll && (
       <div className="mt-2">
-        <div />
+        <div className="mb-2 flex gap-1">
+          {(["all", "today", "week", "month"] as PeriodFilter[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`rounded px-2 py-0.5 text-[10px] ${
+                period === p
+                  ? "bg-neutral-700 text-neutral-100"
+                  : "text-neutral-500 hover:text-neutral-300"
+              }`}
+            >
+              {p === "all" ? "All" : p === "today" ? "Today" : p === "week" ? "Week" : "Month"}
+            </button>
+          ))}
+        </div>
 
         {loading ? (
           <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/60 px-4 py-6 text-sm text-neutral-400">
@@ -195,13 +227,13 @@ export default function CostDashboard() {
           </div>
         ) : null}
 
-        {!loading && !hasSessions ? (
+        {!loading && filteredSessions.length === 0 ? (
           <div className="mt-4 rounded-xl border border-dashed border-neutral-700 bg-neutral-950/50 px-4 py-8 text-center text-sm text-neutral-300">
             토큰 추적 데이터가 아직 없습니다
           </div>
         ) : null}
 
-        {!loading && hasSessions ? (
+        {!loading && filteredSessions.length > 0 ? (
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full divide-y divide-neutral-800 text-left text-sm">
               <thead className="text-xs uppercase tracking-wide text-neutral-500">
@@ -214,8 +246,8 @@ export default function CostDashboard() {
               </thead>
               <tbody className="divide-y divide-neutral-800">
                 {(() => {
-                  const sorted = dashboard.sessions.slice().sort((a, b) => b.totalCost - a.totalCost);
-                  const visible = sorted.slice(0, 10);
+                  const sorted = filteredSessions.slice().sort((a, b) => b.totalCost - a.totalCost);
+                  const visible = sorted.slice(0, 15);
 
                   return (
                     <>
