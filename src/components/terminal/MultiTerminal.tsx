@@ -483,7 +483,12 @@ export default function MultiTerminal({
 
   const handleSplit = useCallback(
     (paneId: string, direction: "horizontal" | "vertical") => {
-      setTree((prev) => splitPane(prev, paneId, direction));
+      console.log("[MultiTerminal] handleSplit", paneId, direction);
+      setTree((prev) => {
+        const next = splitPane(prev, paneId, direction);
+        console.log("[MultiTerminal] tree leaves before:", collectLeafIds(prev).length, "after:", collectLeafIds(next).length);
+        return next;
+      });
     },
     [],
   );
@@ -641,7 +646,13 @@ export default function MultiTerminal({
       } else {
         await fetch(`/api/sessions/${sessionId}`, { method: "DELETE" });
       }
-      setTree((prev) => updateLeafSession(prev, paneId, null));
+      // Close the pane entirely (or clear if last pane)
+      setTree((prev) => {
+        if (collectLeafIds(prev).length <= 1) {
+          return updateLeafSession(prev, paneId, null);
+        }
+        return closePane(prev, paneId) ?? updateLeafSession(prev, paneId, null);
+      });
       clearExitedPane([paneId]);
     },
     [onKillSession, clearExitedPane],

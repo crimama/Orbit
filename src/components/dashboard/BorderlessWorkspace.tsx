@@ -353,10 +353,10 @@ export default function BorderlessWorkspace({
     if (tab.kind === "session") {
       return (
         <MultiTerminal
-          key={tab.id}
+          key="main-terminal"
           initialSessionId={tab.sessionId}
           requestedSessionId={tab.sessionId}
-          runtimeStorageKey={tab.id}
+          runtimeStorageKey="main-terminal"
           initialWorkspaceId={inlineWorkspaceId}
           autoRestoreWorkspace={Boolean(inlineWorkspaceId)}
           onKillSession={onKillSession}
