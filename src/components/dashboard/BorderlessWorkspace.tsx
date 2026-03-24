@@ -311,8 +311,6 @@ export default function BorderlessWorkspace({
     setDropTarget(null);
   };
 
-  const leftTab = leftTabId ? (tabsById.get(leftTabId) ?? null) : null;
-  const rightTab = rightTabId ? (tabsById.get(rightTabId) ?? null) : null;
 
   // Open file tab when viewedFile changes
   const lastViewedFileRef = useRef<string | null>(null);
@@ -341,52 +339,12 @@ export default function BorderlessWorkspace({
     }
   }, [viewedFile, selectedProject, leftTabId, tabsById, upsertTab]);
 
-  const renderTabContent = (tab: WorkspaceTab | null) => {
-    if (!tab) {
-      return (
-        <div className="flex h-full items-center justify-center bg-neutral-950 text-sm text-neutral-500">
-          Assign a tab to this panel.
-        </div>
-      );
-    }
+  const removeTab = useCallback((tabId: string) => {
+    setTabs((prev) => prev.filter((t) => t.id !== tabId));
+  }, []);
 
-    if (tab.kind === "session") {
-      return (
-        <MultiTerminal
-          key="main-terminal"
-          initialSessionId={tab.sessionId}
-          requestedSessionId={tab.sessionId}
-          initialWorkspaceId={inlineWorkspaceId}
-          autoRestoreWorkspace={Boolean(inlineWorkspaceId)}
-          onKillSession={onKillSession}
-          onPaneSessionsChange={(sessionIds) => {
-            // Update tab title based on pane count
-            setTabs((prev) =>
-              prev.map((t) => {
-                if (t.id !== tab.id || t.kind !== "session") return t;
-                const names = sessionIds
-                  .map((id) => sessions.find((s) => s.id === id))
-                  .filter(Boolean)
-                  .map((s) => s!.name ?? s!.agentType);
-                const title =
-                  names.length === 0
-                    ? "Empty"
-                    : names.length === 1
-                      ? names[0]
-                      : `Workspace (${names.length})`;
-                if (t.title === title) return t;
-                return { ...t, title };
-              }),
-            );
-          }}
-        />
-      );
-    }
-
-    if (tab.kind === "files") {
-      return null;
-    }
-
+  const renderNonSessionTab = (tab: WorkspaceTab | null) => {
+    if (!tab) return null;
     if (tab.kind === "file-view") {
       return (
         <FileEditor
@@ -398,7 +356,6 @@ export default function BorderlessWorkspace({
         />
       );
     }
-
     if (tab.kind === "browser") {
       return (
         <div key={tab.id} className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
@@ -415,8 +372,62 @@ export default function BorderlessWorkspace({
         </div>
       );
     }
+    if (tab.kind === "harness") {
+      return <ProjectHarnessPanel key={tab.id} projectId={tab.projectId} />;
+    }
+    return null;
+  };
 
-    return <ProjectHarnessPanel key={tab.id} projectId={tab.projectId} />;
+  /** Render all session tabs (always mounted, visibility toggled) + active non-session tab */
+  const renderPanelContent = (activeTabId: string | null) => {
+    const sessionTabs = tabs.filter(
+      (t): t is Extract<WorkspaceTab, { kind: "session" }> => t.kind === "session",
+    );
+    const activeTab = activeTabId ? tabsById.get(activeTabId) ?? null : null;
+    const isActiveSession = activeTab?.kind === "session";
+
+    return (
+      <>
+        {/* Session tabs: always mounted, toggle visibility */}
+        {sessionTabs.map((tab) => (
+          <div
+            key={tab.id}
+            className="absolute inset-0"
+            style={{ display: activeTabId === tab.id ? "block" : "none" }}
+          >
+            <MultiTerminal
+              key={tab.id}
+              initialSessionId={tab.sessionId}
+              initialWorkspaceId={activeTabId === tab.id ? inlineWorkspaceId : undefined}
+              autoRestoreWorkspace={false}
+              onKillSession={onKillSession}
+              onPaneSessionsChange={(sessionIds) => {
+                setTabs((prev) =>
+                  prev.map((t) => {
+                    if (t.id !== tab.id || t.kind !== "session") return t;
+                    const names = sessionIds
+                      .map((id) => sessions.find((s) => s.id === id))
+                      .filter(Boolean)
+                      .map((s) => s!.name ?? s!.agentType);
+                    const title =
+                      names.length === 0
+                        ? "Empty"
+                        : names.length === 1
+                          ? names[0]
+                          : `Workspace (${names.length})`;
+                    if (t.title === title) return t;
+                    return { ...t, title };
+                  }),
+                );
+              }}
+              onAllPanesEmpty={() => removeTab(tab.id)}
+            />
+          </div>
+        ))}
+        {/* Non-session tab: render only when active */}
+        {!isActiveSession && activeTab ? renderNonSessionTab(activeTab) : null}
+      </>
+    );
   };
 
   // Panel labels based on split direction
@@ -526,7 +537,7 @@ export default function BorderlessWorkspace({
               <div className="flex h-full min-h-0 flex-col">
                 {renderTabBar("left", leftTabId)}
                 <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {renderTabContent(leftTab)}
+                  {renderPanelContent(leftTabId)}
                   {dropTarget === "left" && (
                     <div className="pointer-events-none absolute inset-0 z-10 rounded bg-cyan-400/10 ring-2 ring-inset ring-cyan-400/40" />
                   )}
@@ -617,7 +628,7 @@ export default function BorderlessWorkspace({
               <div className="flex h-full min-h-0 flex-col">
                 {renderTabBar("right", rightTabId)}
                 <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {renderTabContent(rightTab)}
+                  {renderPanelContent(rightTabId)}
                   {dropTarget === "right" && (
                     <div className="pointer-events-none absolute inset-0 z-10 rounded bg-fuchsia-400/10 ring-2 ring-inset ring-fuchsia-400/40" />
                   )}

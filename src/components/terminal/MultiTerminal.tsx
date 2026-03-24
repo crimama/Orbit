@@ -25,14 +25,13 @@ const WORKSPACE_STORAGE_KEY = "orbit:last-workspace:global";
 
 interface MultiTerminalProps {
   initialSessionId: string | null;
-  /** When changed after mount, adds the session to an empty pane or creates a new split */
-  requestedSessionId?: string | null;
   initialWorkspaceId?: string | null;
   autoRestoreWorkspace?: boolean;
-  runtimeStorageKey?: string;
   onKillSession?: (sessionId: string) => Promise<void> | void;
   /** Called when the set of session IDs in panes changes */
   onPaneSessionsChange?: (sessionIds: string[]) => void;
+  /** Called when all panes are empty (all sessions closed) */
+  onAllPanesEmpty?: () => void;
 }
 
 function sanitizeTreeSessions(
@@ -165,12 +164,11 @@ function placeNewSessionByEdge(
 
 export default function MultiTerminal({
   initialSessionId,
-  requestedSessionId,
   initialWorkspaceId,
   autoRestoreWorkspace = true,
-  runtimeStorageKey,
   onKillSession,
   onPaneSessionsChange,
+  onAllPanesEmpty,
 }: MultiTerminalProps) {
   // Pane tree state
   const [tree, setTree] = useState<PaneNode>(() => {
@@ -198,42 +196,6 @@ export default function MultiTerminal({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
-  const runtimeStateLoadedRef = useRef(false);
-
-  // Handle requestedSessionId — place session in tree without remounting
-  const lastRequestedRef = useRef(requestedSessionId);
-  const activePaneIdRef = useRef(activePaneId);
-  activePaneIdRef.current = activePaneId;
-
-  useEffect(() => {
-    if (!requestedSessionId || requestedSessionId === lastRequestedRef.current) return;
-    lastRequestedRef.current = requestedSessionId;
-
-    setTree((prev) => {
-      const leaves = collectLeafIds(prev);
-
-      // Already in a pane → just focus it
-      for (const leafId of leaves) {
-        const leaf = findLeaf(prev, leafId);
-        if (leaf?.sessionId === requestedSessionId) {
-          setActivePaneId(leafId);
-          return prev;
-        }
-      }
-
-      // Find empty pane → assign session there
-      for (const leafId of leaves) {
-        const leaf = findLeaf(prev, leafId);
-        if (leaf && !leaf.sessionId) {
-          setActivePaneId(leafId);
-          return updateLeafSession(prev, leafId, requestedSessionId);
-        }
-      }
-
-      // Replace session in active pane (read from ref to avoid dep)
-      return updateLeafSession(prev, activePaneIdRef.current, requestedSessionId);
-    });
-  }, [requestedSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notify parent of which sessions are in panes
   useEffect(() => {
@@ -242,7 +204,10 @@ export default function MultiTerminal({
       .map((id) => findLeaf(tree, id)?.sessionId)
       .filter((id): id is string => !!id);
     onPaneSessionsChange?.(sessionIds);
-  }, [tree, onPaneSessionsChange]);
+    if (sessionIds.length === 0) {
+      onAllPanesEmpty?.();
+    }
+  }, [tree, onPaneSessionsChange, onAllPanesEmpty]);
 
   // Close pane when its session exits (via socket event, not polling)
   const closeSessionPane = useCallback((exitedSessionId: string) => {
@@ -309,60 +274,6 @@ export default function MultiTerminal({
   useEffect(() => {
     void fetchWorkspaces();
   }, [fetchWorkspaces]);
-
-  useEffect(() => {
-    if (!runtimeStorageKey) {
-      runtimeStateLoadedRef.current = true;
-      return;
-    }
-    if (runtimeStateLoadedRef.current) return;
-
-    try {
-      const raw = localStorage.getItem(
-        `orbit:runtime-workspace:${runtimeStorageKey}`,
-      );
-      if (!raw) {
-        runtimeStateLoadedRef.current = true;
-        return;
-      }
-
-      const parsed = JSON.parse(raw) as {
-        tree?: unknown;
-        activePaneId?: string;
-      };
-
-      const migratedTree = migrateLegacyTree(parsed.tree);
-      if (!migratedTree) {
-        runtimeStateLoadedRef.current = true;
-        return;
-      }
-
-      const leafIds = collectLeafIds(migratedTree);
-      setTree(migratedTree);
-      if (parsed.activePaneId && leafIds.includes(parsed.activePaneId)) {
-        setActivePaneId(parsed.activePaneId);
-      } else if (leafIds.length > 0) {
-        setActivePaneId(leafIds[0]);
-      }
-    } catch (error) {
-      void error;
-    } finally {
-      runtimeStateLoadedRef.current = true;
-    }
-  }, [runtimeStorageKey]);
-
-  useEffect(() => {
-    if (!runtimeStorageKey || !runtimeStateLoadedRef.current) return;
-
-    try {
-      localStorage.setItem(
-        `orbit:runtime-workspace:${runtimeStorageKey}`,
-        JSON.stringify({ tree, activePaneId }),
-      );
-    } catch (error) {
-      void error;
-    }
-  }, [runtimeStorageKey, tree, activePaneId]);
 
   const applyWorkspace = useCallback(
     (workspace: WorkspaceLayoutInfo) => {
@@ -487,12 +398,7 @@ export default function MultiTerminal({
 
   const handleSplit = useCallback(
     (paneId: string, direction: "horizontal" | "vertical") => {
-      console.log("[MultiTerminal] handleSplit", paneId, direction);
-      setTree((prev) => {
-        const next = splitPane(prev, paneId, direction);
-        console.log("[MultiTerminal] tree leaves before:", collectLeafIds(prev).length, "after:", collectLeafIds(next).length);
-        return next;
-      });
+      setTree((prev) => splitPane(prev, paneId, direction));
     },
     [],
   );
