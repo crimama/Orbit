@@ -219,8 +219,8 @@ export default function MultiTerminal({
         }
       }
 
-      // No empty pane — split the active pane
-      return splitPane(prev, activePaneId, "horizontal", requestedSessionId);
+      // No empty pane — replace session in active pane
+      return updateLeafSession(prev, activePaneId, requestedSessionId);
     });
   }, [requestedSessionId, activePaneId]);
 
