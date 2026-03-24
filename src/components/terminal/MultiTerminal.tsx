@@ -25,6 +25,8 @@ const WORKSPACE_STORAGE_KEY = "orbit:last-workspace:global";
 
 interface MultiTerminalProps {
   initialSessionId: string | null;
+  /** When changed after mount, adds the session to an empty pane or creates a new split */
+  requestedSessionId?: string | null;
   initialWorkspaceId?: string | null;
   autoRestoreWorkspace?: boolean;
   runtimeStorageKey?: string;
@@ -161,6 +163,7 @@ function placeNewSessionByEdge(
 
 export default function MultiTerminal({
   initialSessionId,
+  requestedSessionId,
   initialWorkspaceId,
   autoRestoreWorkspace = true,
   runtimeStorageKey,
@@ -193,6 +196,33 @@ export default function MultiTerminal({
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
   const runtimeStateLoadedRef = useRef(false);
+
+  // Handle requestedSessionId — add session to existing tree without remounting
+  const lastRequestedRef = useRef(requestedSessionId);
+  useEffect(() => {
+    if (!requestedSessionId || requestedSessionId === lastRequestedRef.current) return;
+    lastRequestedRef.current = requestedSessionId;
+
+    setTree((prev) => {
+      // Check if session is already in a pane
+      const leaves = collectLeafIds(prev);
+      for (const leafId of leaves) {
+        const leaf = findLeaf(prev, leafId);
+        if (leaf?.sessionId === requestedSessionId) return prev; // already present
+      }
+
+      // Find an empty pane (sessionId === null)
+      for (const leafId of leaves) {
+        const leaf = findLeaf(prev, leafId);
+        if (leaf && !leaf.sessionId) {
+          return updateLeafSession(prev, leafId, requestedSessionId);
+        }
+      }
+
+      // No empty pane — split the active pane
+      return splitPane(prev, activePaneId, "horizontal", requestedSessionId);
+    });
+  }, [requestedSessionId, activePaneId]);
 
   // Fetch sessions
   useEffect(() => {

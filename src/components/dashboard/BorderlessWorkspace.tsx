@@ -108,7 +108,7 @@ export default function BorderlessWorkspace({
   const [rightTabId, setRightTabId] = useState<string | null>(null);
   const [splitRatio, setSplitRatio] = useState(0.5);
   const [layoutMode, setLayoutMode] = useState<WorkspaceLayoutMode>("left");
-  const [splitDirection, setSplitDirection] = useState<SplitDirection>("horizontal");
+  const [splitDirection] = useState<SplitDirection>("horizontal");
 
   const tabsById = useMemo(
     () => new Map(tabs.map((tab) => [tab.id, tab])),
@@ -253,7 +253,7 @@ export default function BorderlessWorkspace({
   const handleTabDrop = (
     panel: PanelSide,
     event: React.DragEvent<HTMLElement>,
-    direction?: SplitDirection,
+    _direction?: SplitDirection, // eslint-disable-line @typescript-eslint/no-unused-vars
   ) => {
     event.preventDefault();
     setDropTarget(null);
@@ -262,10 +262,8 @@ export default function BorderlessWorkspace({
     const tabId = event.dataTransfer.getData("text/x-orbit-tab-id");
     if (!tabId) return;
     assignTabToPanel(tabId, panel);
-    if (direction) {
-      setSplitDirection(direction);
-    }
-    setLayoutMode("split");
+    // Keep single-panel layout — splits are handled inside MultiTerminal
+    setLayoutMode("left");
   };
 
   const handlePanelDragOver = (
@@ -325,9 +323,10 @@ export default function BorderlessWorkspace({
     if (tab.kind === "session") {
       return (
         <MultiTerminal
-          key={tab.id}
+          key="main-terminal"
           initialSessionId={tab.sessionId}
-          runtimeStorageKey={tab.id}
+          requestedSessionId={tab.sessionId}
+          runtimeStorageKey="main-terminal"
           initialWorkspaceId={inlineWorkspaceId}
           autoRestoreWorkspace={Boolean(inlineWorkspaceId)}
           onKillSession={onKillSession}
