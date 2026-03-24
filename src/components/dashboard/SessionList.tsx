@@ -9,7 +9,7 @@ interface SessionListProps {
   sessionContexts?: Map<string, SessionContext>;
   onTerminate: (id: string) => void;
   onTerminateAndRestart?: (id: string, options: { dangerouslySkipPermissions: boolean }) => void;
-  onResume: (sessionRef: string, agentType?: string) => void;
+  onResume: (sessionRef: string, agentType?: string, projectId?: string) => void;
   onRename?: (id: string, newName: string) => void;
   onOpenSession?: (sessionId: string) => void;
   yoloMode?: boolean;
@@ -164,7 +164,7 @@ export default function SessionList({
               )}
               {s.status !== "active" && (
                 <button
-                  onClick={() => onResume(s.sessionRef, s.agentType)}
+                  onClick={() => onResume(s.sessionRef, s.agentType, s.projectId)}
                   className="rounded px-1.5 py-0.5 text-[10px] text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
                 >
                   Resume

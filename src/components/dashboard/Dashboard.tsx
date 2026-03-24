@@ -384,10 +384,11 @@ export default function Dashboard() {
   );
 
   const handleResumeSession = useCallback(
-    async (sessionRef: string, agentType?: string) => {
-      if (!selectedProject) return;
+    async (sessionRef: string, agentType?: string, projectId?: string) => {
+      const pid = projectId ?? selectedProject?.id;
+      if (!pid) return;
       await createSession({
-        projectId: selectedProject!.id,
+        projectId: pid,
         agentType: (agentType as NewSessionAgent) || "claude-code",
         resumeSessionRef: sessionRef,
       });
