@@ -376,7 +376,7 @@ export default function Dashboard() {
             setInlineSessionId(json.data.id);
             setInlineWorkspaceId(null);
           }
-          fetchSessions();
+          await fetchSessions();
         } else {
           console.error("[createSession] API error:", json);
         }
@@ -391,13 +391,22 @@ export default function Dashboard() {
     async (sessionRef: string, agentType?: string, projectId?: string) => {
       const pid = projectId ?? selectedProject?.id;
       if (!pid) return;
+
+      // Ensure the correct project is selected and sidebar shows active sessions
+      if (projectId) {
+        const project = projects.find((p) => p.id === projectId);
+        if (project) setSelectedProject(project);
+      }
+      setSessionViewMode("active");
+      setProjectFocusTab("sessions");
+
       await createSession({
         projectId: pid,
         agentType: (agentType as NewSessionAgent) || "claude-code",
         resumeSessionRef: sessionRef,
       });
     },
-    [createSession, selectedProject],
+    [createSession, selectedProject, projects],
   );
 
   const handleQuickCreateSession = useCallback(async () => {
