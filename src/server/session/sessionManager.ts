@@ -350,53 +350,32 @@ class SessionManager {
       include: { project: { select: { name: true, color: true } } },
     });
 
-    try {
-      const nextSessionRef = req.resumeSessionRef?.trim() || session.id;
-
-      if (isRemote) {
-        if (project.type === "DOCKER" && !project.dockerContainer) {
-          throw new Error("dockerContainer is not configured for this project");
-        }
-        await this.startRemotePty(
-          session.id,
-          project.sshConfigId!,
-          req.agentType,
-          req.resumeSessionRef,
-          {
-            path: project.path,
-            dockerContainer: project.dockerContainer,
-          },
-          { cols: req.cols, rows: req.rows, dangerouslySkipPermissions: req.dangerouslySkipPermissions },
-        );
-      } else {
-        if (isDocker && !project.dockerContainer) {
-          throw new Error("dockerContainer is not configured for this project");
-        }
-        ptyManager.create(
-          session.id,
-          this.getPtyOptionsForCreate(req, {
-            type: project.type,
-            path: project.path,
-            dockerContainer: project.dockerContainer,
-          }),
-        );
-        this.registerExitHandler(session.id, "local");
-      }
-
-      // Set sessionRef. For resumed Claude sessions, keep the Claude session ref.
-      await prisma.agentSession.update({
-        where: { id: session.id },
-        data: { sessionRef: nextSessionRef },
-      });
-
-      if (req.agentType === AGENT_TYPES.CLAUDE && !req.resumeSessionRef?.trim()) {
-        void this.captureClaudeSessionRef(session.id, project.path);
-      }
-    } catch (err) {
-      // Rollback: delete the DB record if PTY creation fails
+    // Validate Docker config upfront
+    if ((isRemote || isDocker) && project.type === "DOCKER" && !project.dockerContainer) {
       await prisma.agentSession.delete({ where: { id: session.id } });
-      throw err;
+      throw new Error("dockerContainer is not configured for this project");
     }
+
+    const nextSessionRef = req.resumeSessionRef?.trim() || session.id;
+
+    // Store sessionRef + create options so ensureSessionRunning can start
+    // the PTY lazily when session-attach fires from the Socket.io context.
+    // This avoids module-instance mismatch between Next.js API routes and
+    // the custom server's Socket.io handlers.
+    await prisma.agentSession.update({
+      where: { id: session.id },
+      data: {
+        sessionRef: nextSessionRef,
+        lastContext: JSON.stringify({
+          _createOpts: {
+            resumeSessionRef: req.resumeSessionRef,
+            cols: req.cols,
+            rows: req.rows,
+            dangerouslySkipPermissions: req.dangerouslySkipPermissions,
+          },
+        }),
+      },
+    });
 
     void auditLogger.log({
       eventType: "session_create",
@@ -505,44 +484,102 @@ class SessionManager {
       (row.project.type === "SSH" || row.project.type === "DOCKER") &&
       !!row.project.sshConfigId;
 
+    // Extract original create options if available (stored by createSession)
+    let createOpts: {
+      resumeSessionRef?: string;
+      cols?: number;
+      rows?: number;
+      dangerouslySkipPermissions?: boolean;
+    } = {};
     try {
-      const resumeSessionRef =
-        row.agentType === AGENT_TYPES.CLAUDE
-          ? await this.resolveClaudeResumeRef(
-              row.sessionRef,
-              sessionId,
-              row.project.path,
-            )
-          : row.sessionRef !== sessionId
-            ? row.sessionRef
-            : undefined;
+      const parsed = row.lastContext ? JSON.parse(row.lastContext) : null;
+      if (parsed?._createOpts) {
+        createOpts = parsed._createOpts;
+      }
+    } catch {
+      // lastContext may not be JSON
+    }
 
+    try {
       if (isRemote) {
         await this.startRemotePty(
           sessionId,
           row.project.sshConfigId!,
           row.agentType,
-          resumeSessionRef,
+          createOpts.resumeSessionRef,
           {
             path: row.project.path,
             dockerContainer: row.project.dockerContainer,
           },
+          {
+            cols: createOpts.cols,
+            rows: createOpts.rows,
+            dangerouslySkipPermissions: createOpts.dangerouslySkipPermissions,
+          },
         );
       } else {
-        ptyManager.create(
-          sessionId,
-          this.getPtyOptionsForRecover(
-            row.agentType,
-            resumeSessionRef,
-            {
-              type: row.project.type,
-              path: row.project.path,
-              dockerContainer: row.project.dockerContainer,
-            },
-          ),
-        );
+        // Use original create options for brand-new sessions,
+        // fall back to recover options for restarted sessions.
+        if (createOpts.resumeSessionRef || !this.hasValidClaudeRef(row.sessionRef, sessionId)) {
+          ptyManager.create(
+            sessionId,
+            this.getPtyOptionsForCreate(
+              {
+                projectId: row.projectId,
+                agentType: row.agentType,
+                resumeSessionRef: createOpts.resumeSessionRef,
+                cols: createOpts.cols,
+                rows: createOpts.rows,
+                dangerouslySkipPermissions: createOpts.dangerouslySkipPermissions,
+              },
+              {
+                type: row.project.type,
+                path: row.project.path,
+                dockerContainer: row.project.dockerContainer,
+              },
+            ),
+          );
+        } else {
+          const resumeSessionRef =
+            row.agentType === AGENT_TYPES.CLAUDE
+              ? await this.resolveClaudeResumeRef(
+                  row.sessionRef,
+                  sessionId,
+                  row.project.path,
+                )
+              : row.sessionRef !== sessionId
+                ? row.sessionRef
+                : undefined;
+
+          ptyManager.create(
+            sessionId,
+            this.getPtyOptionsForRecover(
+              row.agentType,
+              resumeSessionRef,
+              {
+                type: row.project.type,
+                path: row.project.path,
+                dockerContainer: row.project.dockerContainer,
+              },
+            ),
+          );
+        }
         this.registerExitHandler(sessionId, "local");
       }
+
+      // Clear _createOpts from lastContext after successful PTY start
+      if (createOpts.resumeSessionRef !== undefined) {
+        await prisma.agentSession.update({
+          where: { id: sessionId },
+          data: { lastContext: null },
+        }).catch(() => {});
+      }
+
+      // Capture Claude session ref for brand-new sessions
+      if (row.agentType === AGENT_TYPES.CLAUDE && !createOpts.resumeSessionRef) {
+        void this.captureClaudeSessionRef(sessionId, row.project.path);
+      }
+
       return true;
     } catch (err) {
       console.error(`[SessionManager] ensureSessionRunning failed for ${sessionId}:`, err);
@@ -552,6 +589,11 @@ class SessionManager {
       });
       return false;
     }
+  }
+
+  private hasValidClaudeRef(sessionRef: string, dbSessionId: string): boolean {
+    const ref = sessionRef.trim();
+    return ref.length > 0 && ref !== dbSessionId;
   }
 
   private getPtyOptionsForCreate(
