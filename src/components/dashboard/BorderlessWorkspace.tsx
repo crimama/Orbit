@@ -138,22 +138,52 @@ export default function BorderlessWorkspace({
   );
 
   useEffect(() => {
+    if (!inlineSessionId) return;
     if (inlineSessionId === lastInlineSessionIdRef.current) return;
     lastInlineSessionIdRef.current = inlineSessionId;
 
-    const session = inlineSessionId
-      ? sessions.find((item) => item.id === inlineSessionId)
-      : null;
-    if (!session) return;
+    const session = sessions.find((item) => item.id === inlineSessionId);
+
+    // Build tab from session data if available, or create a minimal stub
+    // so the tab appears immediately even before fetchSessions() resolves.
+    const tab: WorkspaceTab = session
+      ? buildSessionTab(session)
+      : {
+          id: `session:${inlineSessionId}`,
+          kind: "session" as const,
+          title: `Session ${inlineSessionId.slice(0, 8)}`,
+          projectId: selectedProject?.id ?? "",
+          projectName: selectedProject?.name ?? "",
+          projectColor: selectedProject?.color ?? "#64748b",
+          sessionId: inlineSessionId,
+        };
 
     if (layoutMode === "split") {
-      upsertTab(buildSessionTab(session), activePanel);
+      upsertTab(tab, activePanel);
     } else {
-      upsertTab(buildSessionTab(session), "left");
+      upsertTab(tab, "left");
       setLayoutMode("left");
       setActivePanel("left");
     }
-  }, [inlineSessionId, sessions, upsertTab, layoutMode, activePanel]);
+  }, [inlineSessionId, sessions, selectedProject, upsertTab, layoutMode, activePanel]);
+
+  // Update tab metadata when sessions list refreshes (replaces stub with real data)
+  useEffect(() => {
+    setTabs((prev) => {
+      let changed = false;
+      const next = prev.map((tab) => {
+        if (tab.kind !== "session") return tab;
+        const st = tab as Extract<WorkspaceTab, { kind: "session" }>;
+        const fresh = sessions.find((s) => s.id === st.sessionId);
+        if (!fresh) return tab;
+        const updated = buildSessionTab(fresh);
+        if (updated.title === st.title && (updated as typeof st).projectName === st.projectName) return tab;
+        changed = true;
+        return updated;
+      });
+      return changed ? next : prev;
+    });
+  }, [sessions]);
 
   useEffect(() => {
     const paneKey = `${selectedProject?.id ?? "none"}:${projectPaneMode}:${inlineSessionId ?? "none"}`;
