@@ -508,16 +508,10 @@ export default function Dashboard() {
     );
   }, [selectedProject, globalFileIndex]);
 
-  useEffect(() => {
-    if (!selectedProject || !inlineSessionId) return;
-
-    const currentInlineSession = sessions.find(
-      (session) => session.id === inlineSessionId,
-    );
-    if (!currentInlineSession || currentInlineSession.status !== "active") {
-      setInlineSessionId(null);
-    }
-  }, [selectedProject, inlineSessionId, sessions]);
+  // NOTE: Removed the useEffect that cleared inlineSessionId when
+  // session status !== "active". It prevented resuming terminated
+  // sessions because ensureSessionRunning re-activates them on attach,
+  // but this effect would null-out the ID before attach could fire.
 
   const handleOpenSessionFromList = useCallback(
     (sessionId: string) => {
