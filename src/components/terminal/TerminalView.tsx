@@ -320,14 +320,19 @@ export default function TerminalView({
       fitAddonRef.current = fitAddon;
       await initWebgl(term);
 
-      // Attach to session
-      socket.emit("session-attach", sessionId, (res) => {
-        if (res.ok) {
-          attachedRef.current = true;
-        } else {
-          term.write(`\r\n\x1b[31mFailed to attach: ${res.error}\x1b[0m\r\n`);
-        }
-      });
+      // Attach to session with retry (PTY may still be initializing)
+      const tryAttach = (attempt: number) => {
+        socket.emit("session-attach", sessionId, (res) => {
+          if (res.ok) {
+            attachedRef.current = true;
+          } else if (attempt < 3) {
+            setTimeout(() => tryAttach(attempt + 1), 1000);
+          } else {
+            term.write(`\r\n\x1b[31mFailed to attach: ${res.error}\x1b[0m\r\n`);
+          }
+        });
+      };
+      tryAttach(0);
 
       // Socket → Terminal
       socket.on("terminal-data", onTerminalData);
