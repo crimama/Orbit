@@ -241,25 +241,30 @@ export default function MultiTerminal({
   }, [tree, onPaneSessionsChange]);
 
   // Auto-close panes for terminated sessions
+  // Only depends on sessions — reads tree via functional updater to avoid infinite loop
   useEffect(() => {
     if (!sessionsLoadedRef.current) return;
     const activeIds = new Set(
       sessions.filter((s) => s.status === "active").map((s) => s.id),
     );
-    const leaves = collectLeafIds(tree);
-    for (const leafId of leaves) {
-      const leaf = findLeaf(tree, leafId);
-      if (leaf?.sessionId && !activeIds.has(leaf.sessionId)) {
-        // Session is no longer active — clear the pane
-        setTree((prev) => {
-          if (collectLeafIds(prev).length <= 1) {
-            return updateLeafSession(prev, leafId, null);
-          }
-          return closePane(prev, leafId) ?? prev;
-        });
+    if (activeIds.size === 0 && sessions.length === 0) return;
+
+    setTree((currentTree) => {
+      let updated = currentTree;
+      const leaves = collectLeafIds(updated);
+      for (const leafId of leaves) {
+        const leaf = findLeaf(updated, leafId);
+        if (!leaf?.sessionId || activeIds.has(leaf.sessionId)) continue;
+        // Session terminated — close or clear this pane
+        if (collectLeafIds(updated).length <= 1) {
+          updated = updateLeafSession(updated, leafId, null);
+        } else {
+          updated = closePane(updated, leafId) ?? updated;
+        }
       }
-    }
-  }, [sessions, tree]);
+      return updated;
+    });
+  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch sessions
   useEffect(() => {
@@ -433,6 +438,14 @@ export default function MultiTerminal({
         if (prev.has(paneId)) return prev;
         return new Set(prev).add(paneId);
       });
+    });
+    // Session exit: immediately mark session as terminated so auto-close fires
+    sock.on("session-exit", (exitedSessionId: string) => {
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === exitedSessionId ? { ...s, status: "terminated" as const } : s,
+        ),
+      );
     });
     if (sock.connected) {
       setSocketStates((prev) => new Map(prev).set(paneId, true));
