@@ -164,7 +164,16 @@ export default function SessionList({
               )}
               {s.status !== "active" && (
                 <button
-                  onClick={() => onResume(s.sessionRef, s.agentType, s.projectId)}
+                  onClick={() => {
+                    // Orbit-managed sessions: reopen directly by ID
+                    // ensureSessionRunning will re-activate + create PTY
+                    if (s.source !== "claude-history" && onOpenSession) {
+                      onOpenSession(s.id);
+                    } else {
+                      // Claude history sessions: create new session with --resume
+                      onResume(s.sessionRef, s.agentType, s.projectId);
+                    }
+                  }}
                   className="rounded px-1.5 py-0.5 text-[10px] text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
                 >
                   Resume
