@@ -31,6 +31,8 @@ interface MultiTerminalProps {
   autoRestoreWorkspace?: boolean;
   runtimeStorageKey?: string;
   onKillSession?: (sessionId: string) => Promise<void> | void;
+  /** Called when the set of session IDs in panes changes */
+  onPaneSessionsChange?: (sessionIds: string[]) => void;
 }
 
 function sanitizeTreeSessions(
@@ -168,6 +170,7 @@ export default function MultiTerminal({
   autoRestoreWorkspace = true,
   runtimeStorageKey,
   onKillSession,
+  onPaneSessionsChange,
 }: MultiTerminalProps) {
   // Pane tree state
   const [tree, setTree] = useState<PaneNode>(() => {
@@ -204,17 +207,21 @@ export default function MultiTerminal({
     lastRequestedRef.current = requestedSessionId;
 
     setTree((prev) => {
-      // Check if session is already in a pane
+      // Check if session is already in a pane → focus it
       const leaves = collectLeafIds(prev);
       for (const leafId of leaves) {
         const leaf = findLeaf(prev, leafId);
-        if (leaf?.sessionId === requestedSessionId) return prev; // already present
+        if (leaf?.sessionId === requestedSessionId) {
+          setActivePaneId(leafId);
+          return prev;
+        }
       }
 
       // Find an empty pane (sessionId === null)
       for (const leafId of leaves) {
         const leaf = findLeaf(prev, leafId);
         if (leaf && !leaf.sessionId) {
+          setActivePaneId(leafId);
           return updateLeafSession(prev, leafId, requestedSessionId);
         }
       }
@@ -223,6 +230,36 @@ export default function MultiTerminal({
       return updateLeafSession(prev, activePaneId, requestedSessionId);
     });
   }, [requestedSessionId, activePaneId]);
+
+  // Notify parent of which sessions are in panes
+  useEffect(() => {
+    const leaves = collectLeafIds(tree);
+    const sessionIds = leaves
+      .map((id) => findLeaf(tree, id)?.sessionId)
+      .filter((id): id is string => !!id);
+    onPaneSessionsChange?.(sessionIds);
+  }, [tree, onPaneSessionsChange]);
+
+  // Auto-close panes for terminated sessions
+  useEffect(() => {
+    if (!sessionsLoadedRef.current) return;
+    const activeIds = new Set(
+      sessions.filter((s) => s.status === "active").map((s) => s.id),
+    );
+    const leaves = collectLeafIds(tree);
+    for (const leafId of leaves) {
+      const leaf = findLeaf(tree, leafId);
+      if (leaf?.sessionId && !activeIds.has(leaf.sessionId)) {
+        // Session is no longer active — clear the pane
+        setTree((prev) => {
+          if (collectLeafIds(prev).length <= 1) {
+            return updateLeafSession(prev, leafId, null);
+          }
+          return closePane(prev, leafId) ?? prev;
+        });
+      }
+    }
+  }, [sessions, tree]);
 
   // Fetch sessions
   useEffect(() => {

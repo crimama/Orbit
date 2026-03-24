@@ -360,6 +360,26 @@ export default function BorderlessWorkspace({
           initialWorkspaceId={inlineWorkspaceId}
           autoRestoreWorkspace={Boolean(inlineWorkspaceId)}
           onKillSession={onKillSession}
+          onPaneSessionsChange={(sessionIds) => {
+            // Update tab title based on pane count
+            setTabs((prev) =>
+              prev.map((t) => {
+                if (t.id !== tab.id || t.kind !== "session") return t;
+                const names = sessionIds
+                  .map((id) => sessions.find((s) => s.id === id))
+                  .filter(Boolean)
+                  .map((s) => s!.name ?? s!.agentType);
+                const title =
+                  names.length === 0
+                    ? "Empty"
+                    : names.length === 1
+                      ? names[0]
+                      : `Workspace (${names.length})`;
+                if (t.title === title) return t;
+                return { ...t, title };
+              }),
+            );
+          }}
         />
       );
     }
