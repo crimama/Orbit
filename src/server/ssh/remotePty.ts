@@ -275,5 +275,11 @@ class RemotePtyManager implements PtyBackend {
   }
 }
 
-export const remotePtyManager = new RemotePtyManager();
-registerPtyBackend(remotePtyManager);
+// globalThis singleton
+const RPTY_KEY = "__orbit_remote_pty_manager__" as const;
+const _rg = globalThis as unknown as Record<string, RemotePtyManager | undefined>;
+if (!_rg[RPTY_KEY]) {
+  _rg[RPTY_KEY] = new RemotePtyManager();
+  registerPtyBackend(_rg[RPTY_KEY]);
+}
+export const remotePtyManager: RemotePtyManager = _rg[RPTY_KEY];

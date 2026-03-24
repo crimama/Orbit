@@ -206,5 +206,12 @@ class PtyManager implements PtyBackend {
   }
 }
 
-export const ptyManager = new PtyManager();
-registerPtyBackend(ptyManager);
+// globalThis singleton — ensures the same PtyManager instance across
+// Next.js webpack bundles and the custom server (tsx/esbuild).
+const PTY_KEY = "__orbit_pty_manager__" as const;
+const g = globalThis as unknown as Record<string, PtyManager | undefined>;
+if (!g[PTY_KEY]) {
+  g[PTY_KEY] = new PtyManager();
+  registerPtyBackend(g[PTY_KEY]);
+}
+export const ptyManager: PtyManager = g[PTY_KEY];

@@ -836,4 +836,10 @@ class SessionManager {
   }
 }
 
-export const sessionManager = new SessionManager();
+// globalThis singleton — same instance across Next.js webpack + custom server
+const SM_KEY = "__orbit_session_manager__" as const;
+const _g = globalThis as unknown as Record<string, SessionManager | undefined>;
+if (!_g[SM_KEY]) {
+  _g[SM_KEY] = new SessionManager();
+}
+export const sessionManager: SessionManager = _g[SM_KEY];

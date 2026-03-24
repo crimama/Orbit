@@ -36,16 +36,28 @@ export function getScreenPreviewFromScrollback(
   return previewLines.slice(-safeLines).join("\n");
 }
 
-// Registry of backends for unified lookup
-const backends: PtyBackend[] = [];
+// Use globalThis to ensure a single backend registry across
+// Next.js webpack bundles and the custom server (tsx/esbuild).
+const GLOBAL_KEY = "__orbit_pty_backends__" as const;
+
+function getBackends(): PtyBackend[] {
+  const g = globalThis as unknown as Record<string, PtyBackend[] | undefined>;
+  if (!g[GLOBAL_KEY]) {
+    g[GLOBAL_KEY] = [];
+  }
+  return g[GLOBAL_KEY];
+}
 
 export function registerPtyBackend(backend: PtyBackend): void {
-  backends.push(backend);
+  const backends = getBackends();
+  if (!backends.includes(backend)) {
+    backends.push(backend);
+  }
 }
 
 /** Look up the backend that owns a given session ID */
 export function getPtyBackend(sessionId: string): PtyBackend | null {
-  for (const b of backends) {
+  for (const b of getBackends()) {
     if (b.has(sessionId)) return b;
   }
   return null;
