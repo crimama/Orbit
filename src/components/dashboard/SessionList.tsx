@@ -94,7 +94,10 @@ export default function SessionList({
             <div
               className="min-w-0 flex-1 cursor-pointer"
               onClick={() => {
-                if (onOpenSession) {
+                if (s.source === "claude-history") {
+                  // History sessions have virtual IDs (history:xxx) — resume via --resume
+                  onResume(s.sessionRef, s.agentType, s.projectId);
+                } else if (onOpenSession) {
                   onOpenSession(s.id);
                 } else {
                   router.push(`/sessions/${s.id}`);
