@@ -1298,49 +1298,37 @@ export default function Dashboard() {
             </button>
           ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {selectedProject || inlineSessionId ? (
-              <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                {false && projectPaneMode === "harness" && selectedProject && (
-                  <div className="border-b border-neutral-800 p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="text-xs text-neutral-500">
-                        Skills: {skillCount}
-                      </span>
-                      <Link
-                        href={`/graph?projectId=${selectedProject!.id}`}
-                        className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
-                      >
-                        Manage Skills
-                      </Link>
-                    </div>
+            {/* Workspace — kept mounted (hidden) to preserve tab state */}
+            <div className={`flex h-full min-h-0 flex-col overflow-hidden ${
+              selectedProject || inlineSessionId ? "" : "hidden"
+            }`}>
+              <div className="min-h-0 flex-1 overflow-hidden p-0">
+                {!inlineSessionId && !viewedFile && (selectedProject || inlineSessionId) ? (
+                  <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
+                    Select a session or file from the left panel.
                   </div>
+                ) : (
+                  <BorderlessWorkspace
+                    sessions={sessions}
+                    selectedProject={selectedProject}
+                    projectPaneMode={projectPaneMode}
+                    inlineSessionId={inlineSessionId}
+                    inlineWorkspaceId={inlineWorkspaceId}
+                    viewedFile={viewedFile}
+                    onCloseFile={() => setViewedFile(null)}
+                    onKillSession={handleTerminateSession}
+                    onEmpty={() => {
+                      setInlineSessionId(null);
+                      setSelectedProject(null);
+                    }}
+                  />
                 )}
-
-                <div className="min-h-0 flex-1 overflow-hidden p-0">
-                  {!inlineSessionId && !viewedFile ? (
-                    <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
-                      Select a session or file from the left panel.
-                    </div>
-                  ) : (
-                    <BorderlessWorkspace
-                      sessions={sessions}
-                      selectedProject={selectedProject}
-                      projectPaneMode={projectPaneMode}
-                      inlineSessionId={inlineSessionId}
-                      inlineWorkspaceId={inlineWorkspaceId}
-                      viewedFile={viewedFile}
-                      onCloseFile={() => setViewedFile(null)}
-                      onKillSession={handleTerminateSession}
-                      onEmpty={() => {
-                        setInlineSessionId(null);
-                        setSelectedProject(null);
-                      }}
-                    />
-                  )}
-                </div>
               </div>
-            ) : (
-              <div className="space-y-4 overflow-y-auto p-4">
+            </div>
+            {/* Home screen */}
+            <div className={`space-y-4 overflow-y-auto p-4 ${
+              selectedProject || inlineSessionId ? "hidden" : ""
+            }`}>
                 <CostDashboard />
 
                 <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
@@ -1430,7 +1418,6 @@ export default function Dashboard() {
                   />
 
               </div>
-            )}
           </div>
         </div>
       </div>
