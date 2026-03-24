@@ -440,7 +440,7 @@ export default function Dashboard() {
         name: autoName,
         ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
       },
-      { activateInWorkspace: false },
+      { activateInWorkspace: true },
     );
     setProjectSessionName("");
   }, [selectedProject, createSession, quickSessionAgent, projectSessionName, skipPermissions]);
