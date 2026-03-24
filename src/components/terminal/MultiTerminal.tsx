@@ -240,31 +240,22 @@ export default function MultiTerminal({
     onPaneSessionsChange?.(sessionIds);
   }, [tree, onPaneSessionsChange]);
 
-  // Auto-close panes for terminated sessions
-  // Only depends on sessions — reads tree via functional updater to avoid infinite loop
-  useEffect(() => {
-    if (!sessionsLoadedRef.current) return;
-    const activeIds = new Set(
-      sessions.filter((s) => s.status === "active").map((s) => s.id),
-    );
-    if (activeIds.size === 0 && sessions.length === 0) return;
-
+  // Close pane when its session exits (via socket event, not polling)
+  const closeSessionPane = useCallback((exitedSessionId: string) => {
     setTree((currentTree) => {
-      let updated = currentTree;
-      const leaves = collectLeafIds(updated);
+      const leaves = collectLeafIds(currentTree);
       for (const leafId of leaves) {
-        const leaf = findLeaf(updated, leafId);
-        if (!leaf?.sessionId || activeIds.has(leaf.sessionId)) continue;
-        // Session terminated — close or clear this pane
-        if (collectLeafIds(updated).length <= 1) {
-          updated = updateLeafSession(updated, leafId, null);
-        } else {
-          updated = closePane(updated, leafId) ?? updated;
+        const leaf = findLeaf(currentTree, leafId);
+        if (leaf?.sessionId === exitedSessionId) {
+          if (leaves.length <= 1) {
+            return updateLeafSession(currentTree, leafId, null);
+          }
+          return closePane(currentTree, leafId) ?? currentTree;
         }
       }
-      return updated;
+      return currentTree;
     });
-  }, [sessions]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch sessions
   useEffect(() => {
@@ -439,18 +430,14 @@ export default function MultiTerminal({
         return new Set(prev).add(paneId);
       });
     });
-    // Session exit: immediately mark session as terminated so auto-close fires
+    // Session exit: close the pane immediately
     sock.on("session-exit", (exitedSessionId: string) => {
-      setSessions((prev) =>
-        prev.map((s) =>
-          s.id === exitedSessionId ? { ...s, status: "terminated" as const } : s,
-        ),
-      );
+      closeSessionPane(exitedSessionId);
     });
     if (sock.connected) {
       setSocketStates((prev) => new Map(prev).set(paneId, true));
     }
-  }, []);
+  }, [closeSessionPane]);
 
   const destroySocket = useCallback((paneId: string) => {
     const sock = socketsRef.current.get(paneId);
