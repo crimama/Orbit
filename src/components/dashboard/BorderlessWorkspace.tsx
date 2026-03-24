@@ -356,7 +356,6 @@ export default function BorderlessWorkspace({
           key="main-terminal"
           initialSessionId={tab.sessionId}
           requestedSessionId={tab.sessionId}
-          runtimeStorageKey="main-terminal"
           initialWorkspaceId={inlineWorkspaceId}
           autoRestoreWorkspace={Boolean(inlineWorkspaceId)}
           onKillSession={onKillSession}

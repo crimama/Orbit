@@ -200,15 +200,19 @@ export default function MultiTerminal({
   const [savingWorkspace, setSavingWorkspace] = useState(false);
   const runtimeStateLoadedRef = useRef(false);
 
-  // Handle requestedSessionId — add session to existing tree without remounting
+  // Handle requestedSessionId — place session in tree without remounting
   const lastRequestedRef = useRef(requestedSessionId);
+  const activePaneIdRef = useRef(activePaneId);
+  activePaneIdRef.current = activePaneId;
+
   useEffect(() => {
     if (!requestedSessionId || requestedSessionId === lastRequestedRef.current) return;
     lastRequestedRef.current = requestedSessionId;
 
     setTree((prev) => {
-      // Check if session is already in a pane → focus it
       const leaves = collectLeafIds(prev);
+
+      // Already in a pane → just focus it
       for (const leafId of leaves) {
         const leaf = findLeaf(prev, leafId);
         if (leaf?.sessionId === requestedSessionId) {
@@ -217,7 +221,7 @@ export default function MultiTerminal({
         }
       }
 
-      // Find an empty pane (sessionId === null)
+      // Find empty pane → assign session there
       for (const leafId of leaves) {
         const leaf = findLeaf(prev, leafId);
         if (leaf && !leaf.sessionId) {
@@ -226,10 +230,10 @@ export default function MultiTerminal({
         }
       }
 
-      // No empty pane — replace session in active pane
-      return updateLeafSession(prev, activePaneId, requestedSessionId);
+      // Replace session in active pane (read from ref to avoid dep)
+      return updateLeafSession(prev, activePaneIdRef.current, requestedSessionId);
     });
-  }, [requestedSessionId, activePaneId]);
+  }, [requestedSessionId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Notify parent of which sessions are in panes
   useEffect(() => {
