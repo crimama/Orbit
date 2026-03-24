@@ -126,7 +126,7 @@ function placeNewSessionByEdge(
   const isTargetSplit = paneIndex !== -1 && node.children.length >= 2;
 
   if (isTargetSplit) {
-    const shouldMoveForward = position === "right" || position === "bottom";
+    const shouldMoveForward = position === "left" || position === "top";
     const swapIndex = shouldMoveForward ? paneIndex + 1 : paneIndex - 1;
     if (swapIndex < 0 || swapIndex >= node.children.length) {
       return { node, changed: false };
