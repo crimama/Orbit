@@ -544,7 +544,8 @@ class SessionManager {
         this.registerExitHandler(sessionId, "local");
       }
       return true;
-    } catch {
+    } catch (err) {
+      console.error(`[SessionManager] ensureSessionRunning failed for ${sessionId}:`, err);
       await prisma.agentSession.update({
         where: { id: sessionId },
         data: { status: "terminated" },
