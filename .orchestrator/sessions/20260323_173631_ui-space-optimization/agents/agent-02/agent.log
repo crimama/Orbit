@@ -1,0 +1,1669 @@
+# Agent Log: agent-02
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: BorderlessWorkspace + TerminalPane border cleanup
+
+## Agent
+agent-02
+
+## Status
+pending
+
+## Description
+Remove redundant decorative layers in BorderlessWorkspace and TerminalPane. Files: src/components/dashboard/BorderlessWorkspace.tsx and src/components/terminal/TerminalPane.tsx.
+
+Changes to BorderlessWorkspace.tsx:
+1. OUTER WRAPPER (line ~458): Remove redundant border and rounded corners:
+   - Change `rounded-xl border border-neutral-800 bg-neutral-950` to `bg-neutral-950`
+   - The inner panel sections already have their own borders, so the outer one is decorative waste
+
+2. PANEL SECTION BORDERS (line ~465-469): Simplify the active panel indicator:
+   - Keep the cyan shadow for active panel but remove the 1px border when inactive
+   - Change inactive class from `border-neutral-800` to `border-transparent`
+   
+3. TAB BAR (line ~387): Make slightly more compact:
+   - Change `px-2 py-1` to `px-1.5 py-0.5`
+
+Changes to TerminalPane.tsx:
+4. OUTER WRAPPER (line ~172): Reduce corner radius:
+   - Change `rounded-2xl` to `rounded-lg`
+   - This reduces corner clipping from 16px to 8px
+
+5. DROP INDICATOR (line ~232): Match the new radius:
+   - Change `rounded-xl` to `rounded-md` in the drop zone indicator
+
+Read src/components/AGENTS.md for conventions. Preserve all drag-drop, focus, and keyboard functionality.
+
+## Target Files
+- `src/components/dashboard/BorderlessWorkspace.tsx`
+- `src/components/terminal/TerminalPane.tsx`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] No rounded-xl border on BorderlessWorkspace outer div
+- [ ] TerminalPane uses rounded-lg
+- [ ] Tab bar uses py-0.5
+- [ ] npx tsc --noEmit passes
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree
+# Started: 2026-03-23T17:37:41.683370
+
+OpenAI Codex v0.114.0 (research preview)
+--------
+workdir: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019d19d7-c227-7ae3-83cb-beedf2cd3b6b
+--------
+user
+Read and execute the task described below.
+
+# Task: BorderlessWorkspace + TerminalPane border cleanup
+
+## Agent
+agent-02
+
+## Status
+pending
+
+## Description
+Remove redundant decorative layers in BorderlessWorkspace and TerminalPane. Files: src/components/dashboard/BorderlessWorkspace.tsx and src/components/terminal/TerminalPane.tsx.
+
+Changes to BorderlessWorkspace.tsx:
+1. OUTER WRAPPER (line ~458): Remove redundant border and rounded corners:
+   - Change `rounded-xl border border-neutral-800 bg-neutral-950` to `bg-neutral-950`
+   - The inner panel sections already have their own borders, so the outer one is decorative waste
+
+2. PANEL SECTION BORDERS (line ~465-469): Simplify the active panel indicator:
+   - Keep the cyan shadow for active panel but remove the 1px border when inactive
+   - Change inactive class from `border-neutral-800` to `border-transparent`
+   
+3. TAB BAR (line ~387): Make slightly more compact:
+   - Change `px-2 py-1` to `px-1.5 py-0.5`
+
+Changes to TerminalPane.tsx:
+4. OUTER WRAPPER (line ~172): Reduce corner radius:
+   - Change `rounded-2xl` to `rounded-lg`
+   - This reduces corner clipping from 16px to 8px
+
+5. DROP INDICATOR (line ~232): Match the new radius:
+   - Change `rounded-xl` to `rounded-md` in the drop zone indicator
+
+Read src/components/AGENTS.md for conventions. Preserve all drag-drop, focus, and keyboard functionality.
+
+## Target Files
+- `src/components/dashboard/BorderlessWorkspace.tsx`
+- `src/components/terminal/TerminalPane.tsx`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] No rounded-xl border on BorderlessWorkspace outer div
+- [ ] TerminalPane uses rounded-lg
+- [ ] Tab bar uses py-0.5
+- [ ] npx tsc --noEmit passes
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+I’m loading the repo instructions and the component-specific conventions first, then I’ll update `tasks/todo.md` before touching the requested files.
+exec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktreeexec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 0ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/components/AGENTS.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+# Components Layer Rules
+
+## Architecture Boundary
+- `src/server/`를 직접 import하지 마라. API 라우트(`/api/`)를 통해서만 접근.
+- `src/lib/`의 타입과 유틸리티만 import 가능.
+
+## Modules
+- `terminal/` — xterm.js WebGL 터미널 (TerminalView가 핵심)
+- `dashboard/` — 프로젝트/세션 2패널 대시보드
+- `graph/` — React Flow 스킬 그래프 에디터
+- `mobile/` — PWA 전용 UI (VirtualKeyboard, MobileLayout)
+
+## Conventions
+- 파일명: PascalCase (`TerminalView.tsx`)
+- 컴포넌트: "use client" 명시 (서버 컴포넌트가 아닌 경우)
+- 스타일: Tailwind CSS 유틸리티 클래스
+- 상태: React hooks (useState, useEffect), 전역 상태는 Socket.io
+- Socket 연결: `src/lib/useSocket.ts` 훅 사용
+
+## Key Components
+ succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+codex
+I’ve got the repo rules and component conventions. Next I’m checking the two target components and then I’ll record this task in `tasks/todo.md` before editing.
+exec
+/bin/bash -lc "sed -n '140,280p' src/components/terminal/TerminalPane.tsx" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktreeexec
+/bin/bash -lc "sed -n '340,540p' src/components/dashboard/BorderlessWorkspace.tsx" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+      setKeyboardInset(0);
+      return;
+    }
+
+    const viewport = window.visualViewport;
+    if (!viewport) {
+      setKeyboardInset(0);
+      return;
+    }
+
+    const updateInset = () => {
+      const occupied = Math.max(
+        0,
+        window.innerHeight - viewport.height - viewport.offsetTop,
+      );
+      setKeyboardInset(Math.round(occupied));
+    };
+
+    updateInset();
+    viewport.addEventListener("resize", updateInset);
+ succeeded in 0ms:
+    }
+
+    if (tab.kind === "file-view") {
+      return (
+        <FileEditor
+          key={tab.id}
+          projectId={tab.projectId}
+          filePath={tab.filePath}
+          initialContent={tab.fileContent}
+          onClose={onCloseFile}
+        />
+      );
+    }
+
+    if (tab.kind === "browser") {
+      return (
+        <div key={tab.id} className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
+          <div className="flex items-center gap-2 border-b border-neutral-800 bg-neutral-900/80 px-3 py-1.5">
+            <span className="text-[10px] font-medium uppercase tracking-wide text-neutral-500">Browser</span>
+            <span className="truncate text-xs text-neutral-400">{tab.url}</span>
+codex
+I’ve confirmed the requested class changes are isolated and shouldn’t affect the drag/drop or focus handlers. I’m updating `tasks/todo.md` now, then I’ll patch the two components and verify with `npx tsc --noEmit`.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -25,2 +26,8 @@
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+apply_patch(auto_approved=true) exited 0 in 16ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+I’m applying the requested style reductions directly now: outer frame cleanup in `BorderlessWorkspace`, compact tab padding, and the smaller `TerminalPane` radii.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/terminal/TerminalPane.tsx
+@@ -171,3 +171,3 @@
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+@@ -231,3 +231,3 @@
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -386,3 +386,3 @@
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+@@ -457,3 +457,3 @@
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+@@ -467,3 +467,3 @@
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+apply_patch(auto_approved=true) exited 0 in 12ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/terminal/TerminalPane.tsx
+file update:
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+The requested class changes are in place. I’m running the TypeScript check now, then I’ll update task tracking and add the required work note if this repo expects it for even small UI refactors.
+exec
+/bin/bash -lc 'git diff -- src/components/dashboard/BorderlessWorkspace.tsx src/components/terminal/TerminalPane.tsx tasks/todo.md' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c13198..a449589 100644
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@ export default function BorderlessWorkspace({
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@ export default function BorderlessWorkspace({
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktreefile update:
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+ succeeded in 3.31s:
+
+file update:
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+`npx tsc --noEmit` passed cleanly. I’m finishing the required bookkeeping now: marking the task complete in `tasks/todo.md` and adding a small `skill_graph` refactor note so the work is recorded consistently with repo policy.
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/refactor/_TEMPLATE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktreeexec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+# [리팩토링 제목] — YYYY-MM-DD
+
+> **상태**: 🔴 계획 / 🟡 진행중 / 🟢 완료
+> **범위**: 소규모 / 중규모 / 대규모
+> **keywords**:
+
+---
+
+## 동기
+
+<!-- 왜 리팩토링이 필요한가 (기술 부채, 성능, 가독성 등) -->
+
+## Before / After
+
+### Before
+```
+// 기존 구조 또는 코드
+```
+
+### After
+ succeeded in 0ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+file update:
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..304ed55a4dfde752c663535586d3ccf4d303c94c
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+I found the note template and index structure. I’m adding a minimal refactor note plus one index entry, then I’ll close out `tasks/todo.md` with the verification result.
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+# BorderlessWorkspace + TerminalPane border cleanup — 2026-03-23
+
+> **상태**: 🟢 완료
+> **범위**: 소규모
+> **keywords**: `workspace` `terminal` `dashboard` `ui-polish` `border-radius`
+
+---
+
+## 동기
+
+Borderless workspace와 terminal pane의 외곽 장식 레이어가 내부 패널 보더와 중복되어 시각적으로 과했고, pane radius도 현재 레이아웃 대비 크게 설정되어 있었다.
+
+## Before / After
+
+### Before
+```tsx
+<div className="... rounded-xl border border-neutral-800 bg-neutral-950">
+<section className={active ? "border-cyan-400 ..." : "border-neutral-800"} />
+<div className="... rounded-2xl border bg-neutral-950">
+```
+
+### After
+```tsx
+<div className="... bg-neutral-950">
+<section className={active ? "border-cyan-400 ..." : "border-transparent"} />
+<div className="... rounded-lg border bg-neutral-950">
+```
+
+## 변경 내역
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/components/dashboard/BorderlessWorkspace.tsx` | 외곽 보더/라운드 제거, 탭 바 패딩 축소, 비활성 패널 보더 투명 처리 |
+| `src/components/terminal/TerminalPane.tsx` | pane radius를 `rounded-lg`로 축소, 드롭 인디케이터 radius를 `rounded-md`로 조정 |
+
+## 검증
+
+- [x] 기존 drag-drop/focus/keyboard 핸들러 변경 없음 확인
+- [x] `npx tsc --noEmit` 통과
+
+---
+
+## 관련 노트
+- `features/2026-03-12_frontend-component-specification.md`
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] BorderlessWorkspace + TerminalPane border cleanup
++- [x] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -28,5 +28,5 @@
+ 
+-- [ ] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
+-- [ ] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
+-- [ ] `npx tsc --noEmit` 검증 후 결과 기록
++- [x] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [x] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [x] `npx tsc --noEmit` 검증 후 결과 기록
+ 
+@@ -88,2 +88,8 @@
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- `BorderlessWorkspace` 외곽 장식 보더/라운드를 제거하고 비활성 패널 보더를 투명 처리해 중복 레이어를 줄임
++- 워크스페이스 탭 바 패딩과 `TerminalPane`/드롭 인디케이터 라운드 반경을 더 컴팩트하게 맞춤
++- `npx tsc --noEmit` 통과
++
+ ### Phase 1 (2026-02-27)
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/skill_graph/index.md
+@@ -141,2 +141,5 @@
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
++| **workspace**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **ui-polish**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **border-radius**   | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
+ | **thumb-zone**      | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -194,2 +197,3 @@
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | 🟢   | UI 장식 레이어 축소 | `workspace` `terminal` `dashboard` `ui-polish` `border-radius` |
+ 
+apply_patch(auto_approved=true) exited 0 in 29ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/tasks/todo.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/skill_graph/index.md
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..172924070c13543bfdd9db78e8a03f3f4f965cb3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -139,6 +139,9 @@
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
++| **workspace**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **ui-polish**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **border-radius**   | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
+ | **thumb-zone**      | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **streaming-markdown** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **skeleton-screen** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -192,6 +195,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | 🟢   | UI 장식 레이어 축소 | `workspace` `terminal` `dashboard` `ui-polish` `border-radius` |
+ 
+ ### devops/
+ 
+diff --git a/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694b6d30b95a8aacc878bb886e91efc32b2161d1
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+@@ -0,0 +1,44 @@
++# BorderlessWorkspace + TerminalPane border cleanup — 2026-03-23
++
++> **상태**: 🟢 완료
++> **범위**: 소규모
++> **keywords**: `workspace` `terminal` `dashboard` `ui-polish` `border-radius`
++
++---
++
++## 동기
++
++Borderless workspace와 terminal pane의 외곽 장식 레이어가 내부 패널 보더와 중복되어 시각적으로 과했고, pane radius도 현재 레이아웃 대비 크게 설정되어 있었다.
++
++## Before / After
++
++### Before
++```tsx
++<div className="... rounded-xl border border-neutral-800 bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-neutral-800"} />
++<div className="... rounded-2xl border bg-neutral-950">
++```
++
++### After
++```tsx
++<div className="... bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-transparent"} />
++<div className="... rounded-lg border bg-neutral-950">
++```
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/dashboard/BorderlessWorkspace.tsx` | 외곽 보더/라운드 제거, 탭 바 패딩 축소, 비활성 패널 보더 투명 처리 |
++| `src/components/terminal/TerminalPane.tsx` | pane radius를 `rounded-lg`로 축소, 드롭 인디케이터 radius를 `rounded-md`로 조정 |
++
++## 검증
++
++- [x] 기존 drag-drop/focus/keyboard 핸들러 변경 없음 확인
++- [x] `npx tsc --noEmit` 통과
++
++---
++
++## 관련 노트
++- `features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..7ec1960e82db81fb99ed20aac215ed3c0b069852
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [x] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [x] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [x] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -79,6 +86,12 @@
+ - 모바일 chat terminal에 전송 중 상태와 실패 메시지 추가
+ - `npx tsc --noEmit` 실행 시 오류 출력 없이 종료
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- `BorderlessWorkspace` 외곽 장식 보더/라운드를 제거하고 비활성 패널 보더를 투명 처리해 중복 레이어를 줄임
++- 워크스페이스 탭 바 패딩과 `TerminalPane`/드롭 인디케이터 라운드 반경을 더 컴팩트하게 맞춤
++- `npx tsc --noEmit` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..172924070c13543bfdd9db78e8a03f3f4f965cb3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -139,6 +139,9 @@
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
++| **workspace**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **ui-polish**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **border-radius**   | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
+ | **thumb-zone**      | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **streaming-markdown** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **skeleton-screen** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -192,6 +195,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | 🟢   | UI 장식 레이어 축소 | `workspace` `terminal` `dashboard` `ui-polish` `border-radius` |
+ 
+ ### devops/
+ 
+diff --git a/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694b6d30b95a8aacc878bb886e91efc32b2161d1
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+@@ -0,0 +1,44 @@
++# BorderlessWorkspace + TerminalPane border cleanup — 2026-03-23
++
++> **상태**: 🟢 완료
++> **범위**: 소규모
++> **keywords**: `workspace` `terminal` `dashboard` `ui-polish` `border-radius`
++
++---
++
++## 동기
++
++Borderless workspace와 terminal pane의 외곽 장식 레이어가 내부 패널 보더와 중복되어 시각적으로 과했고, pane radius도 현재 레이아웃 대비 크게 설정되어 있었다.
++
++## Before / After
++
++### Before
++```tsx
++<div className="... rounded-xl border border-neutral-800 bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-neutral-800"} />
++<div className="... rounded-2xl border bg-neutral-950">
++```
++
++### After
++```tsx
++<div className="... bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-transparent"} />
++<div className="... rounded-lg border bg-neutral-950">
++```
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/dashboard/BorderlessWorkspace.tsx` | 외곽 보더/라운드 제거, 탭 바 패딩 축소, 비활성 패널 보더 투명 처리 |
++| `src/components/terminal/TerminalPane.tsx` | pane radius를 `rounded-lg`로 축소, 드롭 인디케이터 radius를 `rounded-md`로 조정 |
++
++## 검증
++
++- [x] 기존 drag-drop/focus/keyboard 핸들러 변경 없음 확인
++- [x] `npx tsc --noEmit` 통과
++
++---
++
++## 관련 노트
++- `features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..7ec1960e82db81fb99ed20aac215ed3c0b069852
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [x] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [x] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [x] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -79,6 +86,12 @@
+ - 모바일 chat terminal에 전송 중 상태와 실패 메시지 추가
+ - `npx tsc --noEmit` 실행 시 오류 출력 없이 종료
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- `BorderlessWorkspace` 외곽 장식 보더/라운드를 제거하고 비활성 패널 보더를 투명 처리해 중복 레이어를 줄임
++- 워크스페이스 탭 바 패딩과 `TerminalPane`/드롭 인디케이터 라운드 반경을 더 컴팩트하게 맞춤
++- `npx tsc --noEmit` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+
+exec
+/bin/bash -lc "nl -ba src/components/terminal/TerminalPane.tsx | sed -n '165,245p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktreeexec
+/bin/bash -lc "nl -ba src/components/dashboard/BorderlessWorkspace.tsx | sed -n '380,490p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+   380	    setActivePanel(keepPanel);
+   381	  };
+   382	
+   383	  const renderTabBar = (
+   384	    panelSide: PanelSide,
+   385	    activeTabId: string | null,
+   386	  ) => (
+   387	    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+   388	      <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+   389	        {layoutMode === "split"
+   390	          ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+   391	          : "Workspace"}
+   392	      </span>
+   393	      <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+   394	        {tabs.length === 0 ? (
+   395	          <span className="text-[11px] text-neutral-500">No workspace</span>
+   396	        ) : (
+   397	          tabs.map((tab) => (
+   398	            <span
+   399	              key={`${panelSide}-ws-${tab.id}`}
+ succeeded in 0ms:
+   165	      viewport.removeEventListener("scroll", updateInset);
+   166	      window.removeEventListener("resize", updateInset);
+   167	    };
+   168	  }, [keyboardEnabled]);
+   169	
+   170	  return (
+   171	    <div
+   172	      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+   173	        needsAttention && !isActive
+   174	          ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+   175	          : isActive || isDropTarget
+   176	            ? "border-neutral-800 ring-1 ring-inset"
+   177	            : "border-neutral-800"
+   178	      }`}
+   179	      style={
+   180	        isDropTarget
+   181	          ? { boxShadow: "inset 0 0 0 2px #38bdf8" }
+   182	          : needsAttention && !isActive
+   183	            ? { boxShadow: "inset 0 0 0 1px rgba(245,158,11,0.4), 0 0 8px rgba(245,158,11,0.15)" }
+   184	            : isActive && projectColor
+exec
+/bin/bash -lc "nl -ba tasks/todo.md | sed -n '1,140p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree succeeded in 0ms:
+     1	# Tasks — Todo
+     2	
+     3	## 현재 작업
+     4	
+     5	- [x] BorderlessWorkspace + TerminalPane border cleanup
+     6	- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+     7	- [x] Phase 1: 인프라 구축
+     8	- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+     9	- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+    10	
+    11	## 이번 세션 (2026-03-12)
+    12	
+    13	### YOLO 모드 버그 수정 + 세션별 YOLO
+    14	
+    15	**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+    16	
+    17	- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+    18	- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+    19	- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+    20	- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..172924070c13543bfdd9db78e8a03f3f4f965cb3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -139,6 +139,9 @@
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
++| **workspace**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **ui-polish**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **border-radius**   | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
+ | **thumb-zone**      | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **streaming-markdown** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **skeleton-screen** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -192,6 +195,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | 🟢   | UI 장식 레이어 축소 | `workspace` `terminal` `dashboard` `ui-polish` `border-radius` |
+ 
+ ### devops/
+ 
+diff --git a/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694b6d30b95a8aacc878bb886e91efc32b2161d1
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+@@ -0,0 +1,44 @@
++# BorderlessWorkspace + TerminalPane border cleanup — 2026-03-23
++
++> **상태**: 🟢 완료
++> **범위**: 소규모
++> **keywords**: `workspace` `terminal` `dashboard` `ui-polish` `border-radius`
++
++---
++
++## 동기
++
++Borderless workspace와 terminal pane의 외곽 장식 레이어가 내부 패널 보더와 중복되어 시각적으로 과했고, pane radius도 현재 레이아웃 대비 크게 설정되어 있었다.
++
++## Before / After
++
++### Before
++```tsx
++<div className="... rounded-xl border border-neutral-800 bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-neutral-800"} />
++<div className="... rounded-2xl border bg-neutral-950">
++```
++
++### After
++```tsx
++<div className="... bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-transparent"} />
++<div className="... rounded-lg border bg-neutral-950">
++```
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/dashboard/BorderlessWorkspace.tsx` | 외곽 보더/라운드 제거, 탭 바 패딩 축소, 비활성 패널 보더 투명 처리 |
++| `src/components/terminal/TerminalPane.tsx` | pane radius를 `rounded-lg`로 축소, 드롭 인디케이터 radius를 `rounded-md`로 조정 |
++
++## 검증
++
++- [x] 기존 drag-drop/focus/keyboard 핸들러 변경 없음 확인
++- [x] `npx tsc --noEmit` 통과
++
++---
++
++## 관련 노트
++- `features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..7ec1960e82db81fb99ed20aac215ed3c0b069852
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [x] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [x] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [x] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -79,6 +86,12 @@
+ - 모바일 chat terminal에 전송 중 상태와 실패 메시지 추가
+ - `npx tsc --noEmit` 실행 시 오류 출력 없이 종료
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- `BorderlessWorkspace` 외곽 장식 보더/라운드를 제거하고 비활성 패널 보더를 투명 처리해 중복 레이어를 줄임
++- 워크스페이스 탭 바 패딩과 `TerminalPane`/드롭 인디케이터 라운드 반경을 더 컴팩트하게 맞춤
++- `npx tsc --noEmit` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+
+codex
+Removed the redundant outer decoration and tightened the pane radii without touching the existing drag/drop, focus, or keyboard handlers.
+
+In [BorderlessWorkspace.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx#L387), the tab bar padding is now `px-1.5 py-0.5`, and in [BorderlessWorkspace.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx#L458) the outer wrapper no longer has the `rounded-xl border border-neutral-800` layer. The inactive panel border was changed to transparent at [BorderlessWorkspace.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx#L465).
+
+In [TerminalPane.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/terminal/TerminalPane.tsx#L172), the pane radius is now `rounded-lg`, and the drop indicator was updated to `rounded-md` at [TerminalPane.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/terminal/TerminalPane.tsx#L232).
+
+Task tracking was updated in [tasks/todo.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/tasks/todo.md#L5), and the repo-required note was added at [2026-03-23_workspace-terminal-border-cleanup.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md).
+
+Verification: `npx tsc --noEmit` passed.
+file update:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..172924070c13543bfdd9db78e8a03f3f4f965cb3
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -139,6 +139,9 @@
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
++| **workspace**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **ui-polish**       | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
++| **border-radius**   | [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | refactor |
+ | **thumb-zone**      | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **streaming-markdown** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **skeleton-screen** | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -192,6 +195,7 @@
+ | 문서                                                                       | 상태 | 영향            | 키워드                                                                                   |
+ | -------------------------------------------------------------------------- | ---- | --------------- | ---------------------------------------------------------------------------------------- |
+ | [최근 5파일 단순화](refactor/2026-03-01_simplify-recent.md)               | 🟢   | 200줄 감소      | `interceptor` `sessionManager` `MultiTerminal` `ProjectHarnessPanel` `Dashboard` 중복제거 |
++| [BorderlessWorkspace + TerminalPane border cleanup](refactor/2026-03-23_workspace-terminal-border-cleanup.md) | 🟢   | UI 장식 레이어 축소 | `workspace` `terminal` `dashboard` `ui-polish` `border-radius` |
+ 
+ ### devops/
+ 
+diff --git a/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..694b6d30b95a8aacc878bb886e91efc32b2161d1
+--- /dev/null
++++ b/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md
+@@ -0,0 +1,44 @@
++# BorderlessWorkspace + TerminalPane border cleanup — 2026-03-23
++
++> **상태**: 🟢 완료
++> **범위**: 소규모
++> **keywords**: `workspace` `terminal` `dashboard` `ui-polish` `border-radius`
++
++---
++
++## 동기
++
++Borderless workspace와 terminal pane의 외곽 장식 레이어가 내부 패널 보더와 중복되어 시각적으로 과했고, pane radius도 현재 레이아웃 대비 크게 설정되어 있었다.
++
++## Before / After
++
++### Before
++```tsx
++<div className="... rounded-xl border border-neutral-800 bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-neutral-800"} />
++<div className="... rounded-2xl border bg-neutral-950">
++```
++
++### After
++```tsx
++<div className="... bg-neutral-950">
++<section className={active ? "border-cyan-400 ..." : "border-transparent"} />
++<div className="... rounded-lg border bg-neutral-950">
++```
++
++## 변경 내역
++
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/components/dashboard/BorderlessWorkspace.tsx` | 외곽 보더/라운드 제거, 탭 바 패딩 축소, 비활성 패널 보더 투명 처리 |
++| `src/components/terminal/TerminalPane.tsx` | pane radius를 `rounded-lg`로 축소, 드롭 인디케이터 radius를 `rounded-md`로 조정 |
++
++## 검증
++
++- [x] 기존 drag-drop/focus/keyboard 핸들러 변경 없음 확인
++- [x] `npx tsc --noEmit` 통과
++
++---
++
++## 관련 노트
++- `features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/components/dashboard/BorderlessWorkspace.tsx b/src/components/dashboard/BorderlessWorkspace.tsx
+index 6c131985e7579e179584d6089340e04f23816cb6..a449589da224d0fbd5a770cd5b137a7081de3e95
+--- a/src/components/dashboard/BorderlessWorkspace.tsx
++++ b/src/components/dashboard/BorderlessWorkspace.tsx
+@@ -384,7 +384,7 @@
+     panelSide: PanelSide,
+     activeTabId: string | null,
+   ) => (
+-    <div className="flex items-center gap-2 bg-neutral-900 px-2 py-1 text-xs">
++    <div className="flex items-center gap-2 bg-neutral-900 px-1.5 py-0.5 text-xs">
+       <span className="rounded bg-neutral-800 px-1.5 py-0.5 text-neutral-300">
+         {layoutMode === "split"
+           ? panelSide === "left" ? firstLabel.charAt(0).toUpperCase() + firstLabel.slice(1) : secondLabel.charAt(0).toUpperCase() + secondLabel.slice(1)
+@@ -455,7 +455,7 @@
+   const isHorizontalSplit = splitDirection === "horizontal";
+ 
+   return (
+-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950">
++    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-neutral-950">
+       <div className="min-h-0 flex-1 overflow-hidden">
+         <div className={`flex h-full w-full overflow-hidden ${
+           layoutMode === "split" && !isHorizontalSplit ? "flex-col" : "flex-row"
+@@ -465,7 +465,7 @@
+               className={`min-h-0 min-w-0 overflow-hidden border ${
+                 activePanel === "left"
+                   ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
+-                  : "border-neutral-800"
++                  : "border-transparent"
+               }`}
+               style={{
+                 flex: layoutMode === "split" ? `1 1 ${splitRatio * 100}%` : "1 1 100%",
+diff --git a/src/components/terminal/TerminalPane.tsx b/src/components/terminal/TerminalPane.tsx
+index 2806f80249908781a725efd6cc73dbde2734ae84..01ba76688ea5bca2fcf4b480cc64f5169424329f
+--- a/src/components/terminal/TerminalPane.tsx
++++ b/src/components/terminal/TerminalPane.tsx
+@@ -169,7 +169,7 @@
+ 
+   return (
+     <div
+-      className={`relative flex h-full w-full flex-col rounded-2xl border bg-neutral-950 ${
++      className={`relative flex h-full w-full flex-col rounded-lg border bg-neutral-950 ${
+         needsAttention && !isActive
+           ? "border-amber-500/60 ring-1 ring-inset ring-amber-500/40"
+           : isActive || isDropTarget
+@@ -229,7 +229,7 @@
+     >
+       {isDropTarget && dropRegion && (
+         <div
+-          className={`pointer-events-none absolute z-10 rounded-xl bg-sky-400/25 transition-all ${
++          className={`pointer-events-none absolute z-10 rounded-md bg-sky-400/25 transition-all ${
+             dropRegion === "center"
+               ? "inset-2"
+               : dropRegion === "top"
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..7ec1960e82db81fb99ed20aac215ed3c0b069852
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] BorderlessWorkspace + TerminalPane border cleanup
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- [x] `BorderlessWorkspace.tsx` 외곽 래퍼/탭 바/패널 보더 스타일 정리
++- [x] `TerminalPane.tsx` 라운드 반경 및 드롭 인디케이터 반경 정리
++- [x] `npx tsc --noEmit` 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -79,6 +86,12 @@
+ - 모바일 chat terminal에 전송 중 상태와 실패 메시지 추가
+ - `npx tsc --noEmit` 실행 시 오류 출력 없이 종료
+ 
++### BorderlessWorkspace + TerminalPane border cleanup (2026-03-23)
++
++- `BorderlessWorkspace` 외곽 장식 보더/라운드를 제거하고 비활성 패널 보더를 투명 처리해 중복 레이어를 줄임
++- 워크스페이스 탭 바 패딩과 `TerminalPane`/드롭 인디케이터 라운드 반경을 더 컴팩트하게 맞춤
++- `npx tsc --noEmit` 통과
++
+ ### Phase 1 (2026-02-27)
+ 
+ - Custom Server: `tsx --watch server.ts` — Next.js + Socket.io 동시 서빙
+
+tokens used
+27,897
+Removed the redundant outer decoration and tightened the pane radii without touching the existing drag/drop, focus, or keyboard handlers.
+
+In [BorderlessWorkspace.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx#L387), the tab bar padding is now `px-1.5 py-0.5`, and in [BorderlessWorkspace.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx#L458) the outer wrapper no longer has the `rounded-xl border border-neutral-800` layer. The inactive panel border was changed to transparent at [BorderlessWorkspace.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/dashboard/BorderlessWorkspace.tsx#L465).
+
+In [TerminalPane.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/terminal/TerminalPane.tsx#L172), the pane radius is now `rounded-lg`, and the drop indicator was updated to `rounded-md` at [TerminalPane.tsx](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/src/components/terminal/TerminalPane.tsx#L232).
+
+Task tracking was updated in [tasks/todo.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/tasks/todo.md#L5), and the repo-required note was added at [2026-03-23_workspace-terminal-border-cleanup.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-02/worktree/skill_graph/refactor/2026-03-23_workspace-terminal-border-cleanup.md).
+
+Verification: `npx tsc --noEmit` passed.

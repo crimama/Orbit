@@ -110,9 +110,14 @@ export function registerTerminalHandlers(
 
     // Check all backends (local + remote)
     const existingBackend = getPtyBackend(sessionId);
-    const running =
-      existingBackend !== null ||
-      (await sessionManager.ensureSessionRunning(sessionId));
+    console.log(`[session-attach] ${sessionId} existingBackend=${!!existingBackend} ptyManager.has=${ptyManager.has(sessionId)}`);
+
+    let running = existingBackend !== null;
+    if (!running) {
+      console.log(`[session-attach] ${sessionId} calling ensureSessionRunning...`);
+      running = await sessionManager.ensureSessionRunning(sessionId);
+      console.log(`[session-attach] ${sessionId} ensureSessionRunning=${running} ptyManager.has=${ptyManager.has(sessionId)}`);
+    }
 
     if (!running) {
       callback({ ok: false, error: "Session not found or not running" });

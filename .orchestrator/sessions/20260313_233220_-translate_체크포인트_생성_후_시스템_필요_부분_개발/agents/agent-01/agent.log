@@ -1,0 +1,3584 @@
+# Agent Log: agent-01
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: Socket Lifecycle + Page Visibility
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+usePageVisibility 훅 생성 (src/lib/hooks/usePageVisibility.ts) + useSocket.ts에 통합. 30초 이상 백그라운드 시 socket.disconnect(), 복귀 시 socket.connect(). 기존 useSocket 인터페이스 유지하면서 backgrounded 상태 추가.
+
+## Target Files
+- `src/lib/hooks/usePageVisibility.ts`
+- `src/lib/useSocket.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] 30초+ 탭전환 시 소켓 끊김
+- [ ] 복귀 시 2초 내 재연결
+- [ ] 짧은 전환은 유지
+- [ ] TypeScript strict 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree
+# Started: 2026-03-13T23:38:54.816844
+
+OpenAI Codex v0.114.0 (research preview)
+--------
+workdir: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019ce7a2-d932-76c1-b466-c541e9285ccf
+--------
+user
+Read and execute the task described below.
+
+# Task: Socket Lifecycle + Page Visibility
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+usePageVisibility 훅 생성 (src/lib/hooks/usePageVisibility.ts) + useSocket.ts에 통합. 30초 이상 백그라운드 시 socket.disconnect(), 복귀 시 socket.connect(). 기존 useSocket 인터페이스 유지하면서 backgrounded 상태 추가.
+
+## Target Files
+- `src/lib/hooks/usePageVisibility.ts`
+- `src/lib/useSocket.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] 30초+ 탭전환 시 소켓 끊김
+- [ ] 복귀 시 2초 내 재연결
+- [ ] 짧은 전환은 유지
+- [ ] TypeScript strict 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+요청된 작업은 `usePageVisibility` 훅을 추가하고 `useSocket`에 통합해, 30초 이상 백그라운드일 때만 소켓을 끊고 복귀 시 재연결되도록 만드는 것입니다. 먼저 프로젝트 지침 파일과 관련 구현을 읽고, `tasks/todo.md`를 이번 작업 기준으로 갱신한 뒤 현재 소켓 로직을 확인하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+codex
+프로젝트 지침을 확인했고, 이번 저장소는 작업 전 `tasks/todo.md`에 현재 작업과 계획을 명시적으로 남겨야 합니다. 지금 그 항목을 추가한 다음, `useSocket`과 기존 훅 구조를 읽어 통합 지점을 확인하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -25,2 +26,9 @@
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,260p' src/lib/useSocket.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+
+export function useSocket() {
+  const socketRef = useRef<OrbitSocket | null>(null);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+    const socket = getSocket();
+    socketRef.current = socket;
+
+    function onConnect() {
+      setConnected(true);
+    }
+    function onDisconnect() {
+      setConnected(false);
+    }
+
+exec
+/bin/bash -lc "rg --files src/lib src | sed -n '1,200p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+src/lib/socketClient.ts
+src/lib/hooks/useMobile.ts
+src/lib/hooks/useSessionMetrics.ts
+src/lib/hooks/usePendingApprovals.ts
+src/lib/shellQuote.ts
+src/lib/AGENTS.md
+src/lib/types.ts
+src/lib/constants.ts
+src/lib/paneTree.ts
+src/lib/useSocket.ts
+src/lib/prisma.ts
+src/components/AGENTS.md
+src/server/observability/eventExtractor.ts
+src/server/observability/sessionMetrics.ts
+src/server/AGENTS.md
+src/components/mobile/VirtualKeyboard.tsx
+src/components/mobile/MobileLayout.tsx
+src/server/ssh/deltaStream.ts
+src/server/ssh/credentials.ts
+src/server/ssh/sshManager.ts
+exec
+/bin/bash -lc "rg -n \"useSocket\\(|backgrounded|visibilitychange|document.hidden|socket.connect|socket.disconnect\" src -S" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+src/lib/hooks/useSessionMetrics.ts:8:  const { socket, connected } = useSocket();
+src/lib/hooks/usePendingApprovals.ts:8:  const { socket, connected } = useSocket();
+src/components/mobile/MobileLayout.tsx:39:    document.addEventListener("visibilitychange", syncStatusBarState);
+src/components/mobile/MobileLayout.tsx:48:      document.removeEventListener("visibilitychange", syncStatusBarState);
+src/lib/useSocket.ts:6:export function useSocket() {
+src/lib/useSocket.ts:24:    if (socket.connected) {
+src/lib/useSocket.ts:27:      socket.connect();
+src/components/graph/LiveTrace.tsx:15:  const { socket } = useSocket();
+src/components/dashboard/Dashboard.tsx:111:  const { socket } = useSocket();
+src/components/dashboard/Dashboard.tsx:187:          document.hidden &&
+src/components/terminal/TerminalView.tsx:27:  const { socket: fallbackSocket, connected: fallbackConnected } = useSocket();
+src/components/terminal/SessionChatbotView.tsx:74:  const { socket, connected } = useSocket();
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+현재 `useSocket`은 단순히 mount 시 연결만 보장하고 있고, 페이지 가시성이나 장기 백그라운드 개념은 없습니다. 다음으로 소켓 클라이언트 설정과 주요 소비처를 읽어서 `backgrounded`를 추가해도 기존 사용처가 깨지지 않게 맞추겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' src/lib/hooks/usePendingApprovals.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/lib/socketClient.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+"use client";
+
+import { useEffect, useState, useCallback } from "react";
+import { useSocket } from "@/lib/useSocket";
+import type { PendingApproval } from "@/lib/types";
+
+export function usePendingApprovals() {
+  const { socket, connected } = useSocket();
+  const [pendingApprovals, setPendingApprovals] = useState<PendingApproval[]>(
+    [],
+  );
+
+  useEffect(() => {
+    if (!socket || !connected) return;
+
+    function onPending(approval: PendingApproval) {
+      setPendingApprovals((prev) => [...prev, approval]);
+    }
+
+    function onResolved(
+ succeeded in 0ms:
+import { io, Socket } from "socket.io-client";
+import type { ServerToClientEvents, ClientToServerEvents } from "@/lib/types";
+import { SOCKET_PATH } from "@/lib/constants";
+
+export type OrbitSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
+
+let socket: OrbitSocket | null = null;
+
+function readCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const parts = document.cookie.split(";");
+  for (const part of parts) {
+    const [k, ...rest] = part.trim().split("=");
+    if (k === name) return decodeURIComponent(rest.join("="));
+  }
+  return null;
+}
+
+function getAccessToken(): string {
+  return (
+exec
+/bin/bash -lc "sed -n '1,180p' src/components/terminal/SessionChatbotView.tsx" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/lib/hooks/useSessionMetrics.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+"use client";
+
+import { useEffect, useState } from "react";
+import { useSocket } from "@/lib/useSocket";
+import type { SessionMetricsSnapshot, SessionEvent } from "@/lib/types";
+
+export function useSessionMetrics(sessionId: string | null) {
+  const { socket, connected } = useSocket();
+  const [snapshot, setSnapshot] = useState<SessionMetricsSnapshot | null>(null);
+
+  useEffect(() => {
+    if (!socket || !connected || !sessionId) return;
+
+    socket.emit("metrics-subscribe", sessionId, (initial) => {
+      setSnapshot(initial);
+    });
+
+    function onMetrics(s: SessionMetricsSnapshot) {
+      setSnapshot(s);
+    }
+ succeeded in 0ms:
+"use client";
+
+import {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import pako from "pako";
+import { useSocket } from "@/lib/useSocket";
+import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
+import type {
+  ApiResponse,
+  ReplaceSessionChatMessagesRequest,
+  SessionChatMessageInfo,
+} from "@/lib/types";
+
+type ChatRole = "user" | "assistant";
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '180,360p' src/components/terminal/SessionChatbotView.tsx" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+      if (!res.ok) {
+        setError(res.error ?? "Failed to attach session");
+        return;
+      }
+      setAttached(true);
+      setError(null);
+    });
+
+    socket.on("terminal-data", onTerminalData);
+    socket.on("terminal-data-compressed", onCompressedData);
+    socket.on("session-exit", onSessionExit);
+
+    return () => {
+      socket.off("terminal-data", onTerminalData);
+      socket.off("terminal-data-compressed", onCompressedData);
+      socket.off("session-exit", onSessionExit);
+      socket.emit("session-detach");
+    };
+  }, [socket, connected, sessionId]);
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+`useSocket`은 전역 singleton 소켓을 여러 컴포넌트가 공유하는 구조라, 연결 제어를 mount/unmount가 아니라 문서 가시성 상태 기준으로만 하도록 분리하는 편이 안전합니다. `src/lib` 하위 지침도 읽고, 그 기준에 맞춰 훅 추가와 통합 패치를 진행하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' src/lib/AGENTS.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+# Shared Library Rules
+
+## Architecture Boundary
+- 이 디렉토리는 최하위 의존 계층. 다른 `src/` 디렉토리를 import하지 마라.
+- `src/server/`, `src/components/`, `src/app/` 모두 금지.
+- 오직 외부 패키지와 이 디렉토리 내부 파일만 import 가능.
+
+## Files
+- `types.ts` — 모든 Socket/API/모델 타입 (단일 진실 소스)
+- `constants.ts` — 설정값 상수 (PTY, GC, SSH, Graph, Delta, Interceptor)
+- `prisma.ts` — PrismaClient 싱글턴
+- `socketClient.ts` — Socket.io 클라이언트 래퍼
+- `useSocket.ts` — React Socket.io 훅
+- `hooks/` — 공유 React 훅
+
+## Conventions
+- 타입 추가 시 `types.ts`에 Phase 주석 섹션 구분
+- 상수 추가 시 `constants.ts`에 관련 Phase 섹션에 추가
+- 새 파일은 반드시 camelCase
+exec
+/bin/bash -lc 'ls -la src/lib/hooks' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+total 20
+drwxrwxr-x 2 hun hun 4096 Mar 13 23:38 .
+drwxrwxr-x 3 hun hun 4096 Mar 13 23:38 ..
+-rw-rw-r-- 1 hun hun 2718 Mar 13 23:38 useMobile.ts
+-rw-rw-r-- 1 hun hun 1546 Mar 13 23:38 usePendingApprovals.ts
+-rw-rw-r-- 1 hun hun 1264 Mar 13 23:38 useSessionMetrics.ts
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+`src/lib` 규칙상 내부 의존만 사용하면 되고, 훅 디렉터리도 간단한 client hook 위주입니다. 지금 `usePageVisibility`를 추가하고, `useSocket`을 연결 관리/리스너 등록으로 분리해 `backgrounded`를 반환하도록 수정하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts
+@@ -3,2 +3,3 @@
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+@@ -8,2 +9,3 @@
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+@@ -25,3 +27,3 @@
+       setConnected(true);
+-    } else {
++    } else if (!backgrounded) {
+       socket.connect();
+@@ -33,5 +35,20 @@
+     };
+-  }, []);
++  }, [backgrounded]);
++
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
+ 
+-  return { socket: socketRef.current, connected };
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/hooks/usePageVisibility.ts
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
+
+function readVisibilityState(): DocumentVisibilityState {
+  if (typeof document === "undefined") {
+    return "visible";
+  }
+
+  return document.visibilityState;
+}
+
+export function usePageVisibility() {
+  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
+    readVisibilityState,
+  );
+  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
+  const [backgrounded, setBackgrounded] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    function clearBackgroundTimer() {
+      if (!timeoutRef.current) return;
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
+    function handleVisibilityChange() {
+      const nextState = readVisibilityState();
+      setVisibilityState(nextState);
+
+      if (nextState === "hidden") {
+        const startedAt = Date.now();
+        setHiddenSince(startedAt);
+        clearBackgroundTimer();
+        timeoutRef.current = setTimeout(() => {
+          setBackgrounded(true);
+        }, BACKGROUND_DISCONNECT_DELAY_MS);
+        return;
+      }
+
+      clearBackgroundTimer();
+      setHiddenSince(null);
+      setBackgrounded(false);
+    }
+
+    handleVisibilityChange();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearBackgroundTimer();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, []);
+
+  return {
+    visibilityState,
+    hiddenSince,
+    backgrounded,
+    visible: visibilityState === "visible",
+  };
+}
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/hooks/usePageVisibility.ts
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..07411694398de64d47643b32088bfb807dab6294
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,7 +25,7 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
++    } else if (!backgrounded) {
+       socket.connect();
+     }
+ 
+@@ -31,7 +33,22 @@
+       socket.off("connect", onConnect);
+       socket.off("disconnect", onDisconnect);
+     };
+-  }, []);
++  }, [backgrounded]);
++
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
+ 
+-  return { socket: socketRef.current, connected };
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..07411694398de64d47643b32088bfb807dab6294
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,7 +25,7 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
++    } else if (!backgrounded) {
+       socket.connect();
+     }
+ 
+@@ -31,7 +33,22 @@
+       socket.off("connect", onConnect);
+       socket.off("disconnect", onDisconnect);
+     };
+-  }, []);
++  }, [backgrounded]);
++
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
+ 
+-  return { socket: socketRef.current, connected };
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+초안은 들어갔지만, `useSocket`의 이벤트 리스너는 배경 상태 변경마다 다시 붙을 필요가 없습니다. 리스너 수명주기와 연결 제어를 분리해 중복 재구독을 없앤 뒤 타입체크로 확인하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts
+@@ -27,4 +27,2 @@
+       setConnected(true);
+-    } else if (!backgrounded) {
+-      socket.connect();
+     }
+@@ -35,3 +33,3 @@
+     };
+-  }, [backgrounded]);
++  }, []);
+ 
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,220p' src/lib/useSocket.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/lib/hooks/usePageVisibility.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+
+export function useSocket() {
+  const socketRef = useRef<OrbitSocket | null>(null);
+  const [connected, setConnected] = useState(false);
+  const { backgrounded } = usePageVisibility();
+
+  useEffect(() => {
+    const socket = getSocket();
+    socketRef.current = socket;
+
+    function onConnect() {
+      setConnected(true);
+    }
+    function onDisconnect() {
+      setConnected(false);
+ succeeded in 0ms:
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
+
+function readVisibilityState(): DocumentVisibilityState {
+  if (typeof document === "undefined") {
+    return "visible";
+  }
+
+  return document.visibilityState;
+}
+
+export function usePageVisibility() {
+  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
+    readVisibilityState,
+  );
+  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
+  const [backgrounded, setBackgrounded] = useState(false);
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eb97e8ee02ec3c1d5c66d72c544bad65ca4c6c3f
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+구현은 끝났고, 이제 남은 핵심은 strict 타입 통과 여부입니다. `tasks/todo.md` 진행 상태를 갱신한 뒤 `npx tsc --noEmit`로 이번 변경이 실제로 깨지지 않는지 확인하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md
+@@ -28,5 +28,5 @@
+ 
+-- [ ] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
+-- [ ] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
+-- [ ] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
+ - [ ] TypeScript strict 검증 후 결과 기록
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..d9132cac2368629581dc3bdaf7a69c29d1979074
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..d9132cac2368629581dc3bdaf7a69c29d1979074
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreefile update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..d9132cac2368629581dc3bdaf7a69c29d1979074
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+ succeeded in 3.12s:
+
+codex
+타입체크가 백그라운드에서 계속 실행 중입니다. 결과를 확인하고, 통과하면 `tasks/todo.md`의 결과 섹션까지 마무리하겠습니다.
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..d9132cac2368629581dc3bdaf7a69c29d1979074
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "ls -la skill_graph && find skill_graph -maxdepth 2 -type f | sort | sed -n '1,200p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+total 56
+drwxrwxr-x  7 hun hun  4096 Mar 13 23:38 .
+drwxrwxr-x 12 hun hun  4096 Mar 13 23:41 ..
+drwxrwxr-x  2 hun hun  4096 Mar 13 23:38 bugfix
+drwxrwxr-x  2 hun hun  4096 Mar 13 23:38 decisions
+drwxrwxr-x  2 hun hun  4096 Mar 13 23:38 devops
+drwxrwxr-x  2 hun hun  4096 Mar 13 23:38 features
+-rw-rw-r--  1 hun hun 26651 Mar 13 23:38 index.md
+drwxrwxr-x  2 hun hun  4096 Mar 13 23:38 refactor
+skill_graph/bugfix/2026-03-12_mobile-command-send-execution.md
+skill_graph/bugfix/_TEMPLATE.md
+skill_graph/decisions/2026-02-27_skill-strategy.md
+skill_graph/decisions/2026-02-28_harness-engineering.md
+skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md
+skill_graph/decisions/2026-03-12_libghostty-terminal-ecosystem-research.md
+skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md
+skill_graph/decisions/_TEMPLATE.md
+skill_graph/devops/_TEMPLATE.md
+skill_graph/features/2026-02-27_phase1-infra.md
+skill_graph/features/2026-02-28_phase2-4-parallel.md
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..d9132cac2368629581dc3bdaf7a69c29d1979074
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/bugfix/2026-03-12_mobile-command-send-execution.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' skill_graph/bugfix/_TEMPLATE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+# 모바일 command send 미실행 — 2026-03-12
+
+> **심각도**: 🟠 Major
+> **상태**: 🟢 해결
+> **keywords**: mobile, terminal, session, command, pty
+
+---
+
+## 증상
+
+모바일 UI의 `Type command...` 입력창에서 텍스트를 입력하고 `Send`를 누르면,
+명령이 실행되기보다 터미널 pane 활성화만 일어나는 것처럼 보였고 PTY에서 실제 실행이 안정적으로 일어나지 않았다.
+
+## 원인
+
+모바일 chat terminal만 명령 전송을 `socket.emit("terminal-data", value + "\\r")` 경로에 직접 의존하고 있었다.
+이 경로는 해당 소켓의 attach 상태와 터치 시점에 민감했고, 데스크톱/다른 채팅형 입력 UI가 사용하는 서버 측 `sessionManager.sendInput()` 경로와도 분리되어 있었다.
+
+## 수정
+
+ succeeded in 0ms:
+# [버그 제목] — YYYY-MM-DD
+
+> **심각도**: 🔴 Critical / 🟠 Major / 🟡 Minor
+> **상태**: 🟡 조사중 / 🟢 해결
+> **keywords**:
+
+---
+
+## 증상
+
+<!-- 어떤 현상이 발생했는가 -->
+
+## 원인
+
+<!-- 근본 원인 분석 (root cause) -->
+
+## 수정
+
+### 변경 파일
+| 파일 | 변경 내용 |
+file update:
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..d9132cac2368629581dc3bdaf7a69c29d1979074
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [ ] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+지침상 이 정도 변경은 `skill_graph/` 기록까지 남겨야 해서, 이번 백그라운드 소켓 생명주기 변경을 짧게 문서화하고 인덱스에 연결하겠습니다. 그 후 작업 기록도 완료 상태로 정리합니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/skill_graph/index.md
+@@ -138,2 +138,6 @@
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
++| **socket**          | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **visibility**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **background**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **reconnect**       | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -178,2 +182,3 @@
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md) | 🟢   | 장기 백그라운드 연결 정리 | `socket` `visibility` `background` `reconnect` `session` |
+ 
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
++- [x] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -31,3 +31,3 @@
+ - [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
+-- [ ] TypeScript strict 검증 후 결과 기록
++- [x] TypeScript strict 검증 후 결과 기록
+ 
+@@ -75,2 +75,10 @@
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- `src/lib/hooks/usePageVisibility.ts` 추가: 30초 이상 `document.hidden` 상태일 때만 `backgrounded` 활성화
++- `src/lib/useSocket.ts`에서 `backgrounded` 통합: 장기 백그라운드 시 `socket.disconnect()`, 복귀 시 즉시 `socket.connect()`
++- 기존 `useSocket` 반환값은 유지하고 `backgrounded`만 추가
++- `npx tsc --noEmit` 통과
++- 실제 브라우저에서 30초 대기/복귀 수동 검증은 이번 턴에서 미실행
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+# Socket lifecycle + page visibility — 2026-03-13
+
+> **심각도**: 🟠 Major
+> **상태**: 🟢 해결
+> **keywords**: socket, visibility, background, reconnect, session
+
+---
+
+## 증상
+
+브라우저 탭이 장시간 백그라운드에 있어도 공용 Socket.io 클라이언트가 계속 연결을 유지했다.
+이 때문에 불필요한 연결이 남고, 복귀 시점을 명시적으로 제어할 수 없었다.
+
+## 원인
+
+`src/lib/useSocket.ts`는 mount 시점에만 singleton 소켓을 연결하고, 페이지 가시성 상태를 전혀 반영하지 않았다.
+짧은 탭 전환과 장기 백그라운드가 같은 상태로 취급되어 lifecycle 제어 지점이 없었다.
+
+## 수정
+
+### 변경 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/lib/hooks/usePageVisibility.ts` | 30초 백그라운드 기준 `backgrounded` 상태를 제공하는 공용 훅 추가 |
+| `src/lib/useSocket.ts` | 가시성 훅을 통합해 장기 백그라운드 시 `disconnect()`, 복귀 시 `connect()` 수행 |
+
+### 수정 내용
+```diff
++ const { backgrounded } = usePageVisibility();
++
++ if (backgrounded) {
++   socket.disconnect();
++   setConnected(false);
++   return;
++ }
++
++ if (!socket.connected) {
++   socket.connect();
++ }
+```
+
+## 검증
+
+- [x] 30초 이상 백그라운드 시에만 `backgrounded`가 `true`로 전환되도록 코드 경로 확인
+- [x] 복귀 시 `useSocket` effect가 즉시 `socket.connect()`를 호출하도록 확인
+- [x] `npx tsc --noEmit` 실행
+- [ ] 브라우저에서 30초 대기 포함 실사용 수동 검증
+
+---
+
+## 관련 노트
+- `../features/2026-02-27_phase1-infra.md`
+- `../decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
+apply_patch(auto_approved=true) exited 0 in 8ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/skill_graph/index.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md
+file update:
+diff --git a/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..53a99acc6668631d32b01dddc8b11c0f954abbe4
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+@@ -0,0 +1,53 @@
++# Socket lifecycle + page visibility — 2026-03-13
++
++> **심각도**: 🟠 Major
++> **상태**: 🟢 해결
++> **keywords**: socket, visibility, background, reconnect, session
++
++---
++
++## 증상
++
++브라우저 탭이 장시간 백그라운드에 있어도 공용 Socket.io 클라이언트가 계속 연결을 유지했다.
++이 때문에 불필요한 연결이 남고, 복귀 시점을 명시적으로 제어할 수 없었다.
++
++## 원인
++
++`src/lib/useSocket.ts`는 mount 시점에만 singleton 소켓을 연결하고, 페이지 가시성 상태를 전혀 반영하지 않았다.
++짧은 탭 전환과 장기 백그라운드가 같은 상태로 취급되어 lifecycle 제어 지점이 없었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/lib/hooks/usePageVisibility.ts` | 30초 백그라운드 기준 `backgrounded` 상태를 제공하는 공용 훅 추가 |
++| `src/lib/useSocket.ts` | 가시성 훅을 통합해 장기 백그라운드 시 `disconnect()`, 복귀 시 `connect()` 수행 |
++
++### 수정 내용
++```diff
+++ const { backgrounded } = usePageVisibility();
+++
+++ if (backgrounded) {
+++   socket.disconnect();
+++   setConnected(false);
+++   return;
+++ }
+++
+++ if (!socket.connected) {
+++   socket.connect();
+++ }
++```
++
++## 검증
++
++- [x] 30초 이상 백그라운드 시에만 `backgrounded`가 `true`로 전환되도록 코드 경로 확인
++- [x] 복귀 시 `useSocket` effect가 즉시 `socket.connect()`를 호출하도록 확인
++- [x] `npx tsc --noEmit` 실행
++- [ ] 브라우저에서 30초 대기 포함 실사용 수동 검증
++
++---
++
++## 관련 노트
++- `../features/2026-02-27_phase1-infra.md`
++- `../decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..bb84ba58d736bddf689695393048e3ab6b7c1d80
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -136,6 +136,10 @@
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
++| **socket**          | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **visibility**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **background**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **reconnect**       | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -176,6 +180,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md) | 🟢   | 장기 백그라운드 연결 정리 | `socket` `visibility` `background` `reconnect` `session` |
+ 
+ ### refactor/
+ 
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eecc6cf32da0f6ee93c57da50507ecb0007d99a3
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [x] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- `src/lib/hooks/usePageVisibility.ts` 추가: 30초 이상 `document.hidden` 상태일 때만 `backgrounded` 활성화
++- `src/lib/useSocket.ts`에서 `backgrounded` 통합: 장기 백그라운드 시 `socket.disconnect()`, 복귀 시 즉시 `socket.connect()`
++- 기존 `useSocket` 반환값은 유지하고 `backgrounded`만 추가
++- `npx tsc --noEmit` 통과
++- 실제 브라우저에서 30초 대기/복귀 수동 검증은 이번 턴에서 미실행
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..53a99acc6668631d32b01dddc8b11c0f954abbe4
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+@@ -0,0 +1,53 @@
++# Socket lifecycle + page visibility — 2026-03-13
++
++> **심각도**: 🟠 Major
++> **상태**: 🟢 해결
++> **keywords**: socket, visibility, background, reconnect, session
++
++---
++
++## 증상
++
++브라우저 탭이 장시간 백그라운드에 있어도 공용 Socket.io 클라이언트가 계속 연결을 유지했다.
++이 때문에 불필요한 연결이 남고, 복귀 시점을 명시적으로 제어할 수 없었다.
++
++## 원인
++
++`src/lib/useSocket.ts`는 mount 시점에만 singleton 소켓을 연결하고, 페이지 가시성 상태를 전혀 반영하지 않았다.
++짧은 탭 전환과 장기 백그라운드가 같은 상태로 취급되어 lifecycle 제어 지점이 없었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/lib/hooks/usePageVisibility.ts` | 30초 백그라운드 기준 `backgrounded` 상태를 제공하는 공용 훅 추가 |
++| `src/lib/useSocket.ts` | 가시성 훅을 통합해 장기 백그라운드 시 `disconnect()`, 복귀 시 `connect()` 수행 |
++
++### 수정 내용
++```diff
+++ const { backgrounded } = usePageVisibility();
+++
+++ if (backgrounded) {
+++   socket.disconnect();
+++   setConnected(false);
+++   return;
+++ }
+++
+++ if (!socket.connected) {
+++   socket.connect();
+++ }
++```
++
++## 검증
++
++- [x] 30초 이상 백그라운드 시에만 `backgrounded`가 `true`로 전환되도록 코드 경로 확인
++- [x] 복귀 시 `useSocket` effect가 즉시 `socket.connect()`를 호출하도록 확인
++- [x] `npx tsc --noEmit` 실행
++- [ ] 브라우저에서 30초 대기 포함 실사용 수동 검증
++
++---
++
++## 관련 노트
++- `../features/2026-02-27_phase1-infra.md`
++- `../decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..bb84ba58d736bddf689695393048e3ab6b7c1d80
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -136,6 +136,10 @@
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
++| **socket**          | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **visibility**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **background**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **reconnect**       | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -176,6 +180,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md) | 🟢   | 장기 백그라운드 연결 정리 | `socket` `visibility` `background` `reconnect` `session` |
+ 
+ ### refactor/
+ 
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eecc6cf32da0f6ee93c57da50507ecb0007d99a3
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [x] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- `src/lib/hooks/usePageVisibility.ts` 추가: 30초 이상 `document.hidden` 상태일 때만 `backgrounded` 활성화
++- `src/lib/useSocket.ts`에서 `backgrounded` 통합: 장기 백그라운드 시 `socket.disconnect()`, 복귀 시 즉시 `socket.connect()`
++- 기존 `useSocket` 반환값은 유지하고 `backgrounded`만 추가
++- `npx tsc --noEmit` 통과
++- 실제 브라우저에서 30초 대기/복귀 수동 검증은 이번 턴에서 미실행
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "nl -ba src/lib/hooks/usePageVisibility.ts | sed -n '1,220p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktreeexec
+/bin/bash -lc 'git diff -- src/lib/hooks/usePageVisibility.ts src/lib/useSocket.ts tasks/todo.md skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md skill_graph/index.md' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+     1	"use client";
+     2	
+     3	import { useEffect, useRef, useState } from "react";
+     4	
+     5	const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
+     6	
+     7	function readVisibilityState(): DocumentVisibilityState {
+     8	  if (typeof document === "undefined") {
+     9	    return "visible";
+    10	  }
+    11	
+    12	  return document.visibilityState;
+    13	}
+    14	
+    15	export function usePageVisibility() {
+    16	  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
+    17	    readVisibilityState,
+    18	  );
+    19	  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
+    20	  const [backgrounded, setBackgrounded] = useState(false);
+ succeeded in 0ms:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 0973248..bb84ba5 100644
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -136,6 +136,10 @@
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
++| **socket**          | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **visibility**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **background**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **reconnect**       | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -176,6 +180,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md) | 🟢   | 장기 백그라운드 연결 정리 | `socket` `visibility` `background` `reconnect` `session` |
+exec
+/bin/bash -lc "nl -ba src/lib/useSocket.ts | sed -n '1,220p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree succeeded in 0ms:
+     1	"use client";
+     2	
+     3	import { useEffect, useRef, useState } from "react";
+     4	import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+     5	import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+     6	
+     7	export function useSocket() {
+     8	  const socketRef = useRef<OrbitSocket | null>(null);
+     9	  const [connected, setConnected] = useState(false);
+    10	  const { backgrounded } = usePageVisibility();
+    11	
+    12	  useEffect(() => {
+    13	    const socket = getSocket();
+    14	    socketRef.current = socket;
+    15	
+    16	    function onConnect() {
+    17	      setConnected(true);
+    18	    }
+    19	    function onDisconnect() {
+    20	      setConnected(false);
+file update:
+diff --git a/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..53a99acc6668631d32b01dddc8b11c0f954abbe4
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+@@ -0,0 +1,53 @@
++# Socket lifecycle + page visibility — 2026-03-13
++
++> **심각도**: 🟠 Major
++> **상태**: 🟢 해결
++> **keywords**: socket, visibility, background, reconnect, session
++
++---
++
++## 증상
++
++브라우저 탭이 장시간 백그라운드에 있어도 공용 Socket.io 클라이언트가 계속 연결을 유지했다.
++이 때문에 불필요한 연결이 남고, 복귀 시점을 명시적으로 제어할 수 없었다.
++
++## 원인
++
++`src/lib/useSocket.ts`는 mount 시점에만 singleton 소켓을 연결하고, 페이지 가시성 상태를 전혀 반영하지 않았다.
++짧은 탭 전환과 장기 백그라운드가 같은 상태로 취급되어 lifecycle 제어 지점이 없었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/lib/hooks/usePageVisibility.ts` | 30초 백그라운드 기준 `backgrounded` 상태를 제공하는 공용 훅 추가 |
++| `src/lib/useSocket.ts` | 가시성 훅을 통합해 장기 백그라운드 시 `disconnect()`, 복귀 시 `connect()` 수행 |
++
++### 수정 내용
++```diff
+++ const { backgrounded } = usePageVisibility();
+++
+++ if (backgrounded) {
+++   socket.disconnect();
+++   setConnected(false);
+++   return;
+++ }
+++
+++ if (!socket.connected) {
+++   socket.connect();
+++ }
++```
++
++## 검증
++
++- [x] 30초 이상 백그라운드 시에만 `backgrounded`가 `true`로 전환되도록 코드 경로 확인
++- [x] 복귀 시 `useSocket` effect가 즉시 `socket.connect()`를 호출하도록 확인
++- [x] `npx tsc --noEmit` 실행
++- [ ] 브라우저에서 30초 대기 포함 실사용 수동 검증
++
++---
++
++## 관련 노트
++- `../features/2026-02-27_phase1-infra.md`
++- `../decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..bb84ba58d736bddf689695393048e3ab6b7c1d80
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -136,6 +136,10 @@
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
++| **socket**          | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **visibility**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **background**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **reconnect**       | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -176,6 +180,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md) | 🟢   | 장기 백그라운드 연결 정리 | `socket` `visibility` `background` `reconnect` `session` |
+ 
+ ### refactor/
+ 
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eecc6cf32da0f6ee93c57da50507ecb0007d99a3
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [x] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- `src/lib/hooks/usePageVisibility.ts` 추가: 30초 이상 `document.hidden` 상태일 때만 `backgrounded` 활성화
++- `src/lib/useSocket.ts`에서 `backgrounded` 통합: 장기 백그라운드 시 `socket.disconnect()`, 복귀 시 즉시 `socket.connect()`
++- 기존 `useSocket` 반환값은 유지하고 `backgrounded`만 추가
++- `npx tsc --noEmit` 통과
++- 실제 브라우저에서 30초 대기/복귀 수동 검증은 이번 턴에서 미실행
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+`usePageVisibility`를 추가해 30초 이상 `document.hidden` 상태일 때만 `backgrounded`를 `true`로 만들고, [`useSocket.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts#L7)에서 그 상태를 받아 장기 백그라운드면 `socket.disconnect()`, 복귀하면 즉시 `socket.connect()` 하도록 바꿨습니다. 기존 반환값은 유지했고 `backgrounded`만 추가했습니다. 구현은 [`usePageVisibility.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/hooks/usePageVisibility.ts#L15), 통합은 [`useSocket.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts#L36)에 있습니다.
+
+작업 기록은 [`tasks/todo.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md)에 반영했고, 변경 노트는 [`2026-03-13_socket-lifecycle-page-visibility.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md)에 남겼습니다.
+
+검증은 `npx tsc --noEmit`로 했고 통과했습니다. 브라우저에서 실제로 30초 백그라운드 후 복귀하는 수동 검증은 이번 턴에서는 하지 않았습니다.
+file update:
+diff --git a/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..53a99acc6668631d32b01dddc8b11c0f954abbe4
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md
+@@ -0,0 +1,53 @@
++# Socket lifecycle + page visibility — 2026-03-13
++
++> **심각도**: 🟠 Major
++> **상태**: 🟢 해결
++> **keywords**: socket, visibility, background, reconnect, session
++
++---
++
++## 증상
++
++브라우저 탭이 장시간 백그라운드에 있어도 공용 Socket.io 클라이언트가 계속 연결을 유지했다.
++이 때문에 불필요한 연결이 남고, 복귀 시점을 명시적으로 제어할 수 없었다.
++
++## 원인
++
++`src/lib/useSocket.ts`는 mount 시점에만 singleton 소켓을 연결하고, 페이지 가시성 상태를 전혀 반영하지 않았다.
++짧은 탭 전환과 장기 백그라운드가 같은 상태로 취급되어 lifecycle 제어 지점이 없었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/lib/hooks/usePageVisibility.ts` | 30초 백그라운드 기준 `backgrounded` 상태를 제공하는 공용 훅 추가 |
++| `src/lib/useSocket.ts` | 가시성 훅을 통합해 장기 백그라운드 시 `disconnect()`, 복귀 시 `connect()` 수행 |
++
++### 수정 내용
++```diff
+++ const { backgrounded } = usePageVisibility();
+++
+++ if (backgrounded) {
+++   socket.disconnect();
+++   setConnected(false);
+++   return;
+++ }
+++
+++ if (!socket.connected) {
+++   socket.connect();
+++ }
++```
++
++## 검증
++
++- [x] 30초 이상 백그라운드 시에만 `backgrounded`가 `true`로 전환되도록 코드 경로 확인
++- [x] 복귀 시 `useSocket` effect가 즉시 `socket.connect()`를 호출하도록 확인
++- [x] `npx tsc --noEmit` 실행
++- [ ] 브라우저에서 30초 대기 포함 실사용 수동 검증
++
++---
++
++## 관련 노트
++- `../features/2026-02-27_phase1-infra.md`
++- `../decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..bb84ba58d736bddf689695393048e3ab6b7c1d80
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -136,6 +136,10 @@
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
++| **socket**          | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **visibility**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **background**      | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
++| **reconnect**       | [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md)                         | bugfix            |
+ | **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chat-ui**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+ | **chatbot**         | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+@@ -176,6 +180,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [Socket lifecycle + page visibility](bugfix/2026-03-13_socket-lifecycle-page-visibility.md) | 🟢   | 장기 백그라운드 연결 정리 | `socket` `visibility` `background` `reconnect` `session` |
+ 
+ ### refactor/
+ 
+diff --git a/src/lib/hooks/usePageVisibility.ts b/src/lib/hooks/usePageVisibility.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..90967d0b99d096e23501d8a40123371cf72174db
+--- /dev/null
++++ b/src/lib/hooks/usePageVisibility.ts
+@@ -0,0 +1,64 @@
++"use client";
++
++import { useEffect, useRef, useState } from "react";
++
++const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
++
++function readVisibilityState(): DocumentVisibilityState {
++  if (typeof document === "undefined") {
++    return "visible";
++  }
++
++  return document.visibilityState;
++}
++
++export function usePageVisibility() {
++  const [visibilityState, setVisibilityState] = useState<DocumentVisibilityState>(
++    readVisibilityState,
++  );
++  const [hiddenSince, setHiddenSince] = useState<number | null>(null);
++  const [backgrounded, setBackgrounded] = useState(false);
++  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
++
++  useEffect(() => {
++    function clearBackgroundTimer() {
++      if (!timeoutRef.current) return;
++      clearTimeout(timeoutRef.current);
++      timeoutRef.current = null;
++    }
++
++    function handleVisibilityChange() {
++      const nextState = readVisibilityState();
++      setVisibilityState(nextState);
++
++      if (nextState === "hidden") {
++        const startedAt = Date.now();
++        setHiddenSince(startedAt);
++        clearBackgroundTimer();
++        timeoutRef.current = setTimeout(() => {
++          setBackgrounded(true);
++        }, BACKGROUND_DISCONNECT_DELAY_MS);
++        return;
++      }
++
++      clearBackgroundTimer();
++      setHiddenSince(null);
++      setBackgrounded(false);
++    }
++
++    handleVisibilityChange();
++    document.addEventListener("visibilitychange", handleVisibilityChange);
++
++    return () => {
++      clearBackgroundTimer();
++      document.removeEventListener("visibilitychange", handleVisibilityChange);
++    };
++  }, []);
++
++  return {
++    visibilityState,
++    hiddenSince,
++    backgrounded,
++    visible: visibilityState === "visible",
++  };
++}
+diff --git a/src/lib/useSocket.ts b/src/lib/useSocket.ts
+index 1bf621204be02cf9d5169f74b293845a039ef65e..53165ab8071408d1dbd942a0d16c1dc06301ba20
+--- a/src/lib/useSocket.ts
++++ b/src/lib/useSocket.ts
+@@ -1,11 +1,13 @@
+ "use client";
+ 
+ import { useEffect, useRef, useState } from "react";
++import { usePageVisibility } from "@/lib/hooks/usePageVisibility";
+ import { getSocket, type OrbitSocket } from "@/lib/socketClient";
+ 
+ export function useSocket() {
+   const socketRef = useRef<OrbitSocket | null>(null);
+   const [connected, setConnected] = useState(false);
++  const { backgrounded } = usePageVisibility();
+ 
+   useEffect(() => {
+     const socket = getSocket();
+@@ -23,8 +25,6 @@
+ 
+     if (socket.connected) {
+       setConnected(true);
+-    } else {
+-      socket.connect();
+     }
+ 
+     return () => {
+@@ -33,5 +33,20 @@
+     };
+   }, []);
+ 
+-  return { socket: socketRef.current, connected };
++  useEffect(() => {
++    const socket = getSocket();
++    socketRef.current = socket;
++
++    if (backgrounded) {
++      socket.disconnect();
++      setConnected(false);
++      return;
++    }
++
++    if (!socket.connected) {
++      socket.connect();
++    }
++  }, [backgrounded]);
++
++  return { socket: socketRef.current, connected, backgrounded };
+ }
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..eecc6cf32da0f6ee93c57da50507ecb0007d99a3
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] Socket lifecycle: 페이지 가시성 기반 30초 백그라운드 disconnect / 복귀 reconnect
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- [x] `useSocket` 현재 연결/재연결 흐름과 반환 인터페이스 확인
++- [x] `usePageVisibility` 훅 추가 및 30초 백그라운드 기준 상태 모델링
++- [x] `useSocket`에 통합해 기존 인터페이스 유지 + `backgrounded` 상태 추가
++- [x] TypeScript strict 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### Socket Lifecycle + Page Visibility (2026-03-13)
++
++- `src/lib/hooks/usePageVisibility.ts` 추가: 30초 이상 `document.hidden` 상태일 때만 `backgrounded` 활성화
++- `src/lib/useSocket.ts`에서 `backgrounded` 통합: 장기 백그라운드 시 `socket.disconnect()`, 복귀 시 즉시 `socket.connect()`
++- 기존 `useSocket` 반환값은 유지하고 `backgrounded`만 추가
++- `npx tsc --noEmit` 통과
++- 실제 브라우저에서 30초 대기/복귀 수동 검증은 이번 턴에서 미실행
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+tokens used
+67,720
+`usePageVisibility`를 추가해 30초 이상 `document.hidden` 상태일 때만 `backgrounded`를 `true`로 만들고, [`useSocket.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts#L7)에서 그 상태를 받아 장기 백그라운드면 `socket.disconnect()`, 복귀하면 즉시 `socket.connect()` 하도록 바꿨습니다. 기존 반환값은 유지했고 `backgrounded`만 추가했습니다. 구현은 [`usePageVisibility.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/hooks/usePageVisibility.ts#L15), 통합은 [`useSocket.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/src/lib/useSocket.ts#L36)에 있습니다.
+
+작업 기록은 [`tasks/todo.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/tasks/todo.md)에 반영했고, 변경 노트는 [`2026-03-13_socket-lifecycle-page-visibility.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-01/worktree/skill_graph/bugfix/2026-03-13_socket-lifecycle-page-visibility.md)에 남겼습니다.
+
+검증은 `npx tsc --noEmit`로 했고 통과했습니다. 브라우저에서 실제로 30초 백그라운드 후 복귀하는 수동 검증은 이번 턴에서는 하지 않았습니다.

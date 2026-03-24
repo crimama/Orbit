@@ -1,0 +1,3311 @@
+# Agent Log: agent-05
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: OLED Dark Mode 인프라
+
+## Agent
+agent-05
+
+## Status
+pending
+
+## Description
+useTheme 훅 생성(src/lib/hooks/useTheme.ts): localStorage orbit-theme 읽기, default|oled, data-theme 속성 설정, SSR safety. globals.css: [data-theme=oled] 블록에 --background:#000000, --terminal-bg:#000000 추가. 기본 :root에 --terminal-bg:#0b1220 추가. tailwind.config.ts: terminalBg: var(--terminal-bg) 컬러 추가.
+
+## Target Files
+- `src/app/globals.css`
+- `tailwind.config.ts`
+- `src/lib/hooks/useTheme.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] orbit-theme=oled 시 순수 블랙
+- [ ] 기본 테마 변경 없음
+- [ ] CSS변수 --terminal-bg 사용 가능
+- [ ] SSR 에러 없음
+- [ ] TypeScript strict 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree
+# Started: 2026-03-13T23:38:54.936872
+
+OpenAI Codex v0.114.0 (research preview)
+--------
+workdir: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019ce7a2-d9aa-7050-b6d1-c2eb73a77ea0
+--------
+user
+Read and execute the task described below.
+
+# Task: OLED Dark Mode 인프라
+
+## Agent
+agent-05
+
+## Status
+pending
+
+## Description
+useTheme 훅 생성(src/lib/hooks/useTheme.ts): localStorage orbit-theme 읽기, default|oled, data-theme 속성 설정, SSR safety. globals.css: [data-theme=oled] 블록에 --background:#000000, --terminal-bg:#000000 추가. 기본 :root에 --terminal-bg:#0b1220 추가. tailwind.config.ts: terminalBg: var(--terminal-bg) 컬러 추가.
+
+## Target Files
+- `src/app/globals.css`
+- `tailwind.config.ts`
+- `src/lib/hooks/useTheme.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] orbit-theme=oled 시 순수 블랙
+- [ ] 기본 테마 변경 없음
+- [ ] CSS변수 --terminal-bg 사용 가능
+- [ ] SSR 에러 없음
+- [ ] TypeScript strict 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+작업 범위를 확인했고, 먼저 프로젝트 운영 규칙과 현재 작업 기록 형식을 읽은 뒤 `tasks/todo.md`를 이번 작업에 맞게 갱신하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktreeexec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+ succeeded in 0ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+codex
+작업 기록부터 맞추겠습니다. `tasks/todo.md`에 이번 OLED 다크모드 인프라 항목을 추가한 뒤, 대상 파일의 현재 구현 상태를 읽어 충돌 없이 수정 범위를 좁히겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -25,2 +26,9 @@
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,240p' src/app/globals.css" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktreeexec
+/bin/bash -lc "sed -n '1,240p' tailwind.config.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;
+ succeeded in 0ms:
+@import "@xterm/xterm/css/xterm.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  color: var(--foreground);
+exec
+/bin/bash -lc "sed -n '1,240p' src/lib/hooks/useTheme.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree exited 2 in 0ms:
+sed: can't read src/lib/hooks/useTheme.ts: No such file or directory
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+대상 훅 파일은 아직 없고, CSS 쪽도 기본 변수만 있는 상태입니다. 테마가 이미 다른 경로로 쓰이고 있는지 확인해서 이름 충돌 없이 훅을 추가하겠습니다.
+exec
+/bin/bash -lc 'rg -n "orbit-theme|data-theme|useTheme|terminalBg|terminal-bg|prefers-color-scheme" src tailwind.config.ts' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+src/app/globals.css:12:@media (prefers-color-scheme: dark) {
+exec
+/bin/bash -lc 'rg --files src/lib src/components src/app | rg "hooks|theme|terminal"' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+src/lib/hooks/useMobile.ts
+src/lib/hooks/useSessionMetrics.ts
+src/lib/hooks/usePendingApprovals.ts
+src/components/terminal/TerminalPage.tsx
+src/components/terminal/SessionMetricsPanel.tsx
+src/components/terminal/SessionChatbotView.tsx
+src/components/terminal/MultiTerminal.tsx
+src/components/terminal/SessionNextSteps.tsx
+src/components/terminal/SplitDivider.tsx
+src/components/terminal/TerminalPane.tsx
+src/components/terminal/SessionComposerDock.tsx
+src/components/terminal/PaneRenderer.tsx
+src/components/terminal/MobileChatTerminal.tsx
+src/components/terminal/TerminalView.tsx
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,220p' src/lib/hooks/useMobile.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+"use client";
+
+import { useState, useEffect } from "react";
+
+interface MobileState {
+  isMobile: boolean;
+  isTablet: boolean;
+  isLandscape: boolean;
+  isStandalone: boolean;
+  prefersReducedMotion: boolean;
+}
+
+const MOBILE_BREAKPOINT = 768;
+const TABLET_BREAKPOINT = 1024;
+
+/** SSR-safe default — must match server render to prevent hydration mismatch. */
+const SSR_DEFAULT: MobileState = {
+  isMobile: false,
+  isTablet: false,
+  isLandscape: false,
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+이제 실제 수정에 들어갑니다. 훅은 `default|oled`만 허용하는 SSR-safe 클라이언트 훅으로 만들고, CSS/Tailwind는 기존 기본 테마를 건드리지 않는 선에서 변수만 확장하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/app/globals.css
+@@ -9,2 +9,3 @@
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+@@ -18,2 +19,7 @@
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/app/globals.css
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tailwind.config.ts
+@@ -13,2 +13,3 @@
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tailwind.config.ts
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/lib/hooks/useTheme.ts
+"use client";
+
+import { useEffect, useState } from "react";
+
+export type Theme = "default" | "oled";
+
+const STORAGE_KEY = "orbit-theme";
+const DEFAULT_THEME: Theme = "default";
+
+function isTheme(value: string | null): value is Theme {
+  return value === "default" || value === "oled";
+}
+
+function getStoredTheme(): Theme {
+  if (typeof window === "undefined") return DEFAULT_THEME;
+
+  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
+  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
+}
+
+function applyTheme(theme: Theme) {
+  if (typeof document === "undefined") return;
+
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
+export function useTheme() {
+  // Keep the first client render aligned with SSR, then hydrate from storage.
+  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
+
+  useEffect(() => {
+    const storedTheme = getStoredTheme();
+    setThemeState(storedTheme);
+    applyTheme(storedTheme);
+  }, []);
+
+  const setTheme = (nextTheme: Theme) => {
+    setThemeState(nextTheme);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    }
+
+    applyTheme(nextTheme);
+  };
+
+  return { theme, setTheme, themes: ["default", "oled"] as const };
+}
+apply_patch(auto_approved=true) exited 0 in 7ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/lib/hooks/useTheme.ts
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+수정은 반영됐고, 지금은 strict 타입체크로 훅 시그니처와 SSR 안전성을 확인하겠습니다. 오류가 나오면 바로 같은 범위에서 정리합니다.
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktreefile update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+ succeeded in 3.02s:
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+exec
+/bin/bash -lc 'rg --files skill_graph/features | tail -n 5' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+skill_graph/features/_TEMPLATE.md
+skill_graph/features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md
+skill_graph/features/2026-02-27_phase1-infra.md
+skill_graph/features/2026-02-28_phase2-4-parallel.md
+skill_graph/features/2026-03-12_frontend-component-specification.md
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/features/2026-02-27_phase1-infra.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+# Phase 1: 인프라 구축 — 2026-02-27
+
+> **상태**: 🟢 완료
+> **Phase**: Phase 1
+> **keywords**: pty, terminal, socket.io, custom-server, session, dashboard, xterm
+
+---
+
+## 요구사항
+
+로컬 환경에서 PTY 기반 웹 터미널 + 세션 resume가 동작하는 최소 프로덕트.
+- Custom Server가 Socket.io + Next.js를 동시 서빙
+- 웹 터미널에서 로컬 쉘 명령 실행 가능
+- 브라우저 탭 닫고 재접속 시 PTY 세션 유지
+- 대시보드에서 프로젝트/세션 목록 조회
+- 세션 선택 → 터미널 연결 → 명령 실행 E2E 동작
+- 24시간 미활동 세션 자동 정리 (GC)
+
+## 설계
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+구현 자체는 끝났고, 저장소 규칙에 맞춰 작업 기록과 변경 노트를 정리한 뒤 마무리 검증 상태까지 남기겠습니다.
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+# OLED Dark Mode 인프라 — 2026-03-13
+
+> **상태**: 🟢 완료
+> **Phase**: UI Infra
+> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
+
+---
+
+## 요구사항
+
+`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
+- `oled` 선택 시 순수 블랙 배경 사용
+- 기본 테마의 기존 동작은 유지
+- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
+- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
+
+## 구현 내역
+
+- [x] `src/lib/hooks/useTheme.ts` 추가
+- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
+- [x] `data-theme`를 `document.documentElement`에 반영
+- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
+- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
+- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
+
+## 테스트
+
+- [x] `npx tsc --noEmit`
+
+## 관련 노트
+
+- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
+- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+apply_patch(auto_approved=true) exited 0 in 7ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '120,210p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+| **zmx**             | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **mux**             | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **session-persist** | [터미널 에코시스템 리서치](decisions/2026-03-12_libghostty-terminal-ecosystem-research.md)                          | decision/research |
+| **happy-coder**     | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **yolo**            | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **E2E암호화**       | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **device-switch**   | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **push-notification** | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                    | decision/research |
+| **permission**      | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **Expo**            | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **RPC**             | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md)                                      | decision/research |
+| **frontend**        | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **components**      | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+| **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+| **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+| **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+| **mobile-ux**       | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+exec
+/bin/bash -lc 'rg -n "frontend-component-specification|OLED|features/2026-03-12_frontend-component-specification.md|### features/" skill_graph/index.md' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+131:| **frontend**        | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+132:| **components**      | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+133:| **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+134:| **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+135:| **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+149:| **OLED**            | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | decision/research |
+155:### features/
+162:| [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
+172:| [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 완료 | `mobile-ux` `chat-ui` `chatbot` `thumb-zone` `streaming-markdown` `skeleton-screen` `xterm-mobile` `terminal-gesture` `offline-first` `viewport-dvh` `OLED` |
+220:features/2026-03-12_frontend-component-specification.md
+235:        ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+254:| 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+255:| 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
+exec
+/bin/bash -lc "sed -n '210,280p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+        ├──▶ features/2026-02-27_phase1-infra.md (xterm.js 대체재 평가)
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (SSH + RemotePty 세션 퍼시스턴스)
+        └──▶ decisions/2026-02-28_harness-engineering.md (인터셉터 플러그인 패턴)
+
+decisions/2026-03-12_happy-mobile-yolo-research.md
+        │
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (모바일/PWA/인터셉터)
+        ├──▶ decisions/2026-02-28_harness-engineering.md (가드레일/퍼미션 패턴)
+        └──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (세션 퍼시스턴스)
+
+features/2026-03-12_frontend-component-specification.md
+        │
+        ├──▶ features/2026-02-27_phase1-infra.md (터미널/대시보드 기반)
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (SSH/그래프/인터셉터/모바일)
+        └──▶ decisions/2026-02-28_harness-engineering.md (하네스 패널)
+
+bugfix/2026-03-12_mobile-command-send-execution.md
+        │
+        ├──▶ features/2026-02-28_phase2-4-parallel.md (모바일 터미널 경로 보정)
+        └──▶ decisions/2026-03-12_happy-mobile-yolo-research.md (모바일 UX 맥락)
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/skill_graph/index.md
+@@ -135,2 +135,7 @@
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -162,2 +167,3 @@
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+@@ -236,2 +242,7 @@
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+@@ -255 +266,2 @@
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+apply_patch(auto_approved=true) exited 0 in 8ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/skill_graph/index.md
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..8df9f1b72b688c0d2706f8d7fcf5639f8bb065e5
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -133,6 +133,11 @@
+ | **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -160,6 +165,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+ ### decisions/
+ 
+@@ -234,6 +240,11 @@
+         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+ 
+ ---
+@@ -253,3 +264,4 @@
+ | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+ | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..8df9f1b72b688c0d2706f8d7fcf5639f8bb065e5
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -133,6 +133,11 @@
+ | **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -160,6 +165,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+ ### decisions/
+ 
+@@ -234,6 +240,11 @@
+         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+ 
+ ---
+@@ -253,3 +264,4 @@
+ | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+ | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..a458c180f6335e2c4068f202b54ef5cb88d4adac
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [ ] 기존 테마 변수와 테마 적용 경로 확인
++- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [ ] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] OLED Dark Mode 인프라
++- [x] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -28,6 +28,6 @@
+ 
+-- [ ] 기존 테마 변수와 테마 적용 경로 확인
+-- [ ] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
+-- [ ] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
+-- [ ] 타입체크로 SSR/strict 안전성 검증
++- [x] 기존 테마 변수와 테마 적용 경로 확인
++- [x] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [x] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [x] 타입체크로 SSR/strict 안전성 검증
+ 
+@@ -75,2 +75,10 @@
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- `src/lib/hooks/useTheme.ts` 추가: `orbit-theme`를 `default|oled`로 검증하고 SSR-safe하게 `data-theme`를 동기화
++- `src/app/globals.css`에 `--terminal-bg` 기본값 추가, `[data-theme="oled"]`에서 배경/터미널 배경을 순수 블랙으로 오버라이드
++- `tailwind.config.ts`에 `terminalBg` 토큰 추가
++- `npx tsc --noEmit` 통과
++- `skill_graph/features/2026-03-13_oled-dark-mode-infra.md` 기록 및 `skill_graph/index.md` 인덱스 반영
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+apply_patch(auto_approved=true) exited 0 in 9ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tasks/todo.md
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..8df9f1b72b688c0d2706f8d7fcf5639f8bb065e5
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -133,6 +133,11 @@
+ | **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -160,6 +165,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+ ### decisions/
+ 
+@@ -234,6 +240,11 @@
+         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+ 
+ ---
+@@ -253,3 +264,4 @@
+ | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+ | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..5c11ee7c9cea74547aff26de6bb2062cc27f50f6
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [x] 기존 테마 변수와 테마 적용 경로 확인
++- [x] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [x] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [x] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- `src/lib/hooks/useTheme.ts` 추가: `orbit-theme`를 `default|oled`로 검증하고 SSR-safe하게 `data-theme`를 동기화
++- `src/app/globals.css`에 `--terminal-bg` 기본값 추가, `[data-theme="oled"]`에서 배경/터미널 배경을 순수 블랙으로 오버라이드
++- `tailwind.config.ts`에 `terminalBg` 토큰 추가
++- `npx tsc --noEmit` 통과
++- `skill_graph/features/2026-03-13_oled-dark-mode-infra.md` 기록 및 `skill_graph/index.md` 인덱스 반영
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..8df9f1b72b688c0d2706f8d7fcf5639f8bb065e5
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -133,6 +133,11 @@
+ | **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -160,6 +165,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+ ### decisions/
+ 
+@@ -234,6 +240,11 @@
+         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+ 
+ ---
+@@ -253,3 +264,4 @@
+ | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+ | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..5c11ee7c9cea74547aff26de6bb2062cc27f50f6
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [x] 기존 테마 변수와 테마 적용 경로 확인
++- [x] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [x] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [x] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- `src/lib/hooks/useTheme.ts` 추가: `orbit-theme`를 `default|oled`로 검증하고 SSR-safe하게 `data-theme`를 동기화
++- `src/app/globals.css`에 `--terminal-bg` 기본값 추가, `[data-theme="oled"]`에서 배경/터미널 배경을 순수 블랙으로 오버라이드
++- `tailwind.config.ts`에 `terminalBg` 토큰 추가
++- `npx tsc --noEmit` 통과
++- `skill_graph/features/2026-03-13_oled-dark-mode-infra.md` 기록 및 `skill_graph/index.md` 인덱스 반영
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "nl -ba src/lib/hooks/useTheme.ts | sed -n '1,220p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+     1	"use client";
+     2	
+     3	import { useEffect, useState } from "react";
+     4	
+     5	export type Theme = "default" | "oled";
+     6	
+     7	const STORAGE_KEY = "orbit-theme";
+     8	const DEFAULT_THEME: Theme = "default";
+     9	
+    10	function isTheme(value: string | null): value is Theme {
+    11	  return value === "default" || value === "oled";
+    12	}
+    13	
+    14	function getStoredTheme(): Theme {
+    15	  if (typeof window === "undefined") return DEFAULT_THEME;
+    16	
+    17	  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
+    18	  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
+    19	}
+    20	
+exec
+/bin/bash -lc "nl -ba src/app/globals.css | sed -n '1,80p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+     1	@import "@xterm/xterm/css/xterm.css";
+     2	
+     3	@tailwind base;
+     4	@tailwind components;
+     5	@tailwind utilities;
+     6	
+     7	:root {
+     8	  --background: #ffffff;
+     9	  --foreground: #171717;
+    10	  --terminal-bg: #0b1220;
+    11	}
+    12	
+    13	@media (prefers-color-scheme: dark) {
+    14	  :root {
+    15	    --background: #0a0a0a;
+    16	    --foreground: #ededed;
+    17	  }
+    18	}
+    19	
+    20	[data-theme="oled"] {
+exec
+/bin/bash -lc "nl -ba tailwind.config.ts | sed -n '1,80p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree succeeded in 0ms:
+     1	import type { Config } from "tailwindcss";
+     2	
+     3	const config: Config = {
+     4	  content: [
+     5	    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+     6	    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+     7	    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+     8	  ],
+     9	  theme: {
+    10	    extend: {
+    11	      colors: {
+    12	        background: "var(--background)",
+    13	        foreground: "var(--foreground)",
+    14	        terminalBg: "var(--terminal-bg)",
+    15	      },
+    16	    },
+    17	  },
+    18	  plugins: [],
+    19	};
+    20	export default config;
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..8df9f1b72b688c0d2706f8d7fcf5639f8bb065e5
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -133,6 +133,11 @@
+ | **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -160,6 +165,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+ ### decisions/
+ 
+@@ -234,6 +240,11 @@
+         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+ 
+ ---
+@@ -253,3 +264,4 @@
+ | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+ | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..5c11ee7c9cea74547aff26de6bb2062cc27f50f6
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [x] 기존 테마 변수와 테마 적용 경로 확인
++- [x] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [x] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [x] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- `src/lib/hooks/useTheme.ts` 추가: `orbit-theme`를 `default|oled`로 검증하고 SSR-safe하게 `data-theme`를 동기화
++- `src/app/globals.css`에 `--terminal-bg` 기본값 추가, `[data-theme="oled"]`에서 배경/터미널 배경을 순수 블랙으로 오버라이드
++- `tailwind.config.ts`에 `terminalBg` 토큰 추가
++- `npx tsc --noEmit` 통과
++- `skill_graph/features/2026-03-13_oled-dark-mode-infra.md` 기록 및 `skill_graph/index.md` 인덱스 반영
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+OLED 테마 인프라를 반영했습니다. `useTheme` 훅은 [useTheme.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/lib/hooks/useTheme.ts#L1) 에 추가했고, `orbit-theme`를 `default|oled`로 검증해 `localStorage`와 `data-theme`를 동기화하며 `window`/`document` 접근은 마운트 이후로 제한해 SSR 에러가 없도록 했습니다.
+
+스타일 토큰은 [globals.css](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/app/globals.css#L7) 에서 기본 `--terminal-bg: #0b1220`를 추가했고, `[data-theme="oled"]`에서 `--background`와 `--terminal-bg`를 `#000000`으로 덮어써 순수 블랙이 되도록 했습니다. Tailwind 쪽은 [tailwind.config.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tailwind.config.ts#L11) 에 `terminalBg`를 추가했습니다.
+
+검증은 `npx tsc --noEmit`로 완료했습니다. 작업 기록은 `tasks/todo.md`와 `skill_graph/`에도 반영했습니다.
+file update:
+diff --git a/skill_graph/features/2026-03-13_oled-dark-mode-infra.md b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..ec4fff8b2d275a6c2b271a175ea25ea0ac90d221
+--- /dev/null
++++ b/skill_graph/features/2026-03-13_oled-dark-mode-infra.md
+@@ -0,0 +1,33 @@
++# OLED Dark Mode 인프라 — 2026-03-13
++
++> **상태**: 🟢 완료
++> **Phase**: UI Infra
++> **keywords**: OLED, theme, dark-mode, localStorage, SSR, tailwind, terminal
++
++---
++
++## 요구사항
++
++`orbit-theme` 값에 따라 기본 테마와 OLED 테마를 전환할 수 있어야 한다.
++- `oled` 선택 시 순수 블랙 배경 사용
++- 기본 테마의 기존 동작은 유지
++- CSS 변수 `--terminal-bg`를 Tailwind에서 재사용 가능
++- SSR 환경에서 `window`/`document` 접근 오류가 없어야 함
++
++## 구현 내역
++
++- [x] `src/lib/hooks/useTheme.ts` 추가
++- [x] `localStorage`의 `orbit-theme`를 `default|oled`로 검증
++- [x] `data-theme`를 `document.documentElement`에 반영
++- [x] `src/app/globals.css`에 `--terminal-bg` 기본값 추가
++- [x] `[data-theme="oled"]`에서 `--background`, `--terminal-bg`를 순수 블랙으로 오버라이드
++- [x] `tailwind.config.ts`에 `terminalBg` 색상 토큰 추가
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++
++## 관련 노트
++
++- 연관: `skill_graph/decisions/2026-03-13_mobile-chat-terminal-ux-research.md`
++- 연관: `skill_graph/features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index 09732485eeebba3d8bde1cccfd77b076dcfbc07f..8df9f1b72b688c0d2706f8d7fcf5639f8bb065e5
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -133,6 +133,11 @@
+ | **specification**   | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **workspace**       | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
+ | **pane**            | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)                                     | feature/spec      |
++| **theme**           | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **dark-mode**       | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **localStorage**    | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **SSR**             | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
++| **tailwind**        | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                                                | feature           |
+ | **command**         | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **pty**             | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+ | **mobile**          | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                     | bugfix            |
+@@ -160,6 +165,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md)                  | UI Infra | 🟢 | `OLED` `theme` `dark-mode` `localStorage` `SSR` `tailwind` `terminal` |
+ 
+ ### decisions/
+ 
+@@ -234,6 +240,11 @@
+         ├──▶ decisions/2026-03-12_libghostty-terminal-ecosystem-research.md (터미널 렌더링)
+         ├──▶ features/2026-03-12_frontend-component-specification.md (컴포넌트 UX 적용)
+         └──▶ bugfix/2026-03-12_mobile-command-send-execution.md (모바일 터미널 버그)
++
++features/2026-03-13_oled-dark-mode-infra.md
++        │
++        ├──▶ decisions/2026-03-13_mobile-chat-terminal-ux-research.md (OLED UX 인사이트 구현)
++        └──▶ features/2026-03-12_frontend-component-specification.md (테마 훅/스타일 토큰 확장)
+ ```
+ 
+ ---
+@@ -253,3 +264,4 @@
+ | 2026-03-12 | [Happy 모바일+YOLO 리서치](decisions/2026-03-12_happy-mobile-yolo-research.md) | Happy Coder 모바일 최적화 분석. YOLO 모드 퍼미션 체인, E2E 암호화, 디바이스 스위칭, 푸시 알림, Unified Event Envelope 패턴 수집 |
+ | 2026-03-12 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md) | 34개 컴포넌트 · 6개 페이지 · 4개 훅 전수 조사. Props/State/Socket.io 이벤트/의존성 트리 상세 기술 |
+ | 2026-03-13 | [모바일 채팅/터미널 UX 리서치](decisions/2026-03-13_mobile-chat-terminal-ux-research.md) | 채팅앱(WhatsApp/Telegram/Signal) + 터미널앱(Termux/Termius/Blink) + PWA 패턴 종합. Thumb Zone, 스트리밍 마크다운, 메시지 가상화, xterm.js 모바일 이슈, 오프라인-퍼스트, OLED 최적화 인사이트 수집 |
++| 2026-03-13 | [OLED Dark Mode 인프라](features/2026-03-13_oled-dark-mode-infra.md) | `useTheme` 훅 추가. `orbit-theme`를 `data-theme`와 동기화하고 `--terminal-bg`/OLED 순수 블랙 토큰을 Tailwind까지 연결 |
+diff --git a/src/app/globals.css b/src/app/globals.css
+index bbe7ad136e2f40c0b37479b28e9712d8aa13313d..029ab4f52b0f2bb39b6586f9a9eef33e55baf3de
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -7,6 +7,7 @@
+ :root {
+   --background: #ffffff;
+   --foreground: #171717;
++  --terminal-bg: #0b1220;
+ }
+ 
+ @media (prefers-color-scheme: dark) {
+@@ -16,6 +17,11 @@
+   }
+ }
+ 
++[data-theme="oled"] {
++  --background: #000000;
++  --terminal-bg: #000000;
++}
++
+ body {
+   color: var(--foreground);
+   background: var(--background);
+diff --git a/src/lib/hooks/useTheme.ts b/src/lib/hooks/useTheme.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f0bb83fb645dc9103b0fec4d3ce5bd6cc31952f6
+--- /dev/null
++++ b/src/lib/hooks/useTheme.ts
+@@ -0,0 +1,48 @@
++"use client";
++
++import { useEffect, useState } from "react";
++
++export type Theme = "default" | "oled";
++
++const STORAGE_KEY = "orbit-theme";
++const DEFAULT_THEME: Theme = "default";
++
++function isTheme(value: string | null): value is Theme {
++  return value === "default" || value === "oled";
++}
++
++function getStoredTheme(): Theme {
++  if (typeof window === "undefined") return DEFAULT_THEME;
++
++  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
++  return isTheme(storedTheme) ? storedTheme : DEFAULT_THEME;
++}
++
++function applyTheme(theme: Theme) {
++  if (typeof document === "undefined") return;
++
++  document.documentElement.setAttribute("data-theme", theme);
++}
++
++export function useTheme() {
++  // Keep the first client render aligned with SSR, then hydrate from storage.
++  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
++
++  useEffect(() => {
++    const storedTheme = getStoredTheme();
++    setThemeState(storedTheme);
++    applyTheme(storedTheme);
++  }, []);
++
++  const setTheme = (nextTheme: Theme) => {
++    setThemeState(nextTheme);
++
++    if (typeof window !== "undefined") {
++      window.localStorage.setItem(STORAGE_KEY, nextTheme);
++    }
++
++    applyTheme(nextTheme);
++  };
++
++  return { theme, setTheme, themes: ["default", "oled"] as const };
++}
+diff --git a/tailwind.config.ts b/tailwind.config.ts
+index 021c39379d298a783317a256f478e679d3c60ddc..1639876743ef5c5395e7605e4314665ffafbf63b
+--- a/tailwind.config.ts
++++ b/tailwind.config.ts
+@@ -11,6 +11,7 @@
+       colors: {
+         background: "var(--background)",
+         foreground: "var(--foreground)",
++        terminalBg: "var(--terminal-bg)",
+       },
+     },
+   },
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..5c11ee7c9cea74547aff26de6bb2062cc27f50f6
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] OLED Dark Mode 인프라
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- [x] 기존 테마 변수와 테마 적용 경로 확인
++- [x] `useTheme` 훅 추가 및 `orbit-theme`/`data-theme` 동기화
++- [x] OLED 전용 CSS 변수 및 Tailwind 색상 토큰 추가
++- [x] 타입체크로 SSR/strict 안전성 검증
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,14 @@
+ 
+ ## 결과
+ 
++### OLED Dark Mode 인프라 (2026-03-13)
++
++- `src/lib/hooks/useTheme.ts` 추가: `orbit-theme`를 `default|oled`로 검증하고 SSR-safe하게 `data-theme`를 동기화
++- `src/app/globals.css`에 `--terminal-bg` 기본값 추가, `[data-theme="oled"]`에서 배경/터미널 배경을 순수 블랙으로 오버라이드
++- `tailwind.config.ts`에 `terminalBg` 토큰 추가
++- `npx tsc --noEmit` 통과
++- `skill_graph/features/2026-03-13_oled-dark-mode-infra.md` 기록 및 `skill_graph/index.md` 인덱스 반영
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+tokens used
+44,050
+OLED 테마 인프라를 반영했습니다. `useTheme` 훅은 [useTheme.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/lib/hooks/useTheme.ts#L1) 에 추가했고, `orbit-theme`를 `default|oled`로 검증해 `localStorage`와 `data-theme`를 동기화하며 `window`/`document` 접근은 마운트 이후로 제한해 SSR 에러가 없도록 했습니다.
+
+스타일 토큰은 [globals.css](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/src/app/globals.css#L7) 에서 기본 `--terminal-bg: #0b1220`를 추가했고, `[data-theme="oled"]`에서 `--background`와 `--terminal-bg`를 `#000000`으로 덮어써 순수 블랙이 되도록 했습니다. Tailwind 쪽은 [tailwind.config.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260313_233220_-translate_체크포인트_생성_후_시스템_필요_부분_개발/agents/agent-05/worktree/tailwind.config.ts#L11) 에 `terminalBg`를 추가했습니다.
+
+검증은 `npx tsc --noEmit`로 완료했습니다. 작업 기록은 `tasks/todo.md`와 `skill_graph/`에도 반영했습니다.

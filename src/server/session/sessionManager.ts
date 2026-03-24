@@ -472,8 +472,15 @@ class SessionManager {
       },
     });
 
-    if (!row) return false;
-    if (row.status !== "active") return false;
+    if (!row) {
+      console.log(`[ensureSessionRunning] ${sessionId} row not found in DB`);
+      return false;
+    }
+    if (row.status !== "active") {
+      console.log(`[ensureSessionRunning] ${sessionId} status=${row.status} (not active)`);
+      return false;
+    }
+    console.log(`[ensureSessionRunning] ${sessionId} status=active, agentType=${row.agentType}, path=${row.project.path}`);
 
     // Guard: Docker must be configured if requested
     if (row.project.type === "DOCKER" && !row.project.dockerContainer) {

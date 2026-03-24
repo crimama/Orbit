@@ -1,0 +1,3766 @@
+# Agent Log: agent-01
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: Audit Logger Backend + API
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+감사 로그 시스템을 구현한다.
+
+## 1. src/server/audit/auditLogger.ts (신규)
+간단한 싱글톤 클래스. Prisma를 통해 AuditLog 테이블에 이벤트를 기록한다.
+
+```typescript
+import { prisma } from '@/lib/prisma';
+import type { AuditEventType } from '@/lib/types';
+
+class AuditLogger {
+  async log(params: {
+    eventType: AuditEventType;
+    action: string;
+    sessionId?: string;
+    projectId?: string;
+    detail?: Record<string, unknown>;
+  }): Promise<void> {
+    await prisma.auditLog.create({
+      data: {
+        eventType: params.eventType,
+        action: params.action,
+        sessionId: params.sessionId ?? null,
+        projectId: params.projectId ?? null,
+        detail: params.detail ? JSON.stringify(params.detail) : null,
+      },
+    });
+  }
+}
+export const auditLogger = new AuditLogger();
+```
+
+## 2. src/app/api/audit/route.ts (신규)
+GET 엔드포인트. 쿼리 파라미터: sessionId, projectId, eventType, limit (기본 50), offset.
+기존 API 패턴 참고: src/app/api/projects/route.ts
+
+```typescript
+// 반환: { data: AuditLogInfo[] }
+const logs = await prisma.auditLog.findMany({
+  where: { ... },
+  orderBy: { createdAt: 'desc' },
+  take: limit, skip: offset,
+});
+```
+
+## 3. src/server/pty/interceptor.ts 수정
+- resolve() 메서드 (approve/deny 시) 에서 auditLogger.log() 호출
+- 기존 import에 auditLogger 추가
+- approve 시: eventType='interceptor_approve', action='Approved: {command}'
+- deny 시: eventType='interceptor_deny', action='Denied: {command}'
+
+## 4. src/server/session/sessionManager.ts 수정
+- createSession() 에서: eventType='session_create', action='Created session {id}'
+- terminateSession() 에서: eventType='session_terminate', action='Terminated session {id}'
+
+## 참고
+- prisma import: import { prisma } from '@/lib/prisma'
+- AuditEventType 타입은 src/lib/types.ts에 이미 정의됨
+- AuditLogInfo 타입도 이미 정의됨
+- NextResponse 패턴: import { NextResponse } from 'next/server'
+
+## Target Files
+- `src/server/audit/auditLogger.ts`
+- `src/app/api/audit/route.ts`
+- `src/server/pty/interceptor.ts`
+- `src/server/session/sessionManager.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] auditLogger.log()가 정상 작동
+- [ ] GET /api/audit가 AuditLogInfo[] 반환
+- [ ] interceptor approve/deny 시 로그 기록
+- [ ] session create/terminate 시 로그 기록
+- [ ] npx tsc --noEmit 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree
+# Started: 2026-03-23T07:36:25.958318
+
+OpenAI Codex v0.114.0 (research preview)
+--------
+workdir: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019d17b1-46ca-7020-878c-f0d935cbb5ce
+--------
+user
+Read and execute the task described below.
+
+# Task: Audit Logger Backend + API
+
+## Agent
+agent-01
+
+## Status
+pending
+
+## Description
+감사 로그 시스템을 구현한다.
+
+## 1. src/server/audit/auditLogger.ts (신규)
+간단한 싱글톤 클래스. Prisma를 통해 AuditLog 테이블에 이벤트를 기록한다.
+
+```typescript
+import { prisma } from '@/lib/prisma';
+import type { AuditEventType } from '@/lib/types';
+
+class AuditLogger {
+  async log(params: {
+    eventType: AuditEventType;
+    action: string;
+    sessionId?: string;
+    projectId?: string;
+    detail?: Record<string, unknown>;
+  }): Promise<void> {
+    await prisma.auditLog.create({
+      data: {
+        eventType: params.eventType,
+        action: params.action,
+        sessionId: params.sessionId ?? null,
+        projectId: params.projectId ?? null,
+        detail: params.detail ? JSON.stringify(params.detail) : null,
+      },
+    });
+  }
+}
+export const auditLogger = new AuditLogger();
+```
+
+## 2. src/app/api/audit/route.ts (신규)
+GET 엔드포인트. 쿼리 파라미터: sessionId, projectId, eventType, limit (기본 50), offset.
+기존 API 패턴 참고: src/app/api/projects/route.ts
+
+```typescript
+// 반환: { data: AuditLogInfo[] }
+const logs = await prisma.auditLog.findMany({
+  where: { ... },
+  orderBy: { createdAt: 'desc' },
+  take: limit, skip: offset,
+});
+```
+
+## 3. src/server/pty/interceptor.ts 수정
+- resolve() 메서드 (approve/deny 시) 에서 auditLogger.log() 호출
+- 기존 import에 auditLogger 추가
+- approve 시: eventType='interceptor_approve', action='Approved: {command}'
+- deny 시: eventType='interceptor_deny', action='Denied: {command}'
+
+## 4. src/server/session/sessionManager.ts 수정
+- createSession() 에서: eventType='session_create', action='Created session {id}'
+- terminateSession() 에서: eventType='session_terminate', action='Terminated session {id}'
+
+## 참고
+- prisma import: import { prisma } from '@/lib/prisma'
+- AuditEventType 타입은 src/lib/types.ts에 이미 정의됨
+- AuditLogInfo 타입도 이미 정의됨
+- NextResponse 패턴: import { NextResponse } from 'next/server'
+
+## Target Files
+- `src/server/audit/auditLogger.ts`
+- `src/app/api/audit/route.ts`
+- `src/server/pty/interceptor.ts`
+- `src/server/session/sessionManager.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] auditLogger.log()가 정상 작동
+- [ ] GET /api/audit가 AuditLogInfo[] 반환
+- [ ] interceptor approve/deny 시 로그 기록
+- [ ] session create/terminate 시 로그 기록
+- [ ] npx tsc --noEmit 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+요청한 감사 로그 백엔드와 API를 구현하겠습니다. 먼저 프로젝트 지침 파일과 관련 코드 경로를 읽어서 현재 패턴을 확인한 뒤, `tasks/todo.md`에 작업 항목을 반영하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 0ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+codex
+지침 확인을 마쳤고, 기존 `tasks/todo.md`에는 이번 감사 로그 작업이 아직 없습니다. 이제 관련 구현 파일과 기존 API 패턴을 확인한 뒤, 작업 추적 항목을 추가하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' src/app/api/projects/route.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import type { CreateProjectRequest, ProjectInfo } from "@/lib/types";
+import { registerProject } from "@/server/project/projectRegistry";
+
+function isValidHexColor(value: string): boolean {
+  return /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+export async function GET() {
+  const projects = await prisma.project.findMany({
+    where: { adhoc: false },
+    include: {
+      _count: { select: { sessions: true } },
+      sshConfig: { select: { label: true, host: true } },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+
+  const data: ProjectInfo[] = projects.map((p) => ({
+exec
+/bin/bash -lc "sed -n '1,260p' src/server/pty/interceptor.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,260p' src/server/session/sessionManager.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktreeexec
+/bin/bash -lc "sed -n '1,260p' src/lib/types.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+// --- Socket.io Event Contracts ---
+
+export interface ServerToClientEvents {
+  "terminal-data": (data: string) => void;
+  "terminal-data-compressed": (data: Buffer) => void;
+  "session-update": (session: SessionInfo) => void;
+  "session-list": (sessions: SessionInfo[]) => void;
+  "session-exit": (sessionId: string, exitCode: number) => void;
+  // Phase 2: SSH
+  "ssh-status": (status: SshConnectionStatus) => void;
+  // Phase 3: Skill Graph
+  "graph-state": (state: GraphState) => void;
+  "skill-trace": (trace: SkillTrace) => void;
+  // Bootstrap ready signal
+  "session-ready": (sessionId: string) => void;
+  // Phase 4: Interceptor
+  "interceptor-pending": (approval: PendingApproval) => void;
+  "interceptor-resolved": (approvalId: string, approved: boolean) => void;
+  "interceptor-warn": (warning: InterceptorWarning) => void;
+  "interceptor-mode-changed": (mode: InterceptorMode) => void;
+ succeeded in 0ms:
+import { prisma } from "@/lib/prisma";
+import { shellQuote } from "@/lib/shellQuote";
+import { ptyManager } from "@/server/pty/ptyManager";
+import { remotePtyManager } from "@/server/ssh/remotePty";
+import { sshManager } from "@/server/ssh/sshManager";
+import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
+import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+import type { OrbitServer } from "@/server/socket/types";
+
+const AGENT_TYPES = {
+  TERMINAL: "terminal",
+  CODEX: "codex",
+  OPENCODE: "opencode",
+} as const;
+
+const READY_MARKER_CMD = "printf '\\033]777;orbit-ready\\007'";
+
+function dockerInnerCommand(
+ succeeded in 0ms:
+import { randomUUID } from "crypto";
+import {
+  getActiveRules,
+  getInterceptorMode,
+} from "@/server/pty/interceptorRules";
+import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
+import type {
+  PendingApproval,
+  InterceptorWarning,
+  InterceptorRuleInfo,
+  InterceptorMode,
+} from "@/lib/types";
+
+interface HeldApproval extends PendingApproval {
+  heldData: string;
+  timer: ReturnType<typeof setTimeout>;
+}
+
+type PendingCallback = (approval: PendingApproval) => void;
+type WarnCallback = (warning: InterceptorWarning) => void;
+exec
+/bin/bash -lc "sed -n '260,520p' src/server/pty/interceptor.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+
+      if (rule.severity === "block") {
+        this.createBlock(sessionId, data, command, rule, onPending);
+        return false;
+      }
+
+      if (rule.severity === "warn") {
+        onWarn({
+          sessionId,
+          command,
+          matchedRule: rule,
+          timestamp: new Date().toISOString(),
+        });
+        return true;
+      }
+    }
+
+    return true; // No match — forward normally
+  }
+
+exec
+/bin/bash -lc 'rg -n "Audit(EventType|LogInfo)|auditLog" src prisma -S' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+src/lib/types.ts:574:export type AuditEventType =
+src/lib/types.ts:584:export interface AuditLogInfo {
+src/lib/types.ts:588:  eventType: AuditEventType;
+exec
+/bin/bash -lc "sed -n '260,520p' src/server/session/sessionManager.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+      await prisma.agentSession.delete({ where: { id: session.id } });
+      throw err;
+    }
+
+    return toSessionInfo({
+      ...session,
+      sessionRef: req.resumeSessionRef?.trim() || session.id,
+    });
+  }
+
+  async terminateSession(sessionId: string): Promise<void> {
+    const pendingTimer = this.bootstrapTimers.get(sessionId);
+    if (pendingTimer) {
+      clearTimeout(pendingTimer);
+      this.bootstrapTimers.delete(sessionId);
+    }
+    sessionMetricsManager.clear(sessionId);
+    if (remotePtyManager.has(sessionId)) {
+      remotePtyManager.destroy(sessionId);
+    } else {
+exec
+/bin/bash -lc "sed -n '560,640p' src/lib/types.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+}
+
+// --- Token/Cost Tracking ---
+
+export interface SessionTokenInfo {
+  sessionId: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCost: number;
+  model?: string;
+}
+
+// --- Audit Log ---
+
+export type AuditEventType =
+  | "interceptor_approve"
+  | "interceptor_deny"
+  | "session_create"
+  | "session_terminate"
+  | "session_fork"
+codex
+관련 타입과 구현 지점을 확인했습니다. 다음으로 `tasks/todo.md`에 이번 감사 로그 작업을 추가하고, Prisma 스키마와 API/세션 흐름에서 필요한 필드 매핑을 확인한 뒤 바로 코드 수정에 들어가겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+exec
+/bin/bash -lc 'rg -n "model AuditLog|AuditLog" prisma src -S' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+prisma/schema.prisma:181:model AuditLog {
+src/lib/types.ts:584:export interface AuditLogInfo {
+exec
+/bin/bash -lc "sed -n '176,220p' prisma/schema.prisma" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+  @@index([sessionId, createdAt])
+}
+
+// --- Audit Logging ---
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  sessionId String?
+  projectId String?
+  eventType String   // "interceptor_approve" | "interceptor_deny" | "session_create" | "session_terminate" | "ssh_connect" | "mode_change"
+  action    String
+  detail    String?  // JSON
+  createdAt DateTime @default(now())
+  @@index([sessionId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([eventType, createdAt])
+}
+
+// --- Session Checkpointing & Forking ---
+
+codex
+이제 작업 추적 파일을 먼저 갱신합니다. 이어서 감사 로그 모듈, API, 인터셉터, 세션 매니저 순서로 수정하고 마지막에 타입체크와 기록 노트까지 정리하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -25,2 +26,9 @@
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+@@ -67,2 +75,6 @@
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "sed -n '1,200p' src/lib/prisma.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+import { PrismaClient } from "@prisma/client";
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
+exec
+/bin/bash -lc "rg -n \"searchParams|new URL\\(request.url\\)\" src/app/api -S" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+src/app/api/filesystem/route.ts:8:  const { searchParams } = new URL(request.url);
+src/app/api/filesystem/route.ts:9:  const rawPath = searchParams.get("path") || homedir();
+src/app/api/project-agents/route.ts:24:  const { searchParams } = new URL(request.url);
+src/app/api/project-agents/route.ts:25:  const projectId = searchParams.get("projectId");
+src/app/api/ssh-configs/[id]/browse/route.ts:10:  const { searchParams } = new URL(request.url);
+src/app/api/ssh-configs/[id]/browse/route.ts:11:  const dockerContainer = searchParams.get("dockerContainer")?.trim() || "";
+src/app/api/ssh-configs/[id]/browse/route.ts:13:    searchParams.get("path")?.trim() || (dockerContainer ? "/" : "$HOME");
+src/app/api/sessions/route.ts:8:  const { searchParams } = new URL(request.url);
+src/app/api/sessions/route.ts:9:  const projectId = searchParams.get("projectId") ?? undefined;
+src/app/api/docker/browse/route.ts:9:  const { searchParams } = new URL(request.url);
+src/app/api/docker/browse/route.ts:10:  const container = searchParams.get("container")?.trim() || "";
+src/app/api/docker/browse/route.ts:11:  const requestedPath = searchParams.get("path")?.trim() || "/";
+src/app/api/projects/[id]/files/list/route.ts:17:    const url = new URL(request.url);
+src/app/api/projects/[id]/files/list/route.ts:20:      url.searchParams.get("path") ?? "",
+src/app/api/skills/[id]/route.ts:85:  const { searchParams } = new URL(request.url);
+src/app/api/skills/[id]/route.ts:86:  const edgeId = searchParams.get("edgeId");
+src/app/api/projects/[id]/files/write/route.ts:32:    const url = new URL(request.url);
+src/app/api/projects/[id]/files/write/route.ts:35:      url.searchParams.get("path") ?? "",
+src/app/api/interceptor/rules/route.ts:140:  const { searchParams } = new URL(request.url);
+src/app/api/interceptor/rules/route.ts:141:  const id = searchParams.get("id");
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "sed -n '1,120p' src/app/api/sessions/route.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+import { NextResponse } from "next/server";
+import { sessionManager } from "@/server/session/sessionManager";
+import { listClaudeHistorySessions } from "@/server/session/claudeHistory";
+import { prisma } from "@/lib/prisma";
+import type { CreateSessionRequest } from "@/lib/types";
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get("projectId") ?? undefined;
+
+  const sessions = await sessionManager.listSessions(projectId);
+
+  if (!projectId) {
+    return NextResponse.json({ data: sessions });
+  }
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, name: true, path: true, type: true, sshConfigId: true, dockerContainer: true },
+  });
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "rg -n \"resolve\\(\" src -S" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+src/server/ssh/sshManager.ts:139:        resolve();
+src/server/ssh/sshManager.ts:418:            resolve(channel);
+src/server/ssh/sshManager.ts:456:            resolve(stdout);
+src/server/ssh/sshManager.ts:483:          resolve(wrapper);
+src/server/graph/filesystemGraph.ts:95:    : path.resolve(process.cwd(), projectPath);
+src/server/files/projectFiles.ts:147:  const absPath = relPath ? path.resolve(rootReal, relPath) : rootReal;
+src/server/files/projectFiles.ts:174:  const targetAbs = path.resolve(rootReal, relPath);
+src/server/files/projectFiles.ts:208:      resolve(resolvedPath);
+src/server/files/projectFiles.ts:220:      resolve(attrs);
+src/server/files/projectFiles.ts:232:      resolve(attrs);
+src/server/files/projectFiles.ts:247:      resolve(entries ?? []);
+src/server/files/projectFiles.ts:259:      resolve(Buffer.isBuffer(data) ? data : Buffer.from(data));
+src/server/files/projectFiles.ts:275:      resolve();
+src/server/files/projectFiles.ts:287:      resolve();
+src/server/files/projectFiles.ts:303:      resolve();
+src/server/files/projectFiles.ts:315:      resolve();
+src/server/files/projectFiles.ts:327:      resolve();
+src/server/pty/interceptor.ts:158:  resolve(
+src/server/pty/interceptor.ts:297:      this.resolve(approval.id, false);
+src/server/socket/handlers/interceptor.ts:30:    const result = commandInterceptor.resolve(approvalId, true);
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "sed -n '1,140p' src/server/socket/handlers/interceptor.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+import type { OrbitServer, OrbitSocket } from "@/server/socket/types";
+import { commandInterceptor } from "@/server/pty/interceptor";
+import {
+  seedInterceptorRules,
+  setInterceptorMode,
+} from "@/server/pty/interceptorRules";
+import { getPtyBackend } from "@/server/pty/ptyBackend";
+import type { InterceptorMode } from "@/lib/types";
+
+const VALID_MODES: InterceptorMode[] = ["blacklist", "allowlist", "hybrid", "yolo"];
+
+let rulesSeeded = false;
+
+export function registerInterceptorHandlers(
+  io: OrbitServer,
+  socket: OrbitSocket,
+): void {
+  // Seed default rules on first connection
+  if (!rulesSeeded) {
+    seedInterceptorRules()
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+구현 방식이 정리됐습니다. `resolve()`는 감사 로그 기록을 위해 비동기로 바꾸고, 소켓 핸들러도 그에 맞춰 조정하겠습니다. 이후 `/api/audit`에서 필터와 페이징을 처리하고 `AuditLogInfo`로 매핑합니다.
+exec
+/bin/bash -lc "ls skill_graph/features && sed -n '1,220p' skill_graph/features/2026-02-27_phase1-infra.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+2026-02-27_phase1-infra.md
+2026-02-28_phase2-4-parallel.md
+2026-02-28_project-harness-oh-my-opencode-chat-ux.md
+2026-03-12_frontend-component-specification.md
+2026-03-13_oled-dark-mode-infra.md
+_TEMPLATE.md
+# Phase 1: 인프라 구축 — 2026-02-27
+
+> **상태**: 🟢 완료
+> **Phase**: Phase 1
+> **keywords**: pty, terminal, socket.io, custom-server, session, dashboard, xterm
+
+---
+
+## 요구사항
+
+로컬 환경에서 PTY 기반 웹 터미널 + 세션 resume가 동작하는 최소 프로덕트.
+- Custom Server가 Socket.io + Next.js를 동시 서빙
+- 웹 터미널에서 로컬 쉘 명령 실행 가능
+- 브라우저 탭 닫고 재접속 시 PTY 세션 유지
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/features/_TEMPLATE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+# [기능명] — YYYY-MM-DD
+
+> **상태**: 🔴 계획 / 🟡 진행중 / 🟢 완료
+> **Phase**: Phase 1 / 2 / 3 / 4
+> **keywords**:
+
+---
+
+## 요구사항
+
+<!-- 이 기능이 해결하는 문제와 기대 동작 -->
+
+## 설계
+
+### 변경 범위
+<!-- 영향받는 모듈/파일 목록 -->
+-
+
+### 접근 방식
+<!-- 구현 전략 요약 -->
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+파일 수정을 시작합니다. 비동기 전환 영향이 있는 `src/server/socket/handlers/interceptor.ts`도 함께 맞춰서 수정하겠습니다.
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/audit/auditLogger.ts
+import { prisma } from "@/lib/prisma";
+import type { AuditEventType } from "@/lib/types";
+
+class AuditLogger {
+  async log(params: {
+    eventType: AuditEventType;
+    action: string;
+    sessionId?: string;
+    projectId?: string;
+    detail?: Record<string, unknown>;
+  }): Promise<void> {
+    await prisma.auditLog.create({
+      data: {
+        eventType: params.eventType,
+        action: params.action,
+        sessionId: params.sessionId ?? null,
+        projectId: params.projectId ?? null,
+        detail: params.detail ? JSON.stringify(params.detail) : null,
+      },
+    });
+  }
+}
+
+export const auditLogger = new AuditLogger();
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/app/api/audit/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import type { AuditEventType, AuditLogInfo } from "@/lib/types";
+
+function parseNumber(value: string | null, fallback: number): number {
+  if (!value) return fallback;
+  const parsed = Number.parseInt(value, 10);
+  if (Number.isNaN(parsed) || parsed < 0) return fallback;
+  return parsed;
+}
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
+  const projectId = searchParams.get("projectId")?.trim() || undefined;
+  const eventType = searchParams.get("eventType")?.trim() || undefined;
+  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
+  const offset = parseNumber(searchParams.get("offset"), 0);
+
+  const logs = await prisma.auditLog.findMany({
+    where: {
+      ...(sessionId && { sessionId }),
+      ...(projectId && { projectId }),
+      ...(eventType && { eventType: eventType as AuditEventType }),
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    skip: offset,
+  });
+
+  const data: AuditLogInfo[] = logs.map((log) => ({
+    id: log.id,
+    sessionId: log.sessionId,
+    projectId: log.projectId,
+    eventType: log.eventType as AuditEventType,
+    action: log.action,
+    detail: log.detail,
+    createdAt: log.createdAt.toISOString(),
+  }));
+
+  return NextResponse.json({ data });
+}
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/session/sessionManager.ts
+@@ -8,2 +8,3 @@
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+@@ -257,2 +258,9 @@
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+@@ -270,2 +278,7 @@
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+@@ -286,2 +299,11 @@
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/socket/handlers/interceptor.ts
+@@ -28,4 +28,4 @@
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+@@ -42,5 +42,5 @@
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/pty/interceptor.ts
+@@ -6,2 +6,3 @@
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+@@ -157,6 +158,6 @@
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+@@ -167,2 +168,8 @@
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+@@ -296,3 +303,3 @@
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+apply_patch(auto_approved=true) exited 0 in 23ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/audit/auditLogger.ts
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/app/api/audit/route.ts
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/pty/interceptor.ts
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/session/sessionManager.ts
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/socket/handlers/interceptor.ts
+file update:
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+핵심 코드 연결은 끝났습니다. 이제 타입체크를 돌려서 비동기 전환과 새 API 라우트에서 생긴 오류가 없는지 확인하고, 결과에 맞춰 작업 기록을 마무리하겠습니다.
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktreefile update:
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+ succeeded in 2.97s:
+
+codex
+타입체크가 실행 중입니다. 결과를 확인한 뒤 `tasks/todo.md`와 기능 기록 노트까지 바로 정리하겠습니다.
+exec
+/bin/bash -lc 'git diff -- src/server/audit/auditLogger.ts src/app/api/audit/route.ts src/server/pty/interceptor.ts src/server/socket/handlers/interceptor.ts src/server/session/sessionManager.ts tasks/todo.md' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4..345ebc3 100644
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@ import {
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@ class CommandInterceptor {
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+file update:
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..8da572c2eba16421c8fb823bae31e58a6c4a7ff1
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,10 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- 진행 중
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+타입체크는 오류 없이 끝났습니다. 마지막으로 작업 추적과 `skill_graph` 기록을 남기고 마무리하겠습니다.
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/skill_graph/features/2026-03-23_audit-logging-api.md
+# 감사 로그 백엔드 + API — 2026-03-23
+
+> **상태**: 🟢 완료
+> **Phase**: Phase 4
+> **keywords**: audit, logging, api, interceptor, session, prisma
+
+---
+
+## 요구사항
+
+감사 로그 시스템을 추가해 인터셉터 승인/거부와 세션 생성/종료 이벤트를 `AuditLog` 테이블에 저장하고, 이를 조회하는 `GET /api/audit` 엔드포인트를 제공한다.
+
+## 설계
+
+### 변경 범위
+- `src/server/audit/auditLogger.ts`
+- `src/app/api/audit/route.ts`
+- `src/server/pty/interceptor.ts`
+- `src/server/socket/handlers/interceptor.ts`
+- `src/server/session/sessionManager.ts`
+
+### 접근 방식
+- Prisma `auditLog.create()`를 감싼 단순 싱글톤 로거를 추가
+- API 라우트는 쿼리 파라미터 기반 필터와 페이지네이션만 제공
+- 기존 인터셉터 승인 흐름은 비동기 로그 기록을 위해 `resolve()`를 `async`로 전환
+- 세션 생성/종료는 성공 시점에만 감사 로그를 남기도록 연결
+
+### API / 인터페이스
+```typescript
+auditLogger.log({
+  eventType: "session_create" | "session_terminate" | "interceptor_approve" | "interceptor_deny",
+  action: string,
+  sessionId?: string,
+  projectId?: string,
+  detail?: Record<string, unknown>,
+});
+
+GET /api/audit?sessionId=&projectId=&eventType=&limit=50&offset=0
+```
+
+---
+
+## 구현 내역
+
+- [x] Prisma 기반 `auditLogger` 싱글톤 추가
+- [x] `GET /api/audit` 라우트 추가
+- [x] 인터셉터 승인/거부 시 감사 로그 기록
+- [x] 세션 생성/종료 시 감사 로그 기록
+- [x] 타입 체크 검증
+
+### 주요 변경 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/server/audit/auditLogger.ts` | 신규 — 감사 로그 저장 싱글톤 |
+| `src/app/api/audit/route.ts` | 신규 — 감사 로그 조회 API |
+| `src/server/pty/interceptor.ts` | 승인/거부 시 감사 로그 기록 추가 |
+| `src/server/socket/handlers/interceptor.ts` | 비동기 `resolve()` 호출 반영 |
+| `src/server/session/sessionManager.ts` | 세션 생성/종료 감사 로그 추가 |
+
+---
+
+## 테스트
+
+- [x] `npx tsc --noEmit`
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+- [ ] 수동 확인
+
+## 회고
+
+### 잘된 점
+- 감사 로그 저장 로직을 별도 모듈로 분리해 다른 이벤트에도 재사용 가능하게 유지했다.
+
+### 개선할 점
+- 현재 `/api/audit`는 `eventType` 값을 느슨하게 캐스팅하므로 필요하면 화이트리스트 검증을 추가할 수 있다.
+
+### 교훈 → `tasks/lessons.md` 반영 여부
+- [x] 반영 불필요
+
+## 관련 노트
+- 선행: `features/2026-02-27_phase1-infra.md`
+- 후속: interceptor/SSH/mode 변경 이벤트 감사 로그 확대
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/skill_graph/index.md
+@@ -171,2 +171,3 @@
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [감사 로그 백엔드 + API](features/2026-03-23_audit-logging-api.md)                    | 4     | 🟢   | `audit` `logging` `api` `interceptor` `session` `prisma`                    |
+ 
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
++- [x] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -28,6 +28,6 @@
+ 
+-- [ ] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
+-- [ ] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
+-- [ ] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
+-- [ ] 타입체크 및 결과 기록, 관련 노트 작성
++- [x] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [x] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [x] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [x] 타입체크 및 결과 기록, 관련 노트 작성
+ 
+@@ -77,3 +77,6 @@
+ 
+-- 진행 중
++- `src/server/audit/auditLogger.ts`에서 Prisma 기반 감사 로그 싱글톤 추가
++- `GET /api/audit`에서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터/페이징 지원
++- interceptor approve/deny, session create/terminate 시 `AuditLog` 기록 연결
++- `npx tsc --noEmit` 오류 없이 종료
+ 
+@@ -108,2 +111,3 @@
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/features/2026-03-23_audit-logging-api.md` — 감사 로그 백엔드/API 구현 기록
+ - `skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md` — Happy Coder YOLO 패턴 리서치
+apply_patch(auto_approved=true) exited 0 in 10ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/skill_graph/features/2026-03-23_audit-logging-api.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/tasks/todo.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/skill_graph/index.md
+file update:
+diff --git a/skill_graph/features/2026-03-23_audit-logging-api.md b/skill_graph/features/2026-03-23_audit-logging-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e33e45581a8718f089934ab3c1be13bed4e9cc4
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_audit-logging-api.md
+@@ -0,0 +1,82 @@
++# 감사 로그 백엔드 + API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: audit, logging, api, interceptor, session, prisma
++
++---
++
++## 요구사항
++
++감사 로그 시스템을 추가해 인터셉터 승인/거부와 세션 생성/종료 이벤트를 `AuditLog` 테이블에 저장하고, 이를 조회하는 `GET /api/audit` 엔드포인트를 제공한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/audit/auditLogger.ts`
++- `src/app/api/audit/route.ts`
++- `src/server/pty/interceptor.ts`
++- `src/server/socket/handlers/interceptor.ts`
++- `src/server/session/sessionManager.ts`
++
++### 접근 방식
++- Prisma `auditLog.create()`를 감싼 단순 싱글톤 로거를 추가
++- API 라우트는 쿼리 파라미터 기반 필터와 페이지네이션만 제공
++- 기존 인터셉터 승인 흐름은 비동기 로그 기록을 위해 `resolve()`를 `async`로 전환
++- 세션 생성/종료는 성공 시점에만 감사 로그를 남기도록 연결
++
++### API / 인터페이스
++```typescript
++auditLogger.log({
++  eventType: "session_create" | "session_terminate" | "interceptor_approve" | "interceptor_deny",
++  action: string,
++  sessionId?: string,
++  projectId?: string,
++  detail?: Record<string, unknown>,
++});
++
++GET /api/audit?sessionId=&projectId=&eventType=&limit=50&offset=0
++```
++
++---
++
++## 구현 내역
++
++- [x] Prisma 기반 `auditLogger` 싱글톤 추가
++- [x] `GET /api/audit` 라우트 추가
++- [x] 인터셉터 승인/거부 시 감사 로그 기록
++- [x] 세션 생성/종료 시 감사 로그 기록
++- [x] 타입 체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/audit/auditLogger.ts` | 신규 — 감사 로그 저장 싱글톤 |
++| `src/app/api/audit/route.ts` | 신규 — 감사 로그 조회 API |
++| `src/server/pty/interceptor.ts` | 승인/거부 시 감사 로그 기록 추가 |
++| `src/server/socket/handlers/interceptor.ts` | 비동기 `resolve()` 호출 반영 |
++| `src/server/session/sessionManager.ts` | 세션 생성/종료 감사 로그 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [ ] 수동 확인
++
++## 회고
++
++### 잘된 점
++- 감사 로그 저장 로직을 별도 모듈로 분리해 다른 이벤트에도 재사용 가능하게 유지했다.
++
++### 개선할 점
++- 현재 `/api/audit`는 `eventType` 값을 느슨하게 캐스팅하므로 필요하면 화이트리스트 검증을 추가할 수 있다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: interceptor/SSH/mode 변경 이벤트 감사 로그 확대
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..5d35bc857edbe9d49ad83d98ee9ec96f768fdf50
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -169,6 +169,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [감사 로그 백엔드 + API](features/2026-03-23_audit-logging-api.md)                    | 4     | 🟢   | `audit` `logging` `api` `interceptor` `session` `prisma`                    |
+ 
+ ### decisions/
+ 
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..ef4f23ca069f7a302c903534757b740de8600126
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [x] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [x] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [x] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [x] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,13 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- `src/server/audit/auditLogger.ts`에서 Prisma 기반 감사 로그 싱글톤 추가
++- `GET /api/audit`에서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터/페이징 지원
++- interceptor approve/deny, session create/terminate 시 `AuditLog` 기록 연결
++- `npx tsc --noEmit` 오류 없이 종료
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+@@ -94,4 +109,5 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/features/2026-03-23_audit-logging-api.md` — 감사 로그 백엔드/API 구현 기록
+ - `skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md` — Happy Coder YOLO 패턴 리서치
+
+file update:
+diff --git a/skill_graph/features/2026-03-23_audit-logging-api.md b/skill_graph/features/2026-03-23_audit-logging-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e33e45581a8718f089934ab3c1be13bed4e9cc4
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_audit-logging-api.md
+@@ -0,0 +1,82 @@
++# 감사 로그 백엔드 + API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: audit, logging, api, interceptor, session, prisma
++
++---
++
++## 요구사항
++
++감사 로그 시스템을 추가해 인터셉터 승인/거부와 세션 생성/종료 이벤트를 `AuditLog` 테이블에 저장하고, 이를 조회하는 `GET /api/audit` 엔드포인트를 제공한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/audit/auditLogger.ts`
++- `src/app/api/audit/route.ts`
++- `src/server/pty/interceptor.ts`
++- `src/server/socket/handlers/interceptor.ts`
++- `src/server/session/sessionManager.ts`
++
++### 접근 방식
++- Prisma `auditLog.create()`를 감싼 단순 싱글톤 로거를 추가
++- API 라우트는 쿼리 파라미터 기반 필터와 페이지네이션만 제공
++- 기존 인터셉터 승인 흐름은 비동기 로그 기록을 위해 `resolve()`를 `async`로 전환
++- 세션 생성/종료는 성공 시점에만 감사 로그를 남기도록 연결
++
++### API / 인터페이스
++```typescript
++auditLogger.log({
++  eventType: "session_create" | "session_terminate" | "interceptor_approve" | "interceptor_deny",
++  action: string,
++  sessionId?: string,
++  projectId?: string,
++  detail?: Record<string, unknown>,
++});
++
++GET /api/audit?sessionId=&projectId=&eventType=&limit=50&offset=0
++```
++
++---
++
++## 구현 내역
++
++- [x] Prisma 기반 `auditLogger` 싱글톤 추가
++- [x] `GET /api/audit` 라우트 추가
++- [x] 인터셉터 승인/거부 시 감사 로그 기록
++- [x] 세션 생성/종료 시 감사 로그 기록
++- [x] 타입 체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/audit/auditLogger.ts` | 신규 — 감사 로그 저장 싱글톤 |
++| `src/app/api/audit/route.ts` | 신규 — 감사 로그 조회 API |
++| `src/server/pty/interceptor.ts` | 승인/거부 시 감사 로그 기록 추가 |
++| `src/server/socket/handlers/interceptor.ts` | 비동기 `resolve()` 호출 반영 |
++| `src/server/session/sessionManager.ts` | 세션 생성/종료 감사 로그 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [ ] 수동 확인
++
++## 회고
++
++### 잘된 점
++- 감사 로그 저장 로직을 별도 모듈로 분리해 다른 이벤트에도 재사용 가능하게 유지했다.
++
++### 개선할 점
++- 현재 `/api/audit`는 `eventType` 값을 느슨하게 캐스팅하므로 필요하면 화이트리스트 검증을 추가할 수 있다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: interceptor/SSH/mode 변경 이벤트 감사 로그 확대
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..5d35bc857edbe9d49ad83d98ee9ec96f768fdf50
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -169,6 +169,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [감사 로그 백엔드 + API](features/2026-03-23_audit-logging-api.md)                    | 4     | 🟢   | `audit` `logging` `api` `interceptor` `session` `prisma`                    |
+ 
+ ### decisions/
+ 
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..ef4f23ca069f7a302c903534757b740de8600126
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [x] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [x] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [x] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [x] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,13 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- `src/server/audit/auditLogger.ts`에서 Prisma 기반 감사 로그 싱글톤 추가
++- `GET /api/audit`에서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터/페이징 지원
++- interceptor approve/deny, session create/terminate 시 `AuditLog` 기록 연결
++- `npx tsc --noEmit` 오류 없이 종료
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+@@ -94,4 +109,5 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/features/2026-03-23_audit-logging-api.md` — 감사 로그 백엔드/API 구현 기록
+ - `skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md` — Happy Coder YOLO 패턴 리서치
+
+exec
+/bin/bash -lc "nl -ba src/app/api/audit/route.ts | sed -n '1,200p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktreeexec
+/bin/bash -lc "nl -ba src/server/audit/auditLogger.ts | sed -n '1,120p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+     1	import { prisma } from "@/lib/prisma";
+     2	import type { AuditEventType } from "@/lib/types";
+     3	
+     4	class AuditLogger {
+     5	  async log(params: {
+     6	    eventType: AuditEventType;
+     7	    action: string;
+     8	    sessionId?: string;
+     9	    projectId?: string;
+    10	    detail?: Record<string, unknown>;
+    11	  }): Promise<void> {
+    12	    await prisma.auditLog.create({
+    13	      data: {
+    14	        eventType: params.eventType,
+    15	        action: params.action,
+    16	        sessionId: params.sessionId ?? null,
+    17	        projectId: params.projectId ?? null,
+    18	        detail: params.detail ? JSON.stringify(params.detail) : null,
+    19	      },
+    20	    });
+ succeeded in 0ms:
+     1	import { NextResponse } from "next/server";
+     2	import { prisma } from "@/lib/prisma";
+     3	import type { AuditEventType, AuditLogInfo } from "@/lib/types";
+     4	
+     5	function parseNumber(value: string | null, fallback: number): number {
+     6	  if (!value) return fallback;
+     7	  const parsed = Number.parseInt(value, 10);
+     8	  if (Number.isNaN(parsed) || parsed < 0) return fallback;
+     9	  return parsed;
+    10	}
+    11	
+    12	export async function GET(request: Request) {
+    13	  const { searchParams } = new URL(request.url);
+    14	  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
+    15	  const projectId = searchParams.get("projectId")?.trim() || undefined;
+    16	  const eventType = searchParams.get("eventType")?.trim() || undefined;
+    17	  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
+    18	  const offset = parseNumber(searchParams.get("offset"), 0);
+    19	
+    20	  const logs = await prisma.auditLog.findMany({
+exec
+/bin/bash -lc "nl -ba src/server/pty/interceptor.ts | sed -n '1,240p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+     1	import { randomUUID } from "crypto";
+     2	import {
+     3	  getActiveRules,
+     4	  getInterceptorMode,
+     5	} from "@/server/pty/interceptorRules";
+     6	import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
+     7	import { auditLogger } from "@/server/audit/auditLogger";
+     8	import type {
+     9	  PendingApproval,
+    10	  InterceptorWarning,
+    11	  InterceptorRuleInfo,
+    12	  InterceptorMode,
+    13	} from "@/lib/types";
+    14	
+    15	interface HeldApproval extends PendingApproval {
+    16	  heldData: string;
+    17	  timer: ReturnType<typeof setTimeout>;
+    18	}
+    19	
+    20	type PendingCallback = (approval: PendingApproval) => void;
+exec
+/bin/bash -lc "nl -ba src/server/socket/handlers/interceptor.ts | sed -n '1,120p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktreeexec
+/bin/bash -lc "nl -ba src/server/session/sessionManager.ts | sed -n '180,340p'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree succeeded in 0ms:
+     1	import type { OrbitServer, OrbitSocket } from "@/server/socket/types";
+     2	import { commandInterceptor } from "@/server/pty/interceptor";
+     3	import {
+     4	  seedInterceptorRules,
+     5	  setInterceptorMode,
+     6	} from "@/server/pty/interceptorRules";
+     7	import { getPtyBackend } from "@/server/pty/ptyBackend";
+     8	import type { InterceptorMode } from "@/lib/types";
+     9	
+    10	const VALID_MODES: InterceptorMode[] = ["blacklist", "allowlist", "hybrid", "yolo"];
+    11	
+    12	let rulesSeeded = false;
+    13	
+    14	export function registerInterceptorHandlers(
+    15	  io: OrbitServer,
+    16	  socket: OrbitSocket,
+    17	): void {
+    18	  // Seed default rules on first connection
+    19	  if (!rulesSeeded) {
+    20	    seedInterceptorRules()
+ succeeded in 0ms:
+   180	      remoteProject,
+   181	    );
+   182	    this.registerExitHandler(sessionId, "remote");
+   183	  }
+   184	
+   185	  async reconcileOnStartup(): Promise<void> {
+   186	    const activeCount = await prisma.agentSession.count({
+   187	      where: { status: "active" },
+   188	    });
+   189	
+   190	    if (activeCount > 0) {
+   191	      console.log(
+   192	        `[SessionManager] Startup detected ${activeCount} active session(s); keeping status for lazy recovery`,
+   193	      );
+   194	    }
+   195	  }
+   196	
+   197	  async createSession(req: CreateSessionRequest): Promise<SessionInfo> {
+   198	    const project = await prisma.project.findUnique({
+   199	      where: { id: req.projectId },
+file update:
+diff --git a/skill_graph/features/2026-03-23_audit-logging-api.md b/skill_graph/features/2026-03-23_audit-logging-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e33e45581a8718f089934ab3c1be13bed4e9cc4
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_audit-logging-api.md
+@@ -0,0 +1,82 @@
++# 감사 로그 백엔드 + API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: audit, logging, api, interceptor, session, prisma
++
++---
++
++## 요구사항
++
++감사 로그 시스템을 추가해 인터셉터 승인/거부와 세션 생성/종료 이벤트를 `AuditLog` 테이블에 저장하고, 이를 조회하는 `GET /api/audit` 엔드포인트를 제공한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/audit/auditLogger.ts`
++- `src/app/api/audit/route.ts`
++- `src/server/pty/interceptor.ts`
++- `src/server/socket/handlers/interceptor.ts`
++- `src/server/session/sessionManager.ts`
++
++### 접근 방식
++- Prisma `auditLog.create()`를 감싼 단순 싱글톤 로거를 추가
++- API 라우트는 쿼리 파라미터 기반 필터와 페이지네이션만 제공
++- 기존 인터셉터 승인 흐름은 비동기 로그 기록을 위해 `resolve()`를 `async`로 전환
++- 세션 생성/종료는 성공 시점에만 감사 로그를 남기도록 연결
++
++### API / 인터페이스
++```typescript
++auditLogger.log({
++  eventType: "session_create" | "session_terminate" | "interceptor_approve" | "interceptor_deny",
++  action: string,
++  sessionId?: string,
++  projectId?: string,
++  detail?: Record<string, unknown>,
++});
++
++GET /api/audit?sessionId=&projectId=&eventType=&limit=50&offset=0
++```
++
++---
++
++## 구현 내역
++
++- [x] Prisma 기반 `auditLogger` 싱글톤 추가
++- [x] `GET /api/audit` 라우트 추가
++- [x] 인터셉터 승인/거부 시 감사 로그 기록
++- [x] 세션 생성/종료 시 감사 로그 기록
++- [x] 타입 체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/audit/auditLogger.ts` | 신규 — 감사 로그 저장 싱글톤 |
++| `src/app/api/audit/route.ts` | 신규 — 감사 로그 조회 API |
++| `src/server/pty/interceptor.ts` | 승인/거부 시 감사 로그 기록 추가 |
++| `src/server/socket/handlers/interceptor.ts` | 비동기 `resolve()` 호출 반영 |
++| `src/server/session/sessionManager.ts` | 세션 생성/종료 감사 로그 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [ ] 수동 확인
++
++## 회고
++
++### 잘된 점
++- 감사 로그 저장 로직을 별도 모듈로 분리해 다른 이벤트에도 재사용 가능하게 유지했다.
++
++### 개선할 점
++- 현재 `/api/audit`는 `eventType` 값을 느슨하게 캐스팅하므로 필요하면 화이트리스트 검증을 추가할 수 있다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: interceptor/SSH/mode 변경 이벤트 감사 로그 확대
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..5d35bc857edbe9d49ad83d98ee9ec96f768fdf50
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -169,6 +169,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [감사 로그 백엔드 + API](features/2026-03-23_audit-logging-api.md)                    | 4     | 🟢   | `audit` `logging` `api` `interceptor` `session` `prisma`                    |
+ 
+ ### decisions/
+ 
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..ef4f23ca069f7a302c903534757b740de8600126
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [x] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [x] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [x] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [x] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,13 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- `src/server/audit/auditLogger.ts`에서 Prisma 기반 감사 로그 싱글톤 추가
++- `GET /api/audit`에서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터/페이징 지원
++- interceptor approve/deny, session create/terminate 시 `AuditLog` 기록 연결
++- `npx tsc --noEmit` 오류 없이 종료
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+@@ -94,4 +109,5 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/features/2026-03-23_audit-logging-api.md` — 감사 로그 백엔드/API 구현 기록
+ - `skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md` — Happy Coder YOLO 패턴 리서치
+
+codex
+감사 로그 백엔드와 API를 구현했습니다. `auditLogger` 싱글톤을 추가해 Prisma `AuditLog` 저장을 공통화했고, [`src/server/audit/auditLogger.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/audit/auditLogger.ts#L1)에서 `eventType/action/sessionId/projectId/detail`을 기록합니다. [`src/app/api/audit/route.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/app/api/audit/route.ts#L1)에는 `GET /api/audit`를 추가해서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터와 `AuditLogInfo[]` 응답을 연결했습니다.
+
+이벤트 연동도 넣었습니다. [`src/server/pty/interceptor.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/pty/interceptor.ts#L159)에서 approve/deny 시 감사 로그를 남기도록 `resolve()`를 비동기로 바꿨고, 그에 맞춰 [`src/server/socket/handlers/interceptor.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/socket/handlers/interceptor.ts#L29)도 조정했습니다. [`src/server/session/sessionManager.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/session/sessionManager.ts#L197)에는 세션 생성/종료 로그를 추가했습니다.
+
+검증은 `npx tsc --noEmit`로 완료했습니다. 작업 기록은 [`tasks/todo.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/tasks/todo.md)와 [`skill_graph/features/2026-03-23_audit-logging-api.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/skill_graph/features/2026-03-23_audit-logging-api.md)에 남겼습니다. 수동 API 호출이나 실제 interceptor/session 이벤트 E2E 확인은 이번 턴에서 수행하지 않았습니다.
+file update:
+diff --git a/skill_graph/features/2026-03-23_audit-logging-api.md b/skill_graph/features/2026-03-23_audit-logging-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..4e33e45581a8718f089934ab3c1be13bed4e9cc4
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_audit-logging-api.md
+@@ -0,0 +1,82 @@
++# 감사 로그 백엔드 + API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: audit, logging, api, interceptor, session, prisma
++
++---
++
++## 요구사항
++
++감사 로그 시스템을 추가해 인터셉터 승인/거부와 세션 생성/종료 이벤트를 `AuditLog` 테이블에 저장하고, 이를 조회하는 `GET /api/audit` 엔드포인트를 제공한다.
++
++## 설계
++
++### 변경 범위
++- `src/server/audit/auditLogger.ts`
++- `src/app/api/audit/route.ts`
++- `src/server/pty/interceptor.ts`
++- `src/server/socket/handlers/interceptor.ts`
++- `src/server/session/sessionManager.ts`
++
++### 접근 방식
++- Prisma `auditLog.create()`를 감싼 단순 싱글톤 로거를 추가
++- API 라우트는 쿼리 파라미터 기반 필터와 페이지네이션만 제공
++- 기존 인터셉터 승인 흐름은 비동기 로그 기록을 위해 `resolve()`를 `async`로 전환
++- 세션 생성/종료는 성공 시점에만 감사 로그를 남기도록 연결
++
++### API / 인터페이스
++```typescript
++auditLogger.log({
++  eventType: "session_create" | "session_terminate" | "interceptor_approve" | "interceptor_deny",
++  action: string,
++  sessionId?: string,
++  projectId?: string,
++  detail?: Record<string, unknown>,
++});
++
++GET /api/audit?sessionId=&projectId=&eventType=&limit=50&offset=0
++```
++
++---
++
++## 구현 내역
++
++- [x] Prisma 기반 `auditLogger` 싱글톤 추가
++- [x] `GET /api/audit` 라우트 추가
++- [x] 인터셉터 승인/거부 시 감사 로그 기록
++- [x] 세션 생성/종료 시 감사 로그 기록
++- [x] 타입 체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/server/audit/auditLogger.ts` | 신규 — 감사 로그 저장 싱글톤 |
++| `src/app/api/audit/route.ts` | 신규 — 감사 로그 조회 API |
++| `src/server/pty/interceptor.ts` | 승인/거부 시 감사 로그 기록 추가 |
++| `src/server/socket/handlers/interceptor.ts` | 비동기 `resolve()` 호출 반영 |
++| `src/server/session/sessionManager.ts` | 세션 생성/종료 감사 로그 추가 |
++
++---
++
++## 테스트
++
++- [x] `npx tsc --noEmit`
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [ ] 수동 확인
++
++## 회고
++
++### 잘된 점
++- 감사 로그 저장 로직을 별도 모듈로 분리해 다른 이벤트에도 재사용 가능하게 유지했다.
++
++### 개선할 점
++- 현재 `/api/audit`는 `eventType` 값을 느슨하게 캐스팅하므로 필요하면 화이트리스트 검증을 추가할 수 있다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: interceptor/SSH/mode 변경 이벤트 감사 로그 확대
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..5d35bc857edbe9d49ad83d98ee9ec96f768fdf50
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -169,6 +169,7 @@
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
++| [감사 로그 백엔드 + API](features/2026-03-23_audit-logging-api.md)                    | 4     | 🟢   | `audit` `logging` `api` `interceptor` `session` `prisma`                    |
+ 
+ ### decisions/
+ 
+diff --git a/src/app/api/audit/route.ts b/src/app/api/audit/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6ee436bb6e3750376b0c9b221b7fb6779596834c
+--- /dev/null
++++ b/src/app/api/audit/route.ts
+@@ -0,0 +1,42 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType, AuditLogInfo } from "@/lib/types";
++
++function parseNumber(value: string | null, fallback: number): number {
++  if (!value) return fallback;
++  const parsed = Number.parseInt(value, 10);
++  if (Number.isNaN(parsed) || parsed < 0) return fallback;
++  return parsed;
++}
++
++export async function GET(request: Request) {
++  const { searchParams } = new URL(request.url);
++  const sessionId = searchParams.get("sessionId")?.trim() || undefined;
++  const projectId = searchParams.get("projectId")?.trim() || undefined;
++  const eventType = searchParams.get("eventType")?.trim() || undefined;
++  const limit = Math.min(parseNumber(searchParams.get("limit"), 50), 200);
++  const offset = parseNumber(searchParams.get("offset"), 0);
++
++  const logs = await prisma.auditLog.findMany({
++    where: {
++      ...(sessionId && { sessionId }),
++      ...(projectId && { projectId }),
++      ...(eventType && { eventType: eventType as AuditEventType }),
++    },
++    orderBy: { createdAt: "desc" },
++    take: limit,
++    skip: offset,
++  });
++
++  const data: AuditLogInfo[] = logs.map((log) => ({
++    id: log.id,
++    sessionId: log.sessionId,
++    projectId: log.projectId,
++    eventType: log.eventType as AuditEventType,
++    action: log.action,
++    detail: log.detail,
++    createdAt: log.createdAt.toISOString(),
++  }));
++
++  return NextResponse.json({ data });
++}
+diff --git a/src/server/audit/auditLogger.ts b/src/server/audit/auditLogger.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..f9b2db37395216bba3f2dfc2e4dbfcb27cd7d938
+--- /dev/null
++++ b/src/server/audit/auditLogger.ts
+@@ -0,0 +1,24 @@
++import { prisma } from "@/lib/prisma";
++import type { AuditEventType } from "@/lib/types";
++
++class AuditLogger {
++  async log(params: {
++    eventType: AuditEventType;
++    action: string;
++    sessionId?: string;
++    projectId?: string;
++    detail?: Record<string, unknown>;
++  }): Promise<void> {
++    await prisma.auditLog.create({
++      data: {
++        eventType: params.eventType,
++        action: params.action,
++        sessionId: params.sessionId ?? null,
++        projectId: params.projectId ?? null,
++        detail: params.detail ? JSON.stringify(params.detail) : null,
++      },
++    });
++  }
++}
++
++export const auditLogger = new AuditLogger();
+diff --git a/src/server/pty/interceptor.ts b/src/server/pty/interceptor.ts
+index 5ad0cc4cfa55c302afda407a4d4dd505f1e9b276..345ebc3a2cc8d38929ecf5309fa85e412a296410
+--- a/src/server/pty/interceptor.ts
++++ b/src/server/pty/interceptor.ts
+@@ -4,6 +4,7 @@
+   getInterceptorMode,
+ } from "@/server/pty/interceptorRules";
+ import { INTERCEPTOR_AUTO_DENY_MS } from "@/lib/constants";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type {
+   PendingApproval,
+   InterceptorWarning,
+@@ -155,16 +156,22 @@
+    * Resolve a pending approval.
+    * Returns the held data if approved, null if denied.
+    */
+-  resolve(
++  async resolve(
+     approvalId: string,
+     approved: boolean,
+-  ): { sessionId: string; data: string } | null {
++  ): Promise<{ sessionId: string; data: string } | null> {
+     const held = this.pendingApprovals.get(approvalId);
+     if (!held) return null;
+ 
+     clearTimeout(held.timer);
+     this.pendingApprovals.delete(approvalId);
+ 
++    await auditLogger.log({
++      eventType: approved ? "interceptor_approve" : "interceptor_deny",
++      action: `${approved ? "Approved" : "Denied"}: ${held.command}`,
++      sessionId: held.sessionId,
++    });
++
+     if (approved) {
+       return { sessionId: held.sessionId, data: held.heldData };
+     }
+@@ -294,7 +301,7 @@
+     };
+ 
+     const timer = setTimeout(() => {
+-      this.resolve(approval.id, false);
++      void this.resolve(approval.id, false);
+     }, INTERCEPTOR_AUTO_DENY_MS);
+ 
+     this.pendingApprovals.set(approval.id, {
+diff --git a/src/server/session/sessionManager.ts b/src/server/session/sessionManager.ts
+index df981095550c0f9bd83d6400f97f68c4fdf486a2..a6a704a53b8fc3c8cdd129cde648401c41bb75a0
+--- a/src/server/session/sessionManager.ts
++++ b/src/server/session/sessionManager.ts
+@@ -6,6 +6,7 @@
+ import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+ import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+ import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
++import { auditLogger } from "@/server/audit/auditLogger";
+ import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+ import type { OrbitServer } from "@/server/socket/types";
+ 
+@@ -255,6 +256,13 @@
+         where: { id: session.id },
+         data: { sessionRef: nextSessionRef },
+       });
++
++      await auditLogger.log({
++        eventType: "session_create",
++        action: `Created session ${session.id}`,
++        sessionId: session.id,
++        projectId: session.projectId,
++      });
+     } catch (err) {
+       // Rollback: delete the DB record if PTY creation fails
+       await prisma.agentSession.delete({ where: { id: session.id } });
+@@ -268,6 +276,11 @@
+   }
+ 
+   async terminateSession(sessionId: string): Promise<void> {
++    const existing = await prisma.agentSession.findUnique({
++      where: { id: sessionId },
++      select: { projectId: true },
++    });
++
+     const pendingTimer = this.bootstrapTimers.get(sessionId);
+     if (pendingTimer) {
+       clearTimeout(pendingTimer);
+@@ -284,6 +297,15 @@
+         where: { id: sessionId },
+         data: { status: "terminated" },
+       });
++
++      if (existing) {
++        await auditLogger.log({
++          eventType: "session_terminate",
++          action: `Terminated session ${sessionId}`,
++          sessionId,
++          projectId: existing.projectId,
++        });
++      }
+     } catch {
+       // Session may not exist in DB
+     }
+diff --git a/src/server/socket/handlers/interceptor.ts b/src/server/socket/handlers/interceptor.ts
+index a487082c81294d6af910f42e9e0d3515985a81b7..c405e6b5f30f4317c2ff45feaf431c71dba8bdad
+--- a/src/server/socket/handlers/interceptor.ts
++++ b/src/server/socket/handlers/interceptor.ts
+@@ -26,8 +26,8 @@
+       });
+   }
+ 
+-  socket.on("interceptor-approve", (approvalId) => {
+-    const result = commandInterceptor.resolve(approvalId, true);
++  socket.on("interceptor-approve", async (approvalId) => {
++    const result = await commandInterceptor.resolve(approvalId, true);
+     if (result) {
+       // Forward the held data to the PTY
+       const backend = getPtyBackend(result.sessionId);
+@@ -40,9 +40,9 @@
+     socket.emit("interceptor-resolved", approvalId, true);
+   });
+ 
+-  socket.on("interceptor-deny", (approvalId) => {
++  socket.on("interceptor-deny", async (approvalId) => {
+     const pending = commandInterceptor.getPendingById(approvalId);
+-    commandInterceptor.resolve(approvalId, false);
++    await commandInterceptor.resolve(approvalId, false);
+     if (pending) {
+       io.to(`session:${pending.sessionId}`).emit(
+         "interceptor-resolved",
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..ef4f23ca069f7a302c903534757b740de8600126
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 감사 로그 시스템 구현 (`auditLogger`, `/api/audit`, interceptor/session 연동)
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- [x] `auditLogger` 싱글톤 추가 및 Prisma `AuditLog` 저장 로직 구현
++- [x] `/api/audit` GET 라우트 추가 및 필터/페이징 응답 매핑 구현
++- [x] interceptor approve/deny, session create/terminate 흐름에 감사 로그 연동
++- [x] 타입체크 및 결과 기록, 관련 노트 작성
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +73,13 @@
+ 
+ ## 결과
+ 
++### 감사 로그 시스템 구현 (2026-03-23)
++
++- `src/server/audit/auditLogger.ts`에서 Prisma 기반 감사 로그 싱글톤 추가
++- `GET /api/audit`에서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터/페이징 지원
++- interceptor approve/deny, session create/terminate 시 `AuditLog` 기록 연결
++- `npx tsc --noEmit` 오류 없이 종료
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+@@ -94,4 +109,5 @@
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+ - `skill_graph/features/2026-02-27_phase1-infra.md` — Phase 1 구현 기록
++- `skill_graph/features/2026-03-23_audit-logging-api.md` — 감사 로그 백엔드/API 구현 기록
+ - `skill_graph/decisions/2026-03-12_happy-mobile-yolo-research.md` — Happy Coder YOLO 패턴 리서치
+
+tokens used
+50,601
+감사 로그 백엔드와 API를 구현했습니다. `auditLogger` 싱글톤을 추가해 Prisma `AuditLog` 저장을 공통화했고, [`src/server/audit/auditLogger.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/audit/auditLogger.ts#L1)에서 `eventType/action/sessionId/projectId/detail`을 기록합니다. [`src/app/api/audit/route.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/app/api/audit/route.ts#L1)에는 `GET /api/audit`를 추가해서 `sessionId`, `projectId`, `eventType`, `limit`, `offset` 필터와 `AuditLogInfo[]` 응답을 연결했습니다.
+
+이벤트 연동도 넣었습니다. [`src/server/pty/interceptor.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/pty/interceptor.ts#L159)에서 approve/deny 시 감사 로그를 남기도록 `resolve()`를 비동기로 바꿨고, 그에 맞춰 [`src/server/socket/handlers/interceptor.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/socket/handlers/interceptor.ts#L29)도 조정했습니다. [`src/server/session/sessionManager.ts`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/src/server/session/sessionManager.ts#L197)에는 세션 생성/종료 로그를 추가했습니다.
+
+검증은 `npx tsc --noEmit`로 완료했습니다. 작업 기록은 [`tasks/todo.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/tasks/todo.md)와 [`skill_graph/features/2026-03-23_audit-logging-api.md`](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-01/worktree/skill_graph/features/2026-03-23_audit-logging-api.md)에 남겼습니다. 수동 API 호출이나 실제 interceptor/session 이벤트 E2E 확인은 이번 턴에서 수행하지 않았습니다.

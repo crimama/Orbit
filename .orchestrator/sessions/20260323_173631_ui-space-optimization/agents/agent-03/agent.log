@@ -1,0 +1,1466 @@
+# Agent Log: agent-03
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: Fix globals.css text-xs override
+
+## Agent
+agent-03
+
+## Status
+pending
+
+## Description
+Remove the text-xs override in src/app/globals.css that inflates all toolbar heights.
+
+Current code (lines 96-99):
+```css
+.text-xs {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+```
+
+This overrides Tailwind's standard `text-xs` (0.75rem / 1rem) with 0.875rem, making all `text-xs` elements larger than expected. This directly inflates the height of:
+- Top navigation bar
+- Tab bars in BorderlessWorkspace
+- Pane toolbars in TerminalPane
+- Session list items
+- All other text-xs elements
+
+Action: DELETE the entire .text-xs block (lines 96-99) from the @layer utilities section. Keep the .text-balance utility.
+
+The result should be:
+```css
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+```
+
+This is a safe change because Tailwind's default text-xs (0.75rem) is the standard expected value.
+
+## Target Files
+- `src/app/globals.css`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] text-xs override removed
+- [ ] text-balance utility preserved
+- [ ] File still valid CSS
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree
+# Started: 2026-03-23T17:37:41.712356
+
+OpenAI Codex v0.114.0 (research preview)
+--------
+workdir: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019d19d7-c23c-7160-93cf-f87592bc1f1a
+--------
+user
+Read and execute the task described below.
+
+# Task: Fix globals.css text-xs override
+
+## Agent
+agent-03
+
+## Status
+pending
+
+## Description
+Remove the text-xs override in src/app/globals.css that inflates all toolbar heights.
+
+Current code (lines 96-99):
+```css
+.text-xs {
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+```
+
+This overrides Tailwind's standard `text-xs` (0.75rem / 1rem) with 0.875rem, making all `text-xs` elements larger than expected. This directly inflates the height of:
+- Top navigation bar
+- Tab bars in BorderlessWorkspace
+- Pane toolbars in TerminalPane
+- Session list items
+- All other text-xs elements
+
+Action: DELETE the entire .text-xs block (lines 96-99) from the @layer utilities section. Keep the .text-balance utility.
+
+The result should be:
+```css
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+```
+
+This is a safe change because Tailwind's default text-xs (0.75rem) is the standard expected value.
+
+## Target Files
+- `src/app/globals.css`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] text-xs override removed
+- [ ] text-balance utility preserved
+- [ ] File still valid CSS
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+I’m reading the project playbook and task trackers first, then I’ll update `tasks/todo.md` and make the requested CSS change with a quick verification pass.
+exec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktreeexec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+codex
+I’ve loaded the project rules and existing task log. Next I’m updating `tasks/todo.md` for this CSS fix, then I’ll remove the override and verify the resulting utility block is intact.
+exec
+/bin/bash -lc "sed -n '1,180p' src/app/globals.css" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+@import "@xterm/xterm/css/xterm.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --terminal-bg: #0b1220;
+
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-elevated: #f5f5f5;
+  --surface-overlay: #e5e5e5;
+
+  /* Borders */
+  --border: #d4d4d4;
+  --border-focus: #0ea5e9;
+
+codex
+I found the exact override in `src/app/globals.css`. I’m patching `tasks/todo.md` first to track the work, then removing only the `.text-xs` utility so the rest of the CSS remains unchanged.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -25,2 +26,8 @@
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+apply_patch(auto_approved=true) exited 0 in 8ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..2f122102a3fb545cd3e10b6250226496b89ffb68
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..2f122102a3fb545cd3e10b6250226496b89ffb68
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/src/app/globals.css
+@@ -94,7 +94,2 @@
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+apply_patch(auto_approved=true) exited 0 in 15ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/src/app/globals.css
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..2f122102a3fb545cd3e10b6250226496b89ffb68
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..2f122102a3fb545cd3e10b6250226496b89ffb68
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+The CSS edit is in place. I’m doing a lightweight verification now: confirming the override is gone, the `text-balance` utility still exists, and then I’ll update the task log and a short bugfix note.
+exec
+/bin/bash -lc 'rg -n "text-balance|text-xs" src/app/globals.css' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+92:  .text-balance {
+exec
+/bin/bash -lc "sed -n '72,110p' src/app/globals.css" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+  color: var(--foreground);
+  background: var(--background);
+  font-family:
+    var(--font-geist-sans), "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+input,
+select,
+button,
+textarea {
+  font: inherit;
+}
+
+@layer utilities {
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..2f122102a3fb545cd3e10b6250226496b89ffb68
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,220p' skill_graph/bugfix/2026-03-12_mobile-command-send-execution.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+# 모바일 command send 미실행 — 2026-03-12
+
+> **심각도**: 🟠 Major
+> **상태**: 🟢 해결
+> **keywords**: mobile, terminal, session, command, pty
+
+---
+
+## 증상
+
+모바일 UI의 `Type command...` 입력창에서 텍스트를 입력하고 `Send`를 누르면,
+명령이 실행되기보다 터미널 pane 활성화만 일어나는 것처럼 보였고 PTY에서 실제 실행이 안정적으로 일어나지 않았다.
+
+## 원인
+
+모바일 chat terminal만 명령 전송을 `socket.emit("terminal-data", value + "\\r")` 경로에 직접 의존하고 있었다.
+이 경로는 해당 소켓의 attach 상태와 터치 시점에 민감했고, 데스크톱/다른 채팅형 입력 UI가 사용하는 서버 측 `sessionManager.sendInput()` 경로와도 분리되어 있었다.
+
+## 수정
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..2f122102a3fb545cd3e10b6250226496b89ffb68
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [ ] `text-balance` 유틸리티 유지 여부 확인
++- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+Verification confirmed the override is removed and only `.text-balance` remains in the utility layer. I’m finishing the required repo bookkeeping now: marking the task done and adding a short bugfix record to `skill_graph`.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -28,5 +28,5 @@
+ 
+-- [ ] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
+-- [ ] `text-balance` 유틸리티 유지 여부 확인
+-- [ ] 변경 후 CSS 블록 구조 검토 및 결과 기록
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
+ 
+@@ -74,2 +74,8 @@
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+apply_patch(auto_approved=true) exited 0 in 5ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/tasks/todo.md
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+# globals.css text-xs override 제거 — 2026-03-23
+
+> **심각도**: 🟡 Minor
+> **상태**: 🟢 해결
+> **keywords**: css, tailwind, text-xs, toolbar, typography
+
+---
+
+## 증상
+
+`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
+Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
+그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
+
+## 원인
+
+`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
+
+## 수정
+
+### 변경 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
+
+## 검증
+
+- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
+- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
+- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
+
+---
+
+## 관련 노트
+- `../features/2026-03-12_frontend-component-specification.md`
+apply_patch(auto_approved=true) exited 0 in 8ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+file update:
+diff --git a/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..95b5fddb2916087b8ad15000e8181803429dcc68
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+@@ -0,0 +1,35 @@
++# globals.css text-xs override 제거 — 2026-03-23
++
++> **심각도**: 🟡 Minor
++> **상태**: 🟢 해결
++> **keywords**: css, tailwind, text-xs, toolbar, typography
++
++---
++
++## 증상
++
++`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
++Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
++그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
++
++## 원인
++
++`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
++
++## 검증
++
++- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
++- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
++- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
++
++---
++
++## 관련 노트
++- `../features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..95b5fddb2916087b8ad15000e8181803429dcc68
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+@@ -0,0 +1,35 @@
++# globals.css text-xs override 제거 — 2026-03-23
++
++> **심각도**: 🟡 Minor
++> **상태**: 🟢 해결
++> **keywords**: css, tailwind, text-xs, toolbar, typography
++
++---
++
++## 증상
++
++`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
++Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
++그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
++
++## 원인
++
++`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
++
++## 검증
++
++- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
++- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
++- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
++
++---
++
++## 관련 노트
++- `../features/2026-03-12_frontend-component-specification.md`
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/index.md
+@@ -158,2 +158,5 @@
+ | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
++| **text-xs**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **toolbar**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **typography**      | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
+ 
+@@ -188,2 +191,3 @@
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | 🟢   | 툴바/탭 높이 정상화 | `css` `tailwind` `text-xs` `toolbar` `typography` |
+ 
+apply_patch(auto_approved=true) exited 0 in 22ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/index.md
+file update:
+diff --git a/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..95b5fddb2916087b8ad15000e8181803429dcc68
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+@@ -0,0 +1,35 @@
++# globals.css text-xs override 제거 — 2026-03-23
++
++> **심각도**: 🟡 Minor
++> **상태**: 🟢 해결
++> **keywords**: css, tailwind, text-xs, toolbar, typography
++
++---
++
++## 증상
++
++`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
++Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
++그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
++
++## 원인
++
++`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
++
++## 검증
++
++- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
++- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
++- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
++
++---
++
++## 관련 노트
++- `../features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..9984623238e5b868cb5a6800607f7925cab5d512
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -156,6 +156,9 @@
+ | **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
++| **text-xs**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **toolbar**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **typography**      | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
+ 
+ ---
+ 
+@@ -186,6 +189,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | 🟢   | 툴바/탭 높이 정상화 | `css` `tailwind` `text-xs` `toolbar` `typography` |
+ 
+ ### refactor/
+ 
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+file update:
+diff --git a/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..95b5fddb2916087b8ad15000e8181803429dcc68
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+@@ -0,0 +1,35 @@
++# globals.css text-xs override 제거 — 2026-03-23
++
++> **심각도**: 🟡 Minor
++> **상태**: 🟢 해결
++> **keywords**: css, tailwind, text-xs, toolbar, typography
++
++---
++
++## 증상
++
++`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
++Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
++그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
++
++## 원인
++
++`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
++
++## 검증
++
++- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
++- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
++- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
++
++---
++
++## 관련 노트
++- `../features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..9984623238e5b868cb5a6800607f7925cab5d512
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -156,6 +156,9 @@
+ | **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
++| **text-xs**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **toolbar**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **typography**      | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
+ 
+ ---
+ 
+@@ -186,6 +189,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | 🟢   | 툴바/탭 높이 정상화 | `css` `tailwind` `text-xs` `toolbar` `typography` |
+ 
+ ### refactor/
+ 
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+exec
+/bin/bash -lc "sed -n '88,102p' src/app/globals.css" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+  font: inherit;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+.orbit-resizing,
+.orbit-resizing * {
+  user-select: none !important;
+}
+
+/* CodeMirror responsive containment — prevent internal flex-basis overflow */
+exec
+/bin/bash -lc 'git diff -- src/app/globals.css tasks/todo.md skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md skill_graph/index.md' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree succeeded in 0ms:
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9..9984623 100644
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -156,6 +156,9 @@
+ | **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
++| **text-xs**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **toolbar**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **typography**      | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
+ 
+ ---
+ 
+@@ -186,6 +189,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | 🟢   | 툴바/탭 높이 정상화 | `css` `tailwind` `text-xs` `toolbar` `typography` |
+ 
+file update:
+diff --git a/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..95b5fddb2916087b8ad15000e8181803429dcc68
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+@@ -0,0 +1,35 @@
++# globals.css text-xs override 제거 — 2026-03-23
++
++> **심각도**: 🟡 Minor
++> **상태**: 🟢 해결
++> **keywords**: css, tailwind, text-xs, toolbar, typography
++
++---
++
++## 증상
++
++`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
++Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
++그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
++
++## 원인
++
++`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
++
++## 검증
++
++- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
++- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
++- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
++
++---
++
++## 관련 노트
++- `../features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..9984623238e5b868cb5a6800607f7925cab5d512
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -156,6 +156,9 @@
+ | **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
++| **text-xs**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **toolbar**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **typography**      | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
+ 
+ ---
+ 
+@@ -186,6 +189,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | 🟢   | 툴바/탭 높이 정상화 | `css` `tailwind` `text-xs` `toolbar` `typography` |
+ 
+ ### refactor/
+ 
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+codex
+Removed the `.text-xs` override from [src/app/globals.css](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/src/app/globals.css#L91), leaving only `.text-balance` in the `@layer utilities` block. That restores Tailwind’s standard `text-xs` sizing and should reduce the inflated toolbar/tab heights.
+
+I also updated the required task tracking in [tasks/todo.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/tasks/todo.md) and added a short bugfix record in [skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md), with the index updated at [skill_graph/index.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/index.md).
+
+Verification was lightweight but direct: `rg -n "text-balance|text-xs" src/app/globals.css` now finds only `.text-balance`, and the edited utility block remains valid CSS.
+file update:
+diff --git a/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..95b5fddb2916087b8ad15000e8181803429dcc68
+--- /dev/null
++++ b/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md
+@@ -0,0 +1,35 @@
++# globals.css text-xs override 제거 — 2026-03-23
++
++> **심각도**: 🟡 Minor
++> **상태**: 🟢 해결
++> **keywords**: css, tailwind, text-xs, toolbar, typography
++
++---
++
++## 증상
++
++`src/app/globals.css`에서 전역 `.text-xs` 유틸리티를 `0.875rem / 1.35`로 재정의하고 있어,
++Tailwind 기본 `text-xs`보다 큰 타이포그래피가 앱 전반에 적용되었다.
++그 결과 상단 네비게이션, 탭 바, pane 툴바, 세션 리스트 등 `text-xs` 기반 UI의 높이가 함께 커졌다.
++
++## 원인
++
++`@layer utilities` 내부의 커스텀 `.text-xs`가 Tailwind 기본 유틸리티를 덮어쓰고 있었다.
++
++## 수정
++
++### 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/globals.css` | 전역 `.text-xs` override 삭제, `.text-balance` 유지 |
++
++## 검증
++
++- [x] `src/app/globals.css`에서 `.text-xs` 정의 제거 확인
++- [x] `@layer utilities`에 `.text-balance`만 남았는지 확인
++- [x] `rg -n "text-balance|text-xs" src/app/globals.css` 실행으로 override 미존재 확인
++
++---
++
++## 관련 노트
++- `../features/2026-03-12_frontend-component-specification.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..9984623238e5b868cb5a6800607f7925cab5d512
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -156,6 +156,9 @@
+ | **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+ | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
++| **text-xs**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **toolbar**         | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
++| **typography**      | [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | bugfix |
+ 
+ ---
+ 
+@@ -186,6 +189,7 @@
+ | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
+ | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
+ | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
++| [globals.css text-xs override 제거](bugfix/2026-03-23_globals-text-xs-override-removal.md) | 🟢   | 툴바/탭 높이 정상화 | `css` `tailwind` `text-xs` `toolbar` `typography` |
+ 
+ ### refactor/
+ 
+diff --git a/src/app/globals.css b/src/app/globals.css
+index c8f15c69fa8f97f622fd6830acc12206912885b9..9da34f6dcaedf5af585ff17e685a2c6c14452f9f
+--- a/src/app/globals.css
++++ b/src/app/globals.css
+@@ -92,11 +92,6 @@
+   .text-balance {
+     text-wrap: balance;
+   }
+-
+-  .text-xs {
+-    font-size: 0.875rem;
+-    line-height: 1.35;
+-  }
+ }
+ 
+ .orbit-resizing,
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..dea83e017231c9ccbc4bfe88b4eff38bff2d4843
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] `globals.css`의 `text-xs` override 제거로 툴바 높이 팽창 수정
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,12 @@
+ 
+ ## 계획
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- [x] `src/app/globals.css`의 `@layer utilities`에서 `text-xs` override 삭제
++- [x] `text-balance` 유틸리티 유지 여부 확인
++- [x] 변경 후 CSS 블록 구조 검토 및 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -65,6 +72,12 @@
+ 
+ ## 결과
+ 
++### `globals.css` `text-xs` override 제거 (2026-03-23)
++
++- `src/app/globals.css`의 `@layer utilities`에서 전역 `.text-xs` override 삭제
++- `.text-balance` 유틸리티만 유지되어 Tailwind 기본 `text-xs` 크기(`0.75rem / 1rem`)가 다시 적용됨
++- `rg -n "text-balance|text-xs" src/app/globals.css`와 블록 재확인으로 override 제거 및 CSS 구조 유지 검증
++
+ ### 프로젝트 하네스 + 채팅형 UX (2026-02-28)
+ 
+ - 프로젝트 별 하네스 설정이 DB/REST/UI 레벨에서 동작하도록 연결
+
+tokens used
+16,719
+Removed the `.text-xs` override from [src/app/globals.css](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/src/app/globals.css#L91), leaving only `.text-balance` in the `@layer utilities` block. That restores Tailwind’s standard `text-xs` sizing and should reduce the inflated toolbar/tab heights.
+
+I also updated the required task tracking in [tasks/todo.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/tasks/todo.md) and added a short bugfix record in [skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/bugfix/2026-03-23_globals-text-xs-override-removal.md), with the index updated at [skill_graph/index.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_173631_ui-space-optimization/agents/agent-03/worktree/skill_graph/index.md).
+
+Verification was lightweight but direct: `rg -n "text-balance|text-xs" src/app/globals.css` now finds only `.text-balance`, and the edited utility block remains valid CSS.

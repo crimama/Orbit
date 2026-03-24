@@ -1,0 +1,2752 @@
+# Agent Log: agent-03
+# Command: codex exec --full-auto Read and execute the task described below.
+
+# Task: Session Checkpoint + Fork API
+
+## Agent
+agent-03
+
+## Status
+pending
+
+## Description
+세션 체크포인트 생성/조회와 포크 기능 API.
+
+## 1. src/app/api/sessions/[id]/checkpoints/route.ts (신규)
+- GET: 세션의 체크포인트 목록 (SessionCheckpointInfo[])
+- POST: 체크포인트 생성. body: { name: string }
+  - getPtyBackend(sessionId)로 스크롤백 가져옴
+  - gzip 압축하여 scrollback 필드에 저장
+  - cwd는 없으면 null
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getPtyBackend } from '@/server/pty/ptyBackend';
+import { gzipSync } from 'zlib';
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const checkpoints = await prisma.sessionCheckpoint.findMany({
+    where: { sessionId: params.id },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, sessionId: true, name: true, cwd: true, metadata: true, createdAt: true },
+  });
+  return NextResponse.json({ data: checkpoints.map(c => ({ ...c, createdAt: c.createdAt.toISOString() })) });
+}
+
+export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const body = await request.json();
+  const backend = getPtyBackend(params.id);
+  const scrollback = backend?.getScrollback(params.id);
+  const checkpoint = await prisma.sessionCheckpoint.create({
+    data: {
+      sessionId: params.id,
+      name: body.name || 'checkpoint',
+      scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
+    },
+  });
+  return NextResponse.json({ data: { ...checkpoint, createdAt: checkpoint.createdAt.toISOString() } }, { status: 201 });
+}
+```
+
+## 2. src/app/api/sessions/[id]/fork/route.ts (신규)
+- POST: 체크포인트에서 새 세션 생성. body: { checkpointId: string, name?: string }
+  - 체크포인트의 세션에서 projectId, agentType 복사
+  - sessionManager.createSession() 호출
+  - 반환: 새 SessionInfo
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { sessionManager } from '@/server/session/sessionManager';
+
+export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const body = await request.json();
+  const checkpoint = await prisma.sessionCheckpoint.findUnique({ where: { id: body.checkpointId } });
+  if (!checkpoint) return NextResponse.json({ error: 'Checkpoint not found' }, { status: 404 });
+  
+  const origSession = await prisma.agentSession.findUnique({ where: { id: checkpoint.sessionId } });
+  if (!origSession) return NextResponse.json({ error: 'Original session not found' }, { status: 404 });
+  
+  const newSession = await sessionManager.createSession({
+    projectId: origSession.projectId,
+    agentType: origSession.agentType,
+    name: body.name || 'Fork of ' + (origSession.name || origSession.id.slice(0,8)),
+    resumeSessionRef: origSession.sessionRef,
+  });
+  return NextResponse.json({ data: newSession }, { status: 201 });
+}
+```
+
+## 참고
+- SessionCheckpointInfo 타입은 src/lib/types.ts에 정의됨
+- params 패턴: { params: { id: string } }
+- gzipSync: import { gzipSync } from 'zlib'
+
+## Target Files
+- `src/app/api/sessions/[id]/checkpoints/route.ts`
+- `src/app/api/sessions/[id]/fork/route.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] GET /api/sessions/{id}/checkpoints가 체크포인트 목록 반환
+- [ ] POST /api/sessions/{id}/checkpoints가 스크롤백 포함 체크포인트 생성
+- [ ] POST /api/sessions/{id}/fork가 새 세션 생성
+- [ ] npx tsc --noEmit 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+# CWD: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree
+# Started: 2026-03-23T07:36:26.018544
+
+OpenAI Codex v0.114.0 (research preview)
+--------
+workdir: /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree
+model: gpt-5.4
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR, /home/hun/.codex/memories]
+reasoning effort: medium
+reasoning summaries: none
+session id: 019d17b1-470e-74f3-af72-d212aa9d9b86
+--------
+user
+Read and execute the task described below.
+
+# Task: Session Checkpoint + Fork API
+
+## Agent
+agent-03
+
+## Status
+pending
+
+## Description
+세션 체크포인트 생성/조회와 포크 기능 API.
+
+## 1. src/app/api/sessions/[id]/checkpoints/route.ts (신규)
+- GET: 세션의 체크포인트 목록 (SessionCheckpointInfo[])
+- POST: 체크포인트 생성. body: { name: string }
+  - getPtyBackend(sessionId)로 스크롤백 가져옴
+  - gzip 압축하여 scrollback 필드에 저장
+  - cwd는 없으면 null
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getPtyBackend } from '@/server/pty/ptyBackend';
+import { gzipSync } from 'zlib';
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const checkpoints = await prisma.sessionCheckpoint.findMany({
+    where: { sessionId: params.id },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, sessionId: true, name: true, cwd: true, metadata: true, createdAt: true },
+  });
+  return NextResponse.json({ data: checkpoints.map(c => ({ ...c, createdAt: c.createdAt.toISOString() })) });
+}
+
+export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const body = await request.json();
+  const backend = getPtyBackend(params.id);
+  const scrollback = backend?.getScrollback(params.id);
+  const checkpoint = await prisma.sessionCheckpoint.create({
+    data: {
+      sessionId: params.id,
+      name: body.name || 'checkpoint',
+      scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
+    },
+  });
+  return NextResponse.json({ data: { ...checkpoint, createdAt: checkpoint.createdAt.toISOString() } }, { status: 201 });
+}
+```
+
+## 2. src/app/api/sessions/[id]/fork/route.ts (신규)
+- POST: 체크포인트에서 새 세션 생성. body: { checkpointId: string, name?: string }
+  - 체크포인트의 세션에서 projectId, agentType 복사
+  - sessionManager.createSession() 호출
+  - 반환: 새 SessionInfo
+
+```typescript
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { sessionManager } from '@/server/session/sessionManager';
+
+export async function POST(request: Request, { params }: { params: { id: string } }) {
+  const body = await request.json();
+  const checkpoint = await prisma.sessionCheckpoint.findUnique({ where: { id: body.checkpointId } });
+  if (!checkpoint) return NextResponse.json({ error: 'Checkpoint not found' }, { status: 404 });
+  
+  const origSession = await prisma.agentSession.findUnique({ where: { id: checkpoint.sessionId } });
+  if (!origSession) return NextResponse.json({ error: 'Original session not found' }, { status: 404 });
+  
+  const newSession = await sessionManager.createSession({
+    projectId: origSession.projectId,
+    agentType: origSession.agentType,
+    name: body.name || 'Fork of ' + (origSession.name || origSession.id.slice(0,8)),
+    resumeSessionRef: origSession.sessionRef,
+  });
+  return NextResponse.json({ data: newSession }, { status: 201 });
+}
+```
+
+## 참고
+- SessionCheckpointInfo 타입은 src/lib/types.ts에 정의됨
+- params 패턴: { params: { id: string } }
+- gzipSync: import { gzipSync } from 'zlib'
+
+## Target Files
+- `src/app/api/sessions/[id]/checkpoints/route.ts`
+- `src/app/api/sessions/[id]/fork/route.ts`
+
+## Dependencies
+None
+
+## Acceptance Criteria
+- [ ] GET /api/sessions/{id}/checkpoints가 체크포인트 목록 반환
+- [ ] POST /api/sessions/{id}/checkpoints가 스크롤백 포함 체크포인트 생성
+- [ ] POST /api/sessions/{id}/fork가 새 세션 생성
+- [ ] npx tsc --noEmit 통과
+
+## Notes
+(Orchestrator may add coordination notes here)
+
+mcp startup: no servers
+codex
+요청한 체크포인트/포크 API를 추가하겠습니다. 먼저 `CLAUDE.md`, `tasks/lessons.md`, `tasks/todo.md`를 읽고 현재 구현 방식과 작업 기록 규칙을 맞춘 뒤, 관련 세션 타입과 기존 API 패턴을 확인하겠습니다.
+exec
+/bin/bash -lc "sed -n '1,220p' CLAUDE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Principle
+
+**"어떠한 환경에서도, 사용자의 AI 에이전트와 스킬을 시각적으로 통제하고 지속시키는 지휘 통제실"**
+- 복잡함을 숨기고 단순한 인터페이스를 제공한다
+- 로컬과 원격의 경계를 없앤다
+- 모바일에서도 데스크탑과 동등한 제어권을 보장한다
+
+## Project Summary
+
+**Agent-Orbit**은 AI 에이전트(Claude Code, Codex 등) 오케스트레이션 플랫폼이다.
+로컬/원격(SSH) 서버의 에이전트를 하나의 웹 대시보드에서 관리하며,
+세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공한다.
+
+> 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
+
+## Commands
+exec
+/bin/bash -lc "sed -n '1,260p' tasks/todo.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktreeexec
+/bin/bash -lc "sed -n '1,220p' tasks/lessons.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+# Lessons Learned
+
+<!-- 사용자의 수정·지적으로부터 추출한 교훈을 누적 기록. -->
+<!-- 세션 시작 시 반드시 먼저 확인할 것. -->
+<!-- 반복 검증된 패턴은 skill_graph/analysis/{주제}/_lessons.md 로 승격. -->
+
+## 규칙 & 패턴
+
+<!-- 형식:
+### [날짜] 교훈 제목
+발생 상황: ...
+잘못한 것: ...
+올바른 방법: ...
+-->
+
+---
+
+*아직 기록된 교훈이 없습니다. 사용자의 첫 번째 수정/지적 후 채워집니다.*
+ succeeded in 0ms:
+# Tasks — Todo
+
+## 현재 작업
+
+- [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+- [x] Phase 1: 인프라 구축
+- [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+- [x] YOLO 모드 버그 수정 + 세션별 YOLO 구현
+
+## 이번 세션 (2026-03-12)
+
+### YOLO 모드 버그 수정 + 세션별 YOLO
+
+**근본 원인**: API route의 `commandInterceptor.invalidateCache()`가 Next.js 번들의 별도 모듈 인스턴스에서 실행됨. Socket.io 핸들러가 사용하는 실제 인터셉터 인스턴스의 캐시에는 영향 없음.
+
+- [x] 1. `interceptor.ts` — 세션별 모드 맵 추가 (`sessionModes: Map<string, InterceptorMode>`)
+- [x] 2. `interceptor.ts` — `intercept()`에서 세션 모드 우선 체크 로직 추가
+- [x] 3. Socket 이벤트 추가 — `set-interceptor-mode`, `set-session-mode` (REST 대신 Socket 경유)
+- [x] 4. `types.ts` — 새 소켓 이벤트 타입 정의
+- [x] 5. Dashboard 글로벌 YOLO 토글 → Socket 경유로 변경
+codex
+작업 규칙을 확인했고, 이제 관련 세션 API와 타입, `sessionManager`/PTY 백엔드 인터페이스를 읽은 뒤 `tasks/todo.md`에 이번 작업 항목을 추가하겠습니다. 구현 전에 기존 패턴과 실제 호출 시그니처를 맞추는 쪽으로 정리합니다.
+exec
+/bin/bash -lc "rg -n \"createSession\\(|getPtyBackend|SessionCheckpointInfo|sessionCheckpoint|agentSession\" src prisma --glob '"'!node_modules'"'" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+src/server/observability/eventExtractor.ts:1:import { getPtyBackend } from "@/server/pty/ptyBackend";
+src/server/observability/eventExtractor.ts:81:  const backend = getPtyBackend(sessionId);
+src/server/socket/handlers/interceptor.ts:7:import { getPtyBackend } from "@/server/pty/ptyBackend";
+src/server/socket/handlers/interceptor.ts:33:      const backend = getPtyBackend(result.sessionId);
+src/server/socket/handlers/terminal.ts:3:import { getPtyBackend } from "@/server/pty/ptyBackend";
+src/server/socket/handlers/terminal.ts:82:    const existingBackend = getPtyBackend(sessionId);
+src/server/socket/handlers/terminal.ts:97:    const backend = getPtyBackend(sessionId) ?? ptyManager;
+src/server/socket/handlers/terminal.ts:159:    const backend = getPtyBackend(sid);
+src/server/socket/handlers/terminal.ts:184:      const backend = getPtyBackend(sid);
+src/server/socket/handlers/terminal.ts:201:        const backend = getPtyBackend(session.id);
+src/server/graph/traceDetector.ts:1:import { getPtyBackend } from "@/server/pty/ptyBackend";
+src/server/graph/traceDetector.ts:129:    const backend = getPtyBackend(sessionId);
+src/server/session/sessionManager.ts:132:        prisma.agentSession.update({
+src/server/session/sessionManager.ts:147:        await prisma.agentSession.update({
+src/server/session/sessionManager.ts:185:    const activeCount = await prisma.agentSession.count({
+src/server/session/sessionManager.ts:196:  async createSession(req: CreateSessionRequest): Promise<SessionInfo> {
+src/server/session/sessionManager.ts:209:    const session = await prisma.agentSession.create({
+src/server/session/sessionManager.ts:254:      await prisma.agentSession.update({
+src/server/session/sessionManager.ts:260:      await prisma.agentSession.delete({ where: { id: session.id } });
+src/server/session/sessionManager.ts:283:      await prisma.agentSession.update({
+exec
+/bin/bash -lc 'rg --files src/app/api src/server src/lib prisma | rg "sessions|types|ptyBackend|sessionManager|schema"' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+prisma/schema.prisma
+src/server/pty/ptyBackend.ts
+src/server/session/sessionManager.ts
+src/lib/types.ts
+src/server/socket/types.ts
+src/app/api/sessions/[id]/chat-messages/route.ts
+src/app/api/sessions/[id]/route.ts
+src/app/api/sessions/route.ts
+src/app/api/sessions/[id]/command/route.ts
+src/app/api/resources/sessions/[id]/context/route.ts
+exec
+/bin/bash -lc "sed -n '1,220p' src/server/pty/ptyBackend.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktreeexec
+/bin/bash -lc "sed -n '180,290p' src/server/session/sessionManager.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+    );
+    this.registerExitHandler(sessionId, "remote");
+  }
+
+  async reconcileOnStartup(): Promise<void> {
+    const activeCount = await prisma.agentSession.count({
+      where: { status: "active" },
+    });
+
+    if (activeCount > 0) {
+      console.log(
+        `[SessionManager] Startup detected ${activeCount} active session(s); keeping status for lazy recovery`,
+      );
+    }
+  }
+
+  async createSession(req: CreateSessionRequest): Promise<SessionInfo> {
+    const project = await prisma.project.findUnique({
+      where: { id: req.projectId },
+    });
+ succeeded in 0ms:
+/** Common interface for local and remote PTY backends */
+export interface PtyBackend {
+  has(id: string): boolean;
+  write(id: string, data: string): void;
+  resize(id: string, cols: number, rows: number): void;
+  getScrollback(id: string): string;
+  getScreenPreview(id: string, lines?: number): string;
+  onData(id: string, cb: (data: string) => void): () => void;
+  onExit(id: string, cb: (code: number) => void): () => void;
+  destroy(id: string): void;
+  getIdleSessions(maxIdleMs: number): { id: string }[];
+  isReady(id: string): boolean;
+  onReady(id: string, cb: () => void): () => void;
+}
+
+const ANSI_ESCAPE_PATTERN = /\x1b\[[0-9;]*[A-Za-z]/g;
+const DEFAULT_PREVIEW_LINES = 5;
+
+export function getScreenPreviewFromScrollback(
+  scrollback: string,
+exec
+/bin/bash -lc "sed -n '1,260p' prisma/schema.prisma" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/app/api/sessions/route.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktreeexec
+/bin/bash -lc "sed -n '1,220p' src/app/api/sessions/[id]/route.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Project {
+  id          String         @id @default(uuid())
+  name        String
+  type        String         // "LOCAL" | "SSH" | "DOCKER"
+  color       String         @default("#64748b")
+  path        String
+  sshConfigId String?
+  dockerContainer String?
+  adhoc       Boolean        @default(false)
+  sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
+  sessions    AgentSession[]
+ succeeded in 0ms:
+import { NextResponse } from "next/server";
+import { sessionManager } from "@/server/session/sessionManager";
+import { listClaudeHistorySessions } from "@/server/session/claudeHistory";
+import { prisma } from "@/lib/prisma";
+import type { CreateSessionRequest } from "@/lib/types";
+
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const projectId = searchParams.get("projectId") ?? undefined;
+
+  const sessions = await sessionManager.listSessions(projectId);
+
+  if (!projectId) {
+    return NextResponse.json({ data: sessions });
+  }
+
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, name: true, path: true, type: true, sshConfigId: true, dockerContainer: true },
+  });
+ succeeded in 0ms:
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { sessionManager } from "@/server/session/sessionManager";
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const body = await request.json();
+
+  if (!("name" in body)) {
+    return NextResponse.json(
+      { error: "name field is required" },
+      { status: 400 },
+    );
+  }
+
+  const name = typeof body.name === "string" ? body.name.trim() || null : null;
+
+  try {
+exec
+/bin/bash -lc "sed -n '560,660p' src/lib/types.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+}
+
+// --- Token/Cost Tracking ---
+
+export interface SessionTokenInfo {
+  sessionId: string;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCost: number;
+  model?: string;
+}
+
+// --- Audit Log ---
+
+export type AuditEventType =
+  | "interceptor_approve"
+  | "interceptor_deny"
+  | "session_create"
+  | "session_terminate"
+  | "session_fork"
+codex
+기존 코드 기준으로 보면 `SessionCheckpoint` 스키마와 `SessionCheckpointInfo` 타입은 이미 있고, `createSession`은 재개 참조(`resumeSessionRef`)를 지원합니다. 이제 `tasks/todo.md`에 이번 작업 계획을 추가하고, 그 다음 신규 라우트 2개를 구현하겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/tasks/todo.md
+@@ -4,2 +4,3 @@
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -25,2 +26,9 @@
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+apply_patch(auto_approved=true) exited 0 in 18ms:
+Success. Updated the following files:
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/tasks/todo.md
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '1,140p' src/app/api/sessions/[id]/command/route.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+import { NextResponse } from "next/server";
+import { sessionManager } from "@/server/session/sessionManager";
+
+interface SendCommandRequest {
+  input?: string;
+  appendNewline?: boolean;
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const body = (await request.json()) as SendCommandRequest;
+  const input = typeof body.input === "string" ? body.input : "";
+
+  if (!input.trim()) {
+    return NextResponse.json({ error: "input is required" }, { status: 400 });
+  }
+
+  const payload = body.appendNewline === false ? input : `${input}\r`;
+exec
+/bin/bash -lc 'rg -n "export interface CreateSessionRequest|export interface SessionInfo|toSessionInfo" src/lib/types.ts src/server/session/sessionManager.ts' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+src/server/session/sessionManager.ts:45:function toSessionInfo(row: {
+src/server/session/sessionManager.ts:264:    return toSessionInfo({
+src/server/session/sessionManager.ts:316:    return row ? toSessionInfo(row) : null;
+src/server/session/sessionManager.ts:326:    return rows.map(toSessionInfo);
+src/lib/types.ts:115:export interface SessionInfo {
+src/lib/types.ts:250:export interface CreateSessionRequest {
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+exec
+/bin/bash -lc "sed -n '240,290p' src/lib/types.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktreeexec
+/bin/bash -lc "sed -n '100,170p' src/lib/types.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+
+export interface CreateProjectRequest {
+  name: string;
+  type: ProjectType;
+  color?: string;
+  path: string;
+  sshConfigId?: string;
+  dockerContainer?: string;
+}
+
+export interface CreateSessionRequest {
+  projectId: string;
+  agentType: string;
+  name?: string;
+  cols?: number;
+  rows?: number;
+  resumeSessionRef?: string;
+  dangerouslySkipPermissions?: boolean;
+}
+
+ succeeded in 0ms:
+  title: string;
+  body: string;
+  timestamp: string;
+}
+
+export interface SessionContext {
+  sessionId: string;
+  cwd?: string;
+  gitBranch?: string;
+}
+
+// --- Session Info (API response) ---
+
+export type SessionStatus = "active" | "paused" | "terminated";
+
+export interface SessionInfo {
+  id: string;
+  projectId: string;
+  projectName: string;
+  projectColor: string;
+exec
+/bin/bash -lc "sed -n '1,90p' src/server/session/sessionManager.ts" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+import { prisma } from "@/lib/prisma";
+import { shellQuote } from "@/lib/shellQuote";
+import { ptyManager } from "@/server/pty/ptyManager";
+import { remotePtyManager } from "@/server/ssh/remotePty";
+import { sshManager } from "@/server/ssh/sshManager";
+import { scanRemoteSessions } from "@/server/ssh/remoteScanner";
+import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
+import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
+import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
+import type { OrbitServer } from "@/server/socket/types";
+
+const AGENT_TYPES = {
+  TERMINAL: "terminal",
+  CODEX: "codex",
+  OPENCODE: "opencode",
+} as const;
+
+const READY_MARKER_CMD = "printf '\\033]777;orbit-ready\\007'";
+
+function dockerInnerCommand(
+file update:
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+세부 시그니처를 확인했습니다. `getPtyBackend().getScrollback()`은 바로 쓸 수 있지만 `cwd`를 직접 조회하는 공용 API는 없어서, 요구사항대로 현재 구현에서는 `null`로 저장하는 편이 맞습니다.
+codex
+이제 신규 라우트 파일 두 개를 추가합니다. 응답에는 `SessionCheckpointInfo`/`SessionInfo` 형태만 노출하고, 체크포인트 생성 시 바이너리 `scrollback`은 저장만 하고 응답에서는 제외하도록 정리하겠습니다.
+file update
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/fork/route.ts
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { sessionManager } from "@/server/session/sessionManager";
+
+interface ForkSessionRequest {
+  checkpointId?: string;
+  name?: string;
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const body = (await request.json()) as ForkSessionRequest;
+  const checkpointId =
+    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
+
+  if (!checkpointId) {
+    return NextResponse.json(
+      { error: "checkpointId is required" },
+      { status: 400 },
+    );
+  }
+
+  const checkpoint = await prisma.sessionCheckpoint.findUnique({
+    where: { id: checkpointId },
+  });
+  if (!checkpoint || checkpoint.sessionId !== params.id) {
+    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
+  }
+
+  const origSession = await prisma.agentSession.findUnique({
+    where: { id: checkpoint.sessionId },
+  });
+  if (!origSession) {
+    return NextResponse.json(
+      { error: "Original session not found" },
+      { status: 404 },
+    );
+  }
+
+  try {
+    const newSession = await sessionManager.createSession({
+      projectId: origSession.projectId,
+      agentType: origSession.agentType,
+      name:
+        typeof body.name === "string" && body.name.trim()
+          ? body.name.trim()
+          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
+      resumeSessionRef: origSession.sessionRef,
+    });
+
+    return NextResponse.json({ data: newSession }, { status: 201 });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to fork session";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/checkpoints/route.ts
+import { gzipSync } from "zlib";
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { getPtyBackend } from "@/server/pty/ptyBackend";
+
+export async function GET(
+  _request: Request,
+  { params }: { params: { id: string } },
+) {
+  const checkpoints = await prisma.sessionCheckpoint.findMany({
+    where: { sessionId: params.id },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      sessionId: true,
+      name: true,
+      cwd: true,
+      metadata: true,
+      createdAt: true,
+    },
+  });
+
+  return NextResponse.json({
+    data: checkpoints.map((checkpoint) => ({
+      ...checkpoint,
+      createdAt: checkpoint.createdAt.toISOString(),
+    })),
+  });
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } },
+) {
+  const body = (await request.json()) as { name?: string };
+  const backend = getPtyBackend(params.id);
+  const scrollback = backend?.getScrollback(params.id);
+  const name =
+    typeof body.name === "string" && body.name.trim()
+      ? body.name.trim()
+      : "checkpoint";
+
+  try {
+    const checkpoint = await prisma.sessionCheckpoint.create({
+      data: {
+        sessionId: params.id,
+        name,
+        cwd: null,
+        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
+      },
+      select: {
+        id: true,
+        sessionId: true,
+        name: true,
+        cwd: true,
+        metadata: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        data: {
+          ...checkpoint,
+          createdAt: checkpoint.createdAt.toISOString(),
+        },
+      },
+      { status: 201 },
+    );
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to create checkpoint";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+apply_patch(auto_approved=true) exited 0 in 6ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/checkpoints/route.ts
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/fork/route.ts
+file update:
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+file update:
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+라우트 구현은 넣었습니다. 이제 타입체크를 돌려서 실제 시그니처 충돌이 없는지 확인하고, 통과하면 `tasks/todo.md`와 작업 기록을 마무리하겠습니다.
+exec
+/bin/bash -lc 'npx tsc --noEmit' in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktreefile update:
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+ succeeded in 3.11s:
+
+codex
+타입체크는 아직 실행 중입니다. 결과를 확인한 뒤 필요하면 즉시 수정하고, 통과한 상태로 작업 기록까지 정리하겠습니다.
+file update:
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+`npx tsc --noEmit`는 오류 없이 끝났습니다. 마지막으로 작업 체크리스트와 결과를 남기고, 이번 기능 추가를 `skill_graph`에도 간단히 기록하겠습니다.
+exec
+/bin/bash -lc "ls skill_graph/features && sed -n '1,220p' skill_graph/features/_TEMPLATE.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+2026-02-27_phase1-infra.md
+2026-02-28_phase2-4-parallel.md
+2026-02-28_project-harness-oh-my-opencode-chat-ux.md
+2026-03-12_frontend-component-specification.md
+2026-03-13_oled-dark-mode-infra.md
+_TEMPLATE.md
+# [기능명] — YYYY-MM-DD
+
+> **상태**: 🔴 계획 / 🟡 진행중 / 🟢 완료
+> **Phase**: Phase 1 / 2 / 3 / 4
+> **keywords**:
+
+---
+
+## 요구사항
+
+<!-- 이 기능이 해결하는 문제와 기대 동작 -->
+
+## 설계
+
+exec
+/bin/bash -lc "sed -n '1,260p' skill_graph/index.md" in /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree succeeded in 0ms:
+# Update Notes Index
+
+> 프로젝트 변경 기록의 키워드 기반 인덱스.
+> 키워드 → 문서 링크로 그래프 탐색 가능.
+
+---
+
+## 키워드 그래프
+
+```
+                        ┌─────────┐
+              ┌────────▶│   SSH   │◀──────────┐
+              │         └────┬────┘           │
+              │              │                │
+         ┌────┴────┐    ┌───▼────┐     ┌─────┴──────┐
+         │   PWA   │    │ Delta  │     │  원격(SSH)  │
+         └────┬────┘    └───┬────┘     └─────┬──────┘
+              │             │                │
+         ┌────▼────┐       │          ┌─────▼──────┐
+         │  모바일  │       │          │ RemotePty  │
+file update:
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..33133bfc6b43972b60be917fd6ac8393fe04d823
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [ ] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+
+codex
+작업 기록은 이번 세션 항목만 갱신하고, `skill_graph`는 새 기능 노트 1개와 인덱스 매핑 1줄만 추가하겠습니다. 기존 기록은 건드리지 않겠습니다.
+file update
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/skill_graph/index.md
+@@ -89,2 +89,5 @@
+ | **dashboard**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
++| **session-checkpoint** | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                | feature           |
++| **session-fork**    | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
++| **gzip**            | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
+ | **SSH**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+@@ -168,2 +171,3 @@
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
++| [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)      | 4     | 🟢   | `session-checkpoint` `session-fork` `api` `pty` `gzip`                       |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+# 세션 체크포인트 + 포크 API — 2026-03-23
+
+> **상태**: 🟢 완료
+> **Phase**: Phase 4
+> **keywords**: `session-checkpoint` `session-fork` `api` `pty` `gzip`
+
+---
+
+## 요구사항
+
+세션 체크포인트 목록 조회/생성과 체크포인트 기반 세션 포크 API를 추가한다.
+
+## 설계
+
+### 변경 범위
+- `src/app/api/sessions/[id]/checkpoints/route.ts`
+- `src/app/api/sessions/[id]/fork/route.ts`
+
+### 접근 방식
+
+기존 `sessionManager.createSession()`과 PTY backend registry를 그대로 활용해 최소 변경으로 API를 추가했다. 체크포인트 응답에는 메타데이터만 노출하고, 바이너리 scrollback은 DB에만 저장한다.
+
+### API / 인터페이스
+```typescript
+GET /api/sessions/:id/checkpoints
+POST /api/sessions/:id/checkpoints
+POST /api/sessions/:id/fork
+```
+
+---
+
+## 구현 내역
+
+- [x] 체크포인트 목록 조회 라우트 추가
+- [x] PTY scrollback gzip 저장 로직 추가
+- [x] 체크포인트 기반 세션 포크 라우트 추가
+- [x] 타입체크 검증
+
+### 주요 변경 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/api/sessions/[id]/checkpoints/route.ts` | 체크포인트 GET/POST API 추가 |
+| `src/app/api/sessions/[id]/fork/route.ts` | 체크포인트 기반 세션 포크 API 추가 |
+
+---
+
+## 테스트
+
+- [ ] 단위 테스트
+- [ ] 통합 테스트
+- [x] 수동 확인
+
+수동 확인:
+- `npx tsc --noEmit`
+
+---
+
+## 회고
+
+### 잘된 점
+- 기존 세션 생성/PTY 추상화를 재사용해 DB 스키마 변경 없이 요구사항을 연결했다.
+
+### 개선할 점
+- 체크포인트 생성 시 실제 `cwd`와 추가 metadata를 수집하는 공용 API는 아직 없다.
+
+### 교훈 → `tasks/lessons.md` 반영 여부
+- [x] 반영 불필요
+
+---
+
+## 관련 노트
+- 선행: `features/2026-02-27_phase1-infra.md`
+- 후속: `decisions/2026-02-28_harness-engineering.md`
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/tasks/todo.md
+@@ -4,3 +4,3 @@
+ 
+-- [ ] 세션 체크포인트 생성/조회 및 포크 API 추가
++- [x] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+@@ -28,6 +28,6 @@
+ 
+-- [ ] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
+-- [ ] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
+-- [ ] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
+-- [ ] 타입체크 검증 후 결과 기록
++- [x] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [x] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [x] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [x] 타입체크 검증 후 결과 기록
+ 
+@@ -100,2 +100,9 @@
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- `/api/sessions/[id]/checkpoints` GET/POST 라우트를 추가해 체크포인트 목록 조회와 생성 지원
++- 체크포인트 생성 시 PTY scrollback을 읽어 gzip 압축 후 `scrollback` 바이너리로 저장하고 `cwd`는 `null`로 기록
++- `/api/sessions/[id]/fork` POST 라우트를 추가해 체크포인트 기준으로 원본 세션의 `projectId`, `agentType`, `sessionRef`를 복사한 새 세션 생성 지원
++- `npx tsc --noEmit` 통과
++
+ ## 관련 노트
+apply_patch(auto_approved=true) exited 0 in 36ms:
+Success. Updated the following files:
+A /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/tasks/todo.md
+M /home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/skill_graph/index.md
+file update:
+diff --git a/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md b/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e488c60103db908c4aea4cdcd7ed98397b657ceb
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+@@ -0,0 +1,73 @@
++# 세션 체크포인트 + 포크 API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: `session-checkpoint` `session-fork` `api` `pty` `gzip`
++
++---
++
++## 요구사항
++
++세션 체크포인트 목록 조회/생성과 체크포인트 기반 세션 포크 API를 추가한다.
++
++## 설계
++
++### 변경 범위
++- `src/app/api/sessions/[id]/checkpoints/route.ts`
++- `src/app/api/sessions/[id]/fork/route.ts`
++
++### 접근 방식
++
++기존 `sessionManager.createSession()`과 PTY backend registry를 그대로 활용해 최소 변경으로 API를 추가했다. 체크포인트 응답에는 메타데이터만 노출하고, 바이너리 scrollback은 DB에만 저장한다.
++
++### API / 인터페이스
++```typescript
++GET /api/sessions/:id/checkpoints
++POST /api/sessions/:id/checkpoints
++POST /api/sessions/:id/fork
++```
++
++---
++
++## 구현 내역
++
++- [x] 체크포인트 목록 조회 라우트 추가
++- [x] PTY scrollback gzip 저장 로직 추가
++- [x] 체크포인트 기반 세션 포크 라우트 추가
++- [x] 타입체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/api/sessions/[id]/checkpoints/route.ts` | 체크포인트 GET/POST API 추가 |
++| `src/app/api/sessions/[id]/fork/route.ts` | 체크포인트 기반 세션 포크 API 추가 |
++
++---
++
++## 테스트
++
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [x] 수동 확인
++
++수동 확인:
++- `npx tsc --noEmit`
++
++---
++
++## 회고
++
++### 잘된 점
++- 기존 세션 생성/PTY 추상화를 재사용해 DB 스키마 변경 없이 요구사항을 연결했다.
++
++### 개선할 점
++- 체크포인트 생성 시 실제 `cwd`와 추가 metadata를 수집하는 공용 API는 아직 없다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: `decisions/2026-02-28_harness-engineering.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..96c17df97b55db6ea4038dea72b0b1d138018029
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -87,6 +87,9 @@
+ | **custom-server**   | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+ | **session**         | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+ | **dashboard**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
++| **session-checkpoint** | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                | feature           |
++| **session-fork**    | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
++| **gzip**            | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
+ | **SSH**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+ | **PWA**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+ | **모바일**          | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+@@ -166,6 +169,7 @@
+ | 문서                                                                                  | Phase | 상태 | 키워드                                                                      |
+ | ------------------------------------------------------------------------------------- | ----- | ---- | --------------------------------------------------------------------------- |
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
++| [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)      | 4     | 🟢   | `session-checkpoint` `session-fork` `api` `pty` `gzip`                       |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..6193d0006bad0208e20f5b305b22b857538c7f36
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [x] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [x] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [x] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [x] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -90,6 +98,13 @@
+ - Dashboard: 프로젝트 목록(좌) + 세션 목록(우) 2패널 레이아웃
+ - 빌드 + 타입 체크 + lint 모두 통과
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- `/api/sessions/[id]/checkpoints` GET/POST 라우트를 추가해 체크포인트 목록 조회와 생성 지원
++- 체크포인트 생성 시 PTY scrollback을 읽어 gzip 압축 후 `scrollback` 바이너리로 저장하고 `cwd`는 `null`로 기록
++- `/api/sessions/[id]/fork` POST 라우트를 추가해 체크포인트 기준으로 원본 세션의 `projectId`, `agentType`, `sessionRef`를 복사한 새 세션 생성 지원
++- `npx tsc --noEmit` 통과
++
+ ## 관련 노트
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+
+file update:
+diff --git a/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md b/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e488c60103db908c4aea4cdcd7ed98397b657ceb
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+@@ -0,0 +1,73 @@
++# 세션 체크포인트 + 포크 API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: `session-checkpoint` `session-fork` `api` `pty` `gzip`
++
++---
++
++## 요구사항
++
++세션 체크포인트 목록 조회/생성과 체크포인트 기반 세션 포크 API를 추가한다.
++
++## 설계
++
++### 변경 범위
++- `src/app/api/sessions/[id]/checkpoints/route.ts`
++- `src/app/api/sessions/[id]/fork/route.ts`
++
++### 접근 방식
++
++기존 `sessionManager.createSession()`과 PTY backend registry를 그대로 활용해 최소 변경으로 API를 추가했다. 체크포인트 응답에는 메타데이터만 노출하고, 바이너리 scrollback은 DB에만 저장한다.
++
++### API / 인터페이스
++```typescript
++GET /api/sessions/:id/checkpoints
++POST /api/sessions/:id/checkpoints
++POST /api/sessions/:id/fork
++```
++
++---
++
++## 구현 내역
++
++- [x] 체크포인트 목록 조회 라우트 추가
++- [x] PTY scrollback gzip 저장 로직 추가
++- [x] 체크포인트 기반 세션 포크 라우트 추가
++- [x] 타입체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/api/sessions/[id]/checkpoints/route.ts` | 체크포인트 GET/POST API 추가 |
++| `src/app/api/sessions/[id]/fork/route.ts` | 체크포인트 기반 세션 포크 API 추가 |
++
++---
++
++## 테스트
++
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [x] 수동 확인
++
++수동 확인:
++- `npx tsc --noEmit`
++
++---
++
++## 회고
++
++### 잘된 점
++- 기존 세션 생성/PTY 추상화를 재사용해 DB 스키마 변경 없이 요구사항을 연결했다.
++
++### 개선할 점
++- 체크포인트 생성 시 실제 `cwd`와 추가 metadata를 수집하는 공용 API는 아직 없다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: `decisions/2026-02-28_harness-engineering.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..96c17df97b55db6ea4038dea72b0b1d138018029
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -87,6 +87,9 @@
+ | **custom-server**   | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+ | **session**         | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+ | **dashboard**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
++| **session-checkpoint** | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                | feature           |
++| **session-fork**    | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
++| **gzip**            | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
+ | **SSH**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+ | **PWA**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+ | **모바일**          | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+@@ -166,6 +169,7 @@
+ | 문서                                                                                  | Phase | 상태 | 키워드                                                                      |
+ | ------------------------------------------------------------------------------------- | ----- | ---- | --------------------------------------------------------------------------- |
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
++| [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)      | 4     | 🟢   | `session-checkpoint` `session-fork` `api` `pty` `gzip`                       |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..6193d0006bad0208e20f5b305b22b857538c7f36
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [x] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [x] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [x] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [x] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -90,6 +98,13 @@
+ - Dashboard: 프로젝트 목록(좌) + 세션 목록(우) 2패널 레이아웃
+ - 빌드 + 타입 체크 + lint 모두 통과
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- `/api/sessions/[id]/checkpoints` GET/POST 라우트를 추가해 체크포인트 목록 조회와 생성 지원
++- 체크포인트 생성 시 PTY scrollback을 읽어 gzip 압축 후 `scrollback` 바이너리로 저장하고 `cwd`는 `null`로 기록
++- `/api/sessions/[id]/fork` POST 라우트를 추가해 체크포인트 기준으로 원본 세션의 `projectId`, `agentType`, `sessionRef`를 복사한 새 세션 생성 지원
++- `npx tsc --noEmit` 통과
++
+ ## 관련 노트
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+
+codex
+체크포인트/포크 API를 추가했고 타입체크까지 확인했습니다.
+
+변경 내용은 [src/app/api/sessions/[id]/checkpoints/route.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/checkpoints/route.ts) 와 [src/app/api/sessions/[id]/fork/route.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/fork/route.ts) 에 들어갔습니다. `checkpoints`는 목록 조회와 생성 둘 다 지원하고, 생성 시 PTY scrollback을 읽어 `gzipSync(...)`로 압축한 뒤 `scrollback`에 저장합니다. 현재 `cwd`를 가져오는 공용 경로가 없어서 요구사항대로 `null`로 저장했습니다. `fork`는 `checkpointId`를 검증한 뒤 원본 세션의 `projectId`, `agentType`, `sessionRef`를 복사해 새 세션을 생성합니다.
+
+작업 기록도 [tasks/todo.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/tasks/todo.md) 와 [skill_graph/features/2026-03-23_session-checkpoint-fork-api.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md) 에 남겼습니다.
+
+검증은 `npx tsc --noEmit`로 했고 통과했습니다. 실제 HTTP 호출까지는 이번 턴에서 실행하지 않았습니다.
+file update:
+diff --git a/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md b/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+new file mode 100644
+index 0000000000000000000000000000000000000000..e488c60103db908c4aea4cdcd7ed98397b657ceb
+--- /dev/null
++++ b/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md
+@@ -0,0 +1,73 @@
++# 세션 체크포인트 + 포크 API — 2026-03-23
++
++> **상태**: 🟢 완료
++> **Phase**: Phase 4
++> **keywords**: `session-checkpoint` `session-fork` `api` `pty` `gzip`
++
++---
++
++## 요구사항
++
++세션 체크포인트 목록 조회/생성과 체크포인트 기반 세션 포크 API를 추가한다.
++
++## 설계
++
++### 변경 범위
++- `src/app/api/sessions/[id]/checkpoints/route.ts`
++- `src/app/api/sessions/[id]/fork/route.ts`
++
++### 접근 방식
++
++기존 `sessionManager.createSession()`과 PTY backend registry를 그대로 활용해 최소 변경으로 API를 추가했다. 체크포인트 응답에는 메타데이터만 노출하고, 바이너리 scrollback은 DB에만 저장한다.
++
++### API / 인터페이스
++```typescript
++GET /api/sessions/:id/checkpoints
++POST /api/sessions/:id/checkpoints
++POST /api/sessions/:id/fork
++```
++
++---
++
++## 구현 내역
++
++- [x] 체크포인트 목록 조회 라우트 추가
++- [x] PTY scrollback gzip 저장 로직 추가
++- [x] 체크포인트 기반 세션 포크 라우트 추가
++- [x] 타입체크 검증
++
++### 주요 변경 파일
++| 파일 | 변경 내용 |
++|------|----------|
++| `src/app/api/sessions/[id]/checkpoints/route.ts` | 체크포인트 GET/POST API 추가 |
++| `src/app/api/sessions/[id]/fork/route.ts` | 체크포인트 기반 세션 포크 API 추가 |
++
++---
++
++## 테스트
++
++- [ ] 단위 테스트
++- [ ] 통합 테스트
++- [x] 수동 확인
++
++수동 확인:
++- `npx tsc --noEmit`
++
++---
++
++## 회고
++
++### 잘된 점
++- 기존 세션 생성/PTY 추상화를 재사용해 DB 스키마 변경 없이 요구사항을 연결했다.
++
++### 개선할 점
++- 체크포인트 생성 시 실제 `cwd`와 추가 metadata를 수집하는 공용 API는 아직 없다.
++
++### 교훈 → `tasks/lessons.md` 반영 여부
++- [x] 반영 불필요
++
++---
++
++## 관련 노트
++- 선행: `features/2026-02-27_phase1-infra.md`
++- 후속: `decisions/2026-02-28_harness-engineering.md`
+diff --git a/skill_graph/index.md b/skill_graph/index.md
+index eb1d9e9f7b4b0dd597bcbada700825a18811656a..96c17df97b55db6ea4038dea72b0b1d138018029
+--- a/skill_graph/index.md
++++ b/skill_graph/index.md
+@@ -87,6 +87,9 @@
+ | **custom-server**   | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+ | **session**         | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
+ | **dashboard**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
++| **session-checkpoint** | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                | feature           |
++| **session-fork**    | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
++| **gzip**            | [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)                                   | feature           |
+ | **SSH**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+ | **PWA**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+ | **모바일**          | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+@@ -166,6 +169,7 @@
+ | 문서                                                                                  | Phase | 상태 | 키워드                                                                      |
+ | ------------------------------------------------------------------------------------- | ----- | ---- | --------------------------------------------------------------------------- |
+ | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                 | 1     | 🟢   | `pty` `terminal` `socket.io` `custom-server` `session` `dashboard` `xterm`  |
++| [세션 체크포인트 + 포크 API](features/2026-03-23_session-checkpoint-fork-api.md)      | 4     | 🟢   | `session-checkpoint` `session-fork` `api` `pty` `gzip`                       |
+ | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
+ | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
+ | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
+diff --git a/src/app/api/sessions/[id]/checkpoints/route.ts b/src/app/api/sessions/[id]/checkpoints/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..6f889c35280cb9e4437f576bd48db249e8a1a63f
+--- /dev/null
++++ b/src/app/api/sessions/[id]/checkpoints/route.ts
+@@ -0,0 +1,75 @@
++import { gzipSync } from "zlib";
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { getPtyBackend } from "@/server/pty/ptyBackend";
++
++export async function GET(
++  _request: Request,
++  { params }: { params: { id: string } },
++) {
++  const checkpoints = await prisma.sessionCheckpoint.findMany({
++    where: { sessionId: params.id },
++    orderBy: { createdAt: "desc" },
++    select: {
++      id: true,
++      sessionId: true,
++      name: true,
++      cwd: true,
++      metadata: true,
++      createdAt: true,
++    },
++  });
++
++  return NextResponse.json({
++    data: checkpoints.map((checkpoint) => ({
++      ...checkpoint,
++      createdAt: checkpoint.createdAt.toISOString(),
++    })),
++  });
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as { name?: string };
++  const backend = getPtyBackend(params.id);
++  const scrollback = backend?.getScrollback(params.id);
++  const name =
++    typeof body.name === "string" && body.name.trim()
++      ? body.name.trim()
++      : "checkpoint";
++
++  try {
++    const checkpoint = await prisma.sessionCheckpoint.create({
++      data: {
++        sessionId: params.id,
++        name,
++        cwd: null,
++        scrollback: scrollback ? gzipSync(Buffer.from(scrollback)) : null,
++      },
++      select: {
++        id: true,
++        sessionId: true,
++        name: true,
++        cwd: true,
++        metadata: true,
++        createdAt: true,
++      },
++    });
++
++    return NextResponse.json(
++      {
++        data: {
++          ...checkpoint,
++          createdAt: checkpoint.createdAt.toISOString(),
++        },
++      },
++      { status: 201 },
++    );
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to create checkpoint";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/src/app/api/sessions/[id]/fork/route.ts b/src/app/api/sessions/[id]/fork/route.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..2849fbb114ce7b1b10e45fbe87b007ee66e7f2f5
+--- /dev/null
++++ b/src/app/api/sessions/[id]/fork/route.ts
+@@ -0,0 +1,59 @@
++import { NextResponse } from "next/server";
++import { prisma } from "@/lib/prisma";
++import { sessionManager } from "@/server/session/sessionManager";
++
++interface ForkSessionRequest {
++  checkpointId?: string;
++  name?: string;
++}
++
++export async function POST(
++  request: Request,
++  { params }: { params: { id: string } },
++) {
++  const body = (await request.json()) as ForkSessionRequest;
++  const checkpointId =
++    typeof body.checkpointId === "string" ? body.checkpointId.trim() : "";
++
++  if (!checkpointId) {
++    return NextResponse.json(
++      { error: "checkpointId is required" },
++      { status: 400 },
++    );
++  }
++
++  const checkpoint = await prisma.sessionCheckpoint.findUnique({
++    where: { id: checkpointId },
++  });
++  if (!checkpoint || checkpoint.sessionId !== params.id) {
++    return NextResponse.json({ error: "Checkpoint not found" }, { status: 404 });
++  }
++
++  const origSession = await prisma.agentSession.findUnique({
++    where: { id: checkpoint.sessionId },
++  });
++  if (!origSession) {
++    return NextResponse.json(
++      { error: "Original session not found" },
++      { status: 404 },
++    );
++  }
++
++  try {
++    const newSession = await sessionManager.createSession({
++      projectId: origSession.projectId,
++      agentType: origSession.agentType,
++      name:
++        typeof body.name === "string" && body.name.trim()
++          ? body.name.trim()
++          : `Fork of ${origSession.name || origSession.id.slice(0, 8)}`,
++      resumeSessionRef: origSession.sessionRef,
++    });
++
++    return NextResponse.json({ data: newSession }, { status: 201 });
++  } catch (error) {
++    const message =
++      error instanceof Error ? error.message : "Failed to fork session";
++    return NextResponse.json({ error: message }, { status: 400 });
++  }
++}
+diff --git a/tasks/todo.md b/tasks/todo.md
+index cb3c314508f0bbabea560717f121d05b2ca0d212..6193d0006bad0208e20f5b305b22b857538c7f36
+--- a/tasks/todo.md
++++ b/tasks/todo.md
+@@ -2,6 +2,7 @@
+ 
+ ## 현재 작업
+ 
++- [x] 세션 체크포인트 생성/조회 및 포크 API 추가
+ - [x] 모바일 UI `type command` send 시 터미널 포커스만 이동하고 실행되지 않는 문제 수정
+ - [x] Phase 1: 인프라 구축
+ - [x] 프로젝트 별 하네스 엔지니어링 관리 + oh-my-opencode 특화 + 세션 UI/UX 개선
+@@ -23,6 +24,13 @@
+ 
+ ## 계획
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- [x] 기존 세션/PTY/타입 패턴 확인 후 API 계약 정리
++- [x] `checkpoints` 라우트 구현 및 스크롤백 gzip 저장 연결
++- [x] `fork` 라우트 구현 및 기존 세션 메타데이터로 새 세션 생성 연결
++- [x] 타입체크 검증 후 결과 기록
++
+ ### 모바일 command send 실행 버그 수정 (2026-03-12)
+ 
+ - [x] 모바일 `type command` 입력/전송 컴포넌트와 이벤트 흐름 확인
+@@ -90,6 +98,13 @@
+ - Dashboard: 프로젝트 목록(좌) + 세션 목록(우) 2패널 레이아웃
+ - 빌드 + 타입 체크 + lint 모두 통과
+ 
++### 세션 체크포인트 생성/조회 및 포크 API 추가 (2026-03-23)
++
++- `/api/sessions/[id]/checkpoints` GET/POST 라우트를 추가해 체크포인트 목록 조회와 생성 지원
++- 체크포인트 생성 시 PTY scrollback을 읽어 gzip 압축 후 `scrollback` 바이너리로 저장하고 `cwd`는 `null`로 기록
++- `/api/sessions/[id]/fork` POST 라우트를 추가해 체크포인트 기준으로 원본 세션의 `projectId`, `agentType`, `sessionRef`를 복사한 새 세션 생성 지원
++- `npx tsc --noEmit` 통과
++
+ ## 관련 노트
+ 
+ - `CLAUDE.md` — 프로젝트 아키텍처 및 컨벤션
+
+tokens used
+30,197
+체크포인트/포크 API를 추가했고 타입체크까지 확인했습니다.
+
+변경 내용은 [src/app/api/sessions/[id]/checkpoints/route.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/checkpoints/route.ts) 와 [src/app/api/sessions/[id]/fork/route.ts](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/src/app/api/sessions/[id]/fork/route.ts) 에 들어갔습니다. `checkpoints`는 목록 조회와 생성 둘 다 지원하고, 생성 시 PTY scrollback을 읽어 `gzipSync(...)`로 압축한 뒤 `scrollback`에 저장합니다. 현재 `cwd`를 가져오는 공용 경로가 없어서 요구사항대로 `null`로 저장했습니다. `fork`는 `checkpointId`를 검증한 뒤 원본 세션의 `projectId`, `agentType`, `sessionRef`를 복사해 새 세션을 생성합니다.
+
+작업 기록도 [tasks/todo.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/tasks/todo.md) 와 [skill_graph/features/2026-03-23_session-checkpoint-fork-api.md](/home/hun/Volume/DEVLEOPMENT/Orbit/.orchestrator/sessions/20260323_073214_Phase1_agent_intelligence_features/agents/agent-03/worktree/skill_graph/features/2026-03-23_session-checkpoint-fork-api.md) 에 남겼습니다.
+
+검증은 `npx tsc --noEmit`로 했고 통과했습니다. 실제 HTTP 호출까지는 이번 턴에서 실행하지 않았습니다.
