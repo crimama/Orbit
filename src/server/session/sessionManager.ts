@@ -350,6 +350,8 @@ class SessionManager {
       include: { project: { select: { name: true, color: true } } },
     });
 
+    console.log(`[createSession] created ${session.id} status=active agentType=${req.agentType}`);
+
     // Validate Docker config upfront
     if ((isRemote || isDocker) && project.type === "DOCKER" && !project.dockerContainer) {
       await prisma.agentSession.delete({ where: { id: session.id } });
@@ -476,11 +478,17 @@ class SessionManager {
       console.log(`[ensureSessionRunning] ${sessionId} row not found in DB`);
       return false;
     }
-    if (row.status !== "active") {
-      console.log(`[ensureSessionRunning] ${sessionId} status=${row.status} (not active)`);
-      return false;
+    console.log(`[ensureSessionRunning] ${sessionId} status=${row.status}, agentType=${row.agentType}, path=${row.project.path}`);
+
+    // Re-activate terminated sessions — they may have been terminated by a
+    // prior module-instance PTY that exited, but the user wants to reopen.
+    if (row.status === "terminated") {
+      await prisma.agentSession.update({
+        where: { id: sessionId },
+        data: { status: "active" },
+      });
+      console.log(`[ensureSessionRunning] ${sessionId} re-activated from terminated`);
     }
-    console.log(`[ensureSessionRunning] ${sessionId} status=active, agentType=${row.agentType}, path=${row.project.path}`);
 
     // Guard: Docker must be configured if requested
     if (row.project.type === "DOCKER" && !row.project.dockerContainer) {
