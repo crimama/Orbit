@@ -62,6 +62,7 @@ interface BorderlessWorkspaceProps {
   viewedFile?: ViewedFile | null;
   onCloseFile?: () => void;
   onKillSession: (sessionId: string) => Promise<void> | void;
+  killedSessionId?: string | null;
   onEmpty?: () => void;
 }
 
@@ -100,6 +101,7 @@ export default function BorderlessWorkspace({
   viewedFile,
   onCloseFile,
   onKillSession,
+  killedSessionId,
   onEmpty,
 }: BorderlessWorkspaceProps) {
   const [tabs, setTabs] = useState<WorkspaceTab[]>([]);
@@ -221,6 +223,15 @@ export default function BorderlessWorkspace({
     activePanel,
     upsertTab,
   ]);
+
+  // Remove tab when its session is killed from sidebar
+  const lastKilledRef = useRef(killedSessionId);
+  useEffect(() => {
+    if (!killedSessionId || killedSessionId === lastKilledRef.current) return;
+    lastKilledRef.current = killedSessionId;
+    const tabId = `session:${killedSessionId}`;
+    setTabs((prev) => prev.filter((t) => t.id !== tabId));
+  }, [killedSessionId]);
 
   const prevTabCountRef = useRef(tabs.length);
   useEffect(() => {

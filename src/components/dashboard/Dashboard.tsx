@@ -313,9 +313,12 @@ export default function Dashboard() {
     [selectedProject, fetchProjects, fetchSessions],
   );
 
+  const [killedSessionId, setKilledSessionId] = useState<string | null>(null);
+
   const handleTerminateSession = useCallback(
     async (id: string) => {
       await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+      setKilledSessionId(id);
       fetchSessions();
     },
     [fetchSessions],
@@ -1306,6 +1309,7 @@ export default function Dashboard() {
                     viewedFile={viewedFile}
                     onCloseFile={() => setViewedFile(null)}
                     onKillSession={handleTerminateSession}
+                    killedSessionId={killedSessionId}
                     onEmpty={() => {
                       setInlineSessionId(null);
                       setSelectedProject(null);
