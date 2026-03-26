@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import CodeEditor, { languageFromPath } from "@/components/files/CodeEditor";
 
 interface FileEditorProps {
@@ -22,6 +24,8 @@ export default function FileEditor({
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">(
     "idle",
   );
+  const isMarkdown = /\.mdx?$/i.test(filePath);
+  const [showPreview, setShowPreview] = useState(isMarkdown);
 
   const dirty = content !== savedContent;
 
@@ -96,6 +100,19 @@ export default function FileEditor({
         {saveStatus === "error" && (
           <span className="text-xs text-red-400">Error</span>
         )}
+        {isMarkdown && (
+          <button
+            type="button"
+            onClick={() => setShowPreview((v) => !v)}
+            className={`shrink-0 rounded px-2 py-0.5 text-xs font-medium transition ${
+              showPreview
+                ? "bg-neutral-700 text-neutral-100"
+                : "text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
+            }`}
+          >
+            {showPreview ? "Edit" : "Preview"}
+          </button>
+        )}
         {onClose && (
           <button
             type="button"
@@ -107,12 +124,35 @@ export default function FileEditor({
         )}
       </div>
       <div className="min-h-0 flex-1">
-        <CodeEditor
-          value={content}
-          onChange={setContent}
-          languageId={languageFromPath(filePath)}
-          readOnly={saving}
-        />
+        {showPreview && isMarkdown ? (
+          <div className="h-full overflow-y-auto px-6 py-4 prose prose-invert prose-sm max-w-none
+            prose-headings:text-neutral-100 prose-headings:font-semibold
+            prose-h1:text-lg prose-h1:border-b prose-h1:border-neutral-800 prose-h1:pb-2
+            prose-h2:text-base prose-h3:text-sm
+            prose-p:text-neutral-300 prose-p:leading-relaxed
+            prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
+            prose-strong:text-neutral-200
+            prose-code:text-amber-300 prose-code:bg-neutral-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs
+            prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800 prose-pre:rounded-lg
+            prose-li:text-neutral-300
+            prose-table:text-xs
+            prose-th:text-neutral-400 prose-th:border-neutral-700
+            prose-td:border-neutral-800
+            prose-hr:border-neutral-800
+            prose-blockquote:border-neutral-700 prose-blockquote:text-neutral-400
+          ">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {content}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <CodeEditor
+            value={content}
+            onChange={setContent}
+            languageId={languageFromPath(filePath)}
+            readOnly={saving}
+          />
+        )}
       </div>
     </div>
   );
