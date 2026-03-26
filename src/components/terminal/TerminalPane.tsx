@@ -119,18 +119,12 @@ export default function TerminalPane({
 
   const hasDraggedSession = (e: DragEvent<HTMLDivElement>) => {
     const types = Array.from(e.dataTransfer.types);
-    return (
-      types.includes("application/x-orbit-session-id") ||
-      e.dataTransfer.getData("text/plain").startsWith("session:")
-    );
+    return types.includes("application/x-orbit-session-id") || types.includes("text/plain");
   };
 
   const hasDraggedPane = (e: DragEvent<HTMLDivElement>) => {
     const types = Array.from(e.dataTransfer.types);
-    return (
-      types.includes("application/x-orbit-pane-id") ||
-      e.dataTransfer.getData("text/plain").startsWith("pane:")
-    );
+    return types.includes("application/x-orbit-pane-id");
   };
 
   const keyboardEnabled = isMobile && Boolean(sessionId && socket);

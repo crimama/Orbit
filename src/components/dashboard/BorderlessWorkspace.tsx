@@ -226,7 +226,7 @@ export default function BorderlessWorkspace({
   ]);
 
   // Remove tab when its session is killed from sidebar
-  const lastKilledRef = useRef(killedSessionId);
+  const lastKilledRef = useRef<string | null>(null);
   useEffect(() => {
     if (!killedSessionId || killedSessionId === lastKilledRef.current) return;
     lastKilledRef.current = killedSessionId;
@@ -253,7 +253,7 @@ export default function BorderlessWorkspace({
       const fallback = tabs[1]?.id ?? tabs[0].id;
       setRightTabId(fallback);
     }
-  }, [tabs, tabsById, leftTabId, rightTabId]);
+  }, [tabs, tabsById, leftTabId, rightTabId, onEmpty]);
 
   const assignTabToPanel = (tabId: string, panel: PanelSide) => {
     if (panel === "left") {
@@ -350,7 +350,7 @@ export default function BorderlessWorkspace({
       upsertTab(fileTab, "left");
       setLayoutMode("left");
     }
-  }, [viewedFile, selectedProject, leftTabId, tabsById, upsertTab]);
+  }, [viewedFile, selectedProject, leftTabId, tabsById, upsertTab, layoutMode, activePanel]);
 
   const removeTab = useCallback((tabId: string) => {
     setTabs((prev) => prev.filter((t) => t.id !== tabId));

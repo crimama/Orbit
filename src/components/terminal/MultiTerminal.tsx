@@ -197,6 +197,14 @@ export default function MultiTerminal({
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
 
+  // Keep activePaneId pointing to a valid leaf after tree changes
+  useEffect(() => {
+    const leaves = collectLeafIds(tree);
+    if (leaves.length > 0 && !leaves.includes(activePaneId)) {
+      setActivePaneId(leaves[0]);
+    }
+  }, [tree, activePaneId]);
+
   // Notify parent of which sessions are in panes
   const onPaneSessionsChangeRef = useRef(onPaneSessionsChange);
   onPaneSessionsChangeRef.current = onPaneSessionsChange;
@@ -429,27 +437,6 @@ export default function MultiTerminal({
         }
         return updated;
       });
-
-      // Use functional updater to read latest activePaneId without stale closure
-      setActivePaneId((prevActive) => {
-        if (prevActive !== paneId) return prevActive;
-        // Active pane was closed — pick another leaf
-        // We need the updated tree; read from ref or re-derive
-        return prevActive; // Will be corrected by the effect below
-      });
-
-      // Post-close: ensure activePaneId points to an existing leaf
-      // Using setTimeout(0) to run after setTree has been applied
-      setTimeout(() => {
-        setTree((currentTree) => {
-          const leaves = collectLeafIds(currentTree);
-          setActivePaneId((prev) => {
-            if (leaves.includes(prev)) return prev;
-            return leaves[0] ?? prev;
-          });
-          return currentTree; // no mutation
-        });
-      }, 0);
 
       clearExitedPane([paneId]);
     },

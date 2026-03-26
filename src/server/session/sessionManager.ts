@@ -158,17 +158,27 @@ class SessionManager {
     );
   }
 
+  private registeredExitSessions = new Set<string>();
+
   private registerExitHandler(
     sessionId: string,
     backend: "local" | "remote" = "local",
   ): void {
+    // Prevent duplicate registration on PTY restart
+    if (this.registeredExitSessions.has(sessionId)) return;
+    this.registeredExitSessions.add(sessionId);
+
     const manager = backend === "remote" ? remotePtyManager : ptyManager;
     manager.onExit(sessionId, async () => {
+      this.registeredExitSessions.delete(sessionId);
       try {
-        await prisma.agentSession.update({
+        const row = await prisma.agentSession.update({
           where: { id: sessionId },
           data: { status: "terminated" },
+          include: { project: { select: { name: true, color: true } } },
         });
+        // Notify dashboard clients
+        this.queueSessionUpdate(toSessionInfo(row));
       } catch {
         // Session may already be deleted
       }
@@ -704,10 +714,13 @@ class SessionManager {
       };
     }
 
+    const args: string[] = resumeSessionRef ? ["--resume", resumeSessionRef] : [];
+    // Note: dangerouslySkipPermissions is not persisted per-session,
+    // so recovered sessions start in normal permission mode.
     return {
       cwd: project.path,
       command: "claude",
-      args: resumeSessionRef ? ["--resume", resumeSessionRef] : [],
+      args,
     };
   }
 

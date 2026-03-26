@@ -58,7 +58,7 @@ export function readJsonlSessions(): JsonlSessionSummary[] {
     // Use python for fast batch processing of all JSONL files
     const script = [
       "import os, json, sys",
-      `projects_dir = "${projectsDir}"`,
+      "projects_dir = sys.argv[1]",
       "results = []",
       "for proj in os.listdir(projects_dir):",
       "    proj_path = os.path.join(projects_dir, proj)",
@@ -100,7 +100,7 @@ export function readJsonlSessions(): JsonlSessionSummary[] {
       "print(json.dumps(results[:200]))",
     ].join("\n");
 
-    const result = execFileSync("python3", ["-c", script], {
+    const result = execFileSync("python3", ["-c", script, projectsDir], {
       encoding: "utf-8",
       timeout: 15000,
     });

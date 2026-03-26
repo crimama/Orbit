@@ -6,15 +6,6 @@ import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
 import { tokenTracker } from "@/server/observability/tokenTracker";
 import type { SessionInfo, SessionNotification, SessionContext } from "@/lib/types";
 
-// OSC 777 notify: \x1b]777;notify;title;body\x07
-const OSC_NOTIFY_RE = /\x1b\]777;notify;([^;]*);([^\x07]*)\x07/g;
-// OSC 7 cwd: \x1b]7;file://host/path\x07
-const OSC_CWD_RE = /\x1b\]7;file:\/\/[^/]*([^\x07]*)\x07/g;
-// Agent Teams: detect teammate idle/completion/elicitation patterns
-const AGENT_TEAMS_IDLE_RE = /\[Agent Teams?\]\s*(?:teammate|agent)\s+(\S+)\s+is idle/gi;
-const AGENT_TEAMS_COMPLETE_RE = /\[Agent Teams?\]\s*(?:task|work)\s+completed/gi;
-const AGENT_TEAMS_QUESTION_RE = /\[Agent Teams?\]\s*(?:question|elicitation|waiting for input)/gi;
-
 function extractOscEvents(
   sessionId: string,
   data: string,
@@ -22,9 +13,13 @@ function extractOscEvents(
 ): string {
   let cleaned = data;
 
+  // All regex created per-call to avoid shared lastIndex state across sessions
+  const oscNotifyRe = /\x1b\]777;notify;([^;]*);([^\x07]*)\x07/g;
+  const oscCwdRe = /\x1b\]7;file:\/\/[^/]*([^\x07]*)\x07/g;
+
   // Extract notifications
   let match: RegExpExecArray | null;
-  while ((match = OSC_NOTIFY_RE.exec(data)) !== null) {
+  while ((match = oscNotifyRe.exec(data)) !== null) {
     const notification: SessionNotification = {
       sessionId,
       title: match[1] || "Notification",
@@ -33,41 +28,34 @@ function extractOscEvents(
     };
     socket.emit("session-notify", notification);
   }
-  OSC_NOTIFY_RE.lastIndex = 0;
-  cleaned = cleaned.replace(OSC_NOTIFY_RE, "");
+  cleaned = cleaned.replace(oscNotifyRe, "");
 
   // Extract cwd
-  while ((match = OSC_CWD_RE.exec(data)) !== null) {
+  while ((match = oscCwdRe.exec(data)) !== null) {
     const ctx: SessionContext = { sessionId, cwd: decodeURIComponent(match[1]) };
     socket.emit("session-context", ctx);
   }
-  OSC_CWD_RE.lastIndex = 0;
-  cleaned = cleaned.replace(OSC_CWD_RE, "");
+  cleaned = cleaned.replace(oscCwdRe, "");
 
-  // Agent Teams pattern detection (non-destructive — don't strip from output)
-  if (AGENT_TEAMS_IDLE_RE.test(data)) {
+  // Agent Teams pattern detection (non-destructive, no g flag needed)
+  if (/\[Agent Teams?\]\s*(?:teammate|agent)\s+\S+\s+is idle/i.test(data)) {
     socket.emit("session-notify", {
       sessionId, title: "Agent Idle", body: "A teammate has finished and is waiting for work",
       timestamp: new Date().toISOString(),
     });
   }
-  AGENT_TEAMS_IDLE_RE.lastIndex = 0;
-
-  if (AGENT_TEAMS_COMPLETE_RE.test(data)) {
+  if (/\[Agent Teams?\]\s*(?:task|work)\s+completed/i.test(data)) {
     socket.emit("session-notify", {
       sessionId, title: "Task Completed", body: "An agent task has been completed",
       timestamp: new Date().toISOString(),
     });
   }
-  AGENT_TEAMS_COMPLETE_RE.lastIndex = 0;
-
-  if (AGENT_TEAMS_QUESTION_RE.test(data)) {
+  if (/\[Agent Teams?\]\s*(?:question|elicitation|waiting for input)/i.test(data)) {
     socket.emit("session-notify", {
       sessionId, title: "Agent Question", body: "An agent is waiting for your input",
       timestamp: new Date().toISOString(),
     });
   }
-  AGENT_TEAMS_QUESTION_RE.lastIndex = 0;
 
   return cleaned;
 }

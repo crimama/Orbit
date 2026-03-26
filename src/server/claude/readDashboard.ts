@@ -34,7 +34,8 @@ export function readClaudeSessions(): ClaudeSessionRow[] {
   try {
     const script = [
       "import sqlite3, json",
-      `conn = sqlite3.connect("${dbPath}")`,
+      "import sys",
+      "conn = sqlite3.connect(sys.argv[1])",
       "c = conn.cursor()",
       "rows = c.execute('SELECT s.id, s.project_id, p.name as project_name, s.slug, s.first_prompt, s.summary, s.input_tokens, s.output_tokens, s.cache_read_tokens, s.total_cost, s.created_at, s.modified_at FROM sessions s LEFT JOIN projects p ON s.project_id = p.id ORDER BY s.modified_at DESC LIMIT 200').fetchall()",
       "cols = ['id','project_id','project_name','slug','first_prompt','summary','input_tokens','output_tokens','cache_read_tokens','total_cost','created_at','modified_at']",
@@ -42,7 +43,7 @@ export function readClaudeSessions(): ClaudeSessionRow[] {
       "conn.close()",
     ].join("; ");
 
-    const result = execFileSync("python3", ["-c", script], {
+    const result = execFileSync("python3", ["-c", script, dbPath], {
       encoding: "utf-8",
       timeout: 5000,
     });
