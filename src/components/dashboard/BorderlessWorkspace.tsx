@@ -221,6 +221,7 @@ export default function BorderlessWorkspace({
     sessions,
     inlineSessionId,
     activePanel,
+    layoutMode,
     upsertTab,
   ]);
 
@@ -303,8 +304,9 @@ export default function BorderlessWorkspace({
     const tabId = event.dataTransfer.getData("text/x-orbit-tab-id");
     if (!tabId) return;
     assignTabToPanel(tabId, panel);
-    // Keep single-panel layout — splits are handled inside MultiTerminal
-    setLayoutMode("left");
+    if (panel === "right") {
+      setLayoutMode("split");
+    }
   };
 
   const handlePanelDragOver = (

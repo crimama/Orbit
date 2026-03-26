@@ -350,8 +350,6 @@ class SessionManager {
       include: { project: { select: { name: true, color: true } } },
     });
 
-    console.log(`[createSession] created ${session.id} status=active agentType=${req.agentType}`);
-
     // Validate Docker config upfront
     if ((isRemote || isDocker) && project.type === "DOCKER" && !project.dockerContainer) {
       await prisma.agentSession.delete({ where: { id: session.id } });
@@ -474,11 +472,7 @@ class SessionManager {
       },
     });
 
-    if (!row) {
-      console.log(`[ensureSessionRunning] ${sessionId} row not found in DB`);
-      return false;
-    }
-    console.log(`[ensureSessionRunning] ${sessionId} status=${row.status}, agentType=${row.agentType}, path=${row.project.path}`);
+    if (!row) return false;
 
     // Re-activate terminated sessions — they may have been terminated by a
     // prior module-instance PTY that exited, but the user wants to reopen.
@@ -487,7 +481,6 @@ class SessionManager {
         where: { id: sessionId },
         data: { status: "active" },
       });
-      console.log(`[ensureSessionRunning] ${sessionId} re-activated from terminated`);
     }
 
     // Guard: Docker must be configured if requested
@@ -582,13 +575,11 @@ class SessionManager {
         this.registerExitHandler(sessionId, "local");
       }
 
-      // Clear _createOpts from lastContext after successful PTY start
-      if (createOpts.resumeSessionRef !== undefined) {
-        await prisma.agentSession.update({
-          where: { id: sessionId },
-          data: { lastContext: null },
-        }).catch(() => {});
-      }
+      // Always clear _createOpts from lastContext after successful PTY start
+      await prisma.agentSession.update({
+        where: { id: sessionId },
+        data: { lastContext: null },
+      }).catch(() => {});
 
       // Capture Claude session ref for brand-new sessions
       if (row.agentType === AGENT_TYPES.CLAUDE && !createOpts.resumeSessionRef) {

@@ -115,6 +115,11 @@ export default function AuditLogPanel({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (filter === "live") {
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function loadLogs() {

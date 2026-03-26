@@ -1,5 +1,4 @@
 import type { OrbitServer, OrbitSocket } from "@/server/socket/types";
-import { ptyManager } from "@/server/pty/ptyManager";
 import { getPtyBackend } from "@/server/pty/ptyBackend";
 import { commandInterceptor } from "@/server/pty/interceptor";
 import { sessionManager } from "@/server/session/sessionManager";
@@ -109,31 +108,32 @@ export function registerTerminalHandlers(
     detach();
 
     // Check all backends (local + remote)
-    const existingBackend = getPtyBackend(sessionId);
-    console.log(`[session-attach] ${sessionId} existingBackend=${!!existingBackend} ptyManager.has=${ptyManager.has(sessionId)}`);
+    let backend = getPtyBackend(sessionId);
 
-    let running = existingBackend !== null;
-    if (!running) {
-      console.log(`[session-attach] ${sessionId} calling ensureSessionRunning...`);
-      running = await sessionManager.ensureSessionRunning(sessionId);
-      console.log(`[session-attach] ${sessionId} ensureSessionRunning=${running} ptyManager.has=${ptyManager.has(sessionId)}`);
+    if (!backend) {
+      const running = await sessionManager.ensureSessionRunning(sessionId);
+      if (!running) {
+        callback({ ok: false, error: "Session not found or not running" });
+        return;
+      }
+      backend = getPtyBackend(sessionId);
     }
 
-    if (!running) {
-      callback({ ok: false, error: "Session not found or not running" });
+    if (!backend) {
+      callback({ ok: false, error: "Backend unavailable after session start" });
       return;
     }
+
+    // Capture as const for inner functions
+    const resolvedBackend = backend;
 
     socket.data.attachedSessionId = sessionId;
     sessionRoom = `session:${sessionId}`;
     await socket.join(sessionRoom);
 
-    // Re-lookup backend after ensureSessionRunning may have created it
-    const backend = getPtyBackend(sessionId) ?? ptyManager;
-
     // Helper: start streaming scrollback + live data once ready
     function startStreaming() {
-      const scrollback = backend.getScrollback(sessionId);
+      const scrollback = resolvedBackend.getScrollback(sessionId);
       if (scrollback) {
         const result = compressIfNeeded(scrollback);
         if (result.compressed) {
@@ -151,7 +151,7 @@ export function registerTerminalHandlers(
         }
       });
 
-      unsubData = backend.onData(sessionId, (data) => {
+      unsubData = resolvedBackend.onData(sessionId, (data) => {
         const cleaned = extractOscEvents(sessionId, data, socket);
         void tokenTracker.processOutput(sessionId, cleaned);
         if (cleaned) batcher!.push(cleaned);
@@ -160,8 +160,8 @@ export function registerTerminalHandlers(
       socket.emit("session-ready", sessionId);
     }
 
-    unsubExit = backend.onExit(sessionId, async (exitCode) => {
-      const preview = backend.getScreenPreview(sessionId);
+    unsubExit = resolvedBackend.onExit(sessionId, async (exitCode) => {
+      const preview = resolvedBackend.getScreenPreview(sessionId);
       socket.emit("session-exit", sessionId, exitCode);
       const session = await sessionManager.getSession(sessionId);
       if (session) {
@@ -176,10 +176,10 @@ export function registerTerminalHandlers(
     });
 
     // Gate streaming on backend ready state
-    if (backend.isReady(sessionId)) {
+    if (resolvedBackend.isReady(sessionId)) {
       startStreaming();
     } else {
-      unsubReady = backend.onReady(sessionId, () => {
+      unsubReady = resolvedBackend.onReady(sessionId, () => {
         unsubReady = null;
         startStreaming();
       });

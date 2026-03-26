@@ -372,9 +372,7 @@ export default function Dashboard() {
           body: JSON.stringify(request),
         });
         const json = (await res.json()) as ApiResponse<SessionInfo>;
-        console.log("[createSession] API response:", JSON.stringify(json).slice(0, 200));
         if ("data" in json) {
-          console.log("[createSession] new session id:", json.data.id, "activateInWorkspace:", options?.activateInWorkspace !== false);
           if (options?.activateInWorkspace !== false) {
             setInlineSessionId(json.data.id);
             setInlineWorkspaceId(null);
