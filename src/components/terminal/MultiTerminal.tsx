@@ -198,16 +198,24 @@ export default function MultiTerminal({
   const [savingWorkspace, setSavingWorkspace] = useState(false);
 
   // Notify parent of which sessions are in panes
+  const onPaneSessionsChangeRef = useRef(onPaneSessionsChange);
+  onPaneSessionsChangeRef.current = onPaneSessionsChange;
+  const onAllPanesEmptyRef = useRef(onAllPanesEmpty);
+  onAllPanesEmptyRef.current = onAllPanesEmpty;
+  const mountedRef = useRef(false);
+
   useEffect(() => {
     const leaves = collectLeafIds(tree);
     const sessionIds = leaves
       .map((id) => findLeaf(tree, id)?.sessionId)
       .filter((id): id is string => !!id);
-    onPaneSessionsChange?.(sessionIds);
-    if (sessionIds.length === 0) {
-      onAllPanesEmpty?.();
+    onPaneSessionsChangeRef.current?.(sessionIds);
+    // Only fire onAllPanesEmpty after mount (not on initial render)
+    if (mountedRef.current && sessionIds.length === 0) {
+      onAllPanesEmptyRef.current?.();
     }
-  }, [tree, onPaneSessionsChange, onAllPanesEmpty]);
+    mountedRef.current = true;
+  }, [tree]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close pane when its session exits (via socket event, not polling)
   const closeSessionPane = useCallback((exitedSessionId: string) => {

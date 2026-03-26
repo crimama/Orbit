@@ -404,7 +404,10 @@ export default function BorderlessWorkspace({
           <div
             key={tab.id}
             className="absolute inset-0"
-            style={{ display: activeTabId === tab.id ? "block" : "none" }}
+            style={{
+              visibility: activeTabId === tab.id ? "visible" : "hidden",
+              zIndex: activeTabId === tab.id ? 1 : 0,
+            }}
           >
             <MultiTerminal
               key={tab.id}
