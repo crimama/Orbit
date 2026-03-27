@@ -56,6 +56,14 @@ export async function POST(request: Request) {
     );
   }
 
+  const VALID_AGENT_TYPES = ["claude-code", "terminal", "codex", "opencode"] as const;
+  if (!VALID_AGENT_TYPES.includes(body.agentType as typeof VALID_AGENT_TYPES[number])) {
+    return NextResponse.json(
+      { error: "Invalid agentType" },
+      { status: 400 },
+    );
+  }
+
   try {
     const session = await sessionManager.createSession(body);
     return NextResponse.json({ data: session }, { status: 201 });

@@ -8,8 +8,8 @@ function CompareContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const left = searchParams.get("left");
-  const right = searchParams.get("right");
+  const left = searchParams?.get("left") ?? null;
+  const right = searchParams?.get("right") ?? null;
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#0a0a0a] text-neutral-200">

@@ -13,7 +13,7 @@ function LoginPageContent() {
   const [error, setError] = useState<string | null>(null);
 
   const nextPath = useMemo(() => {
-    const raw = searchParams.get("next")?.trim() || "/";
+    const raw = searchParams?.get("next")?.trim() || "/";
     return raw.startsWith("/") ? raw : "/";
   }, [searchParams]);
 

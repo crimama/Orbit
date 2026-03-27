@@ -20,8 +20,16 @@ export function useSocket() {
       setConnected(false);
     }
 
+    function onConnectError(err: Error) {
+      const msg = err.message?.toLowerCase() ?? "";
+      if (msg.includes("unauthorized") || msg.includes("auth") || msg.includes("token")) {
+        window.location.href = "/login";
+      }
+    }
+
     socket.on("connect", onConnect);
     socket.on("disconnect", onDisconnect);
+    socket.on("connect_error", onConnectError);
 
     if (socket.connected) {
       setConnected(true);
@@ -30,6 +38,7 @@ export function useSocket() {
     return () => {
       socket.off("connect", onConnect);
       socket.off("disconnect", onDisconnect);
+      socket.off("connect_error", onConnectError);
     };
   }, []);
 
@@ -38,11 +47,16 @@ export function useSocket() {
     socketRef.current = socket;
 
     if (backgrounded) {
-      socket.disconnect();
-      setConnected(false);
+      // Don't destroy the socket — just disconnect transport.
+      // The 5-minute delay in usePageVisibility already gates this.
+      if (socket.connected) {
+        socket.disconnect();
+        setConnected(false);
+      }
       return;
     }
 
+    // Returning from background — reconnect if needed
     if (!socket.connected) {
       socket.connect();
     }

@@ -99,6 +99,7 @@ class SessionManager {
   private pendingSessionUpdates = new Map<string, SessionInfo>();
   private sessionUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private lastAutoRename = new Map<string, number>();
+  private ensureRunningPromises = new Map<string, Promise<boolean>>();
 
   bindSocketServer(io: OrbitServer): void {
     this.socketServer = io;
@@ -129,6 +130,8 @@ class SessionManager {
 
   queueSessionUpdate(session: SessionInfo): void {
     this.pendingSessionUpdates.set(session.id, session);
+    // Leading-edge debounce: first call starts a 2s timer; subsequent calls
+    // only update the pending map (the timer reads the latest value on fire).
     if (this.sessionUpdateTimers.has(session.id)) return;
 
     const timer = setTimeout(() => {
@@ -468,6 +471,17 @@ class SessionManager {
     if (ptyManager.has(sessionId) || remotePtyManager.has(sessionId))
       return true;
 
+    const existing = this.ensureRunningPromises.get(sessionId);
+    if (existing) return existing;
+
+    const promise = this._doEnsureSessionRunning(sessionId);
+    this.ensureRunningPromises.set(sessionId, promise);
+    return promise.finally(() => {
+      this.ensureRunningPromises.delete(sessionId);
+    });
+  }
+
+  private async _doEnsureSessionRunning(sessionId: string): Promise<boolean> {
     const row = await prisma.agentSession.findUnique({
       where: { id: sessionId },
       include: {
@@ -483,15 +497,6 @@ class SessionManager {
     });
 
     if (!row) return false;
-
-    // Re-activate terminated sessions — they may have been terminated by a
-    // prior module-instance PTY that exited, but the user wants to reopen.
-    if (row.status === "terminated") {
-      await prisma.agentSession.update({
-        where: { id: sessionId },
-        data: { status: "active" },
-      });
-    }
 
     // Guard: Docker must be configured if requested
     if (row.project.type === "DOCKER" && !row.project.dockerContainer) {
@@ -583,6 +588,14 @@ class SessionManager {
           );
         }
         this.registerExitHandler(sessionId, "local");
+      }
+
+      // Re-activate terminated sessions after PTY is confirmed running
+      if (row.status === "terminated") {
+        await prisma.agentSession.update({
+          where: { id: sessionId },
+          data: { status: "active" },
+        });
       }
 
       // Always clear _createOpts from lastContext after successful PTY start
@@ -764,6 +777,11 @@ class SessionManager {
       this.bootstrapTimers.delete(sessionId);
       if (!remotePtyManager.has(sessionId)) return;
       remotePtyManager.write(sessionId, command);
+
+      // R-5: Watch for docker exec errors within a 5-second window
+      if (isContainer) {
+        this.watchDockerBootstrapErrors(sessionId);
+      }
     }, 120);
     this.bootstrapTimers.set(sessionId, timer);
   }
@@ -799,6 +817,61 @@ class SessionManager {
   ): string {
     const inner = dockerInnerCommand(workdir, agentType, resumeSessionRef);
     return `docker exec -it ${shellQuote(container.trim())} /bin/bash -ilc ${shellQuote(inner)}\r`;
+  }
+
+  private static readonly DOCKER_ERROR_PATTERNS = [
+    "Error response from daemon",
+    "No such container",
+    "OCI runtime",
+    "is not running",
+    "Cannot connect to the Docker daemon",
+  ];
+
+  private watchDockerBootstrapErrors(sessionId: string): void {
+    let outputAccum = "";
+    let unsub: (() => void) | null = null;
+
+    const cleanup = () => {
+      if (unsub) {
+        unsub();
+        unsub = null;
+      }
+      clearTimeout(watchTimer);
+    };
+
+    const onData = (data: string) => {
+      outputAccum += data;
+      const matched = SessionManager.DOCKER_ERROR_PATTERNS.some(
+        (pattern) => outputAccum.includes(pattern),
+      );
+      if (matched) {
+        cleanup();
+        console.error(
+          `[SessionManager] Docker exec error detected for session ${sessionId}`,
+        );
+        void prisma.agentSession
+          .update({
+            where: { id: sessionId },
+            data: { status: "terminated" },
+            include: { project: { select: { name: true, color: true } } },
+          })
+          .then((row) => {
+            this.queueSessionUpdate(toSessionInfo(row));
+          })
+          .catch(() => {});
+      }
+    };
+
+    try {
+      unsub = remotePtyManager.onData(sessionId, onData);
+    } catch {
+      // Session may not exist yet
+      return;
+    }
+
+    const watchTimer = setTimeout(() => {
+      cleanup();
+    }, 5_000);
   }
 
   /**
@@ -876,6 +949,10 @@ class SessionManager {
     );
     for (const session of idleSessions) {
       await this.terminateSession(session.id);
+      const terminated = await this.getSession(session.id);
+      if (terminated) {
+        this.queueSessionUpdate(terminated);
+      }
     }
   }
 

@@ -12,7 +12,9 @@ export default function SessionPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`/api/sessions/${params.id}`)
+    const id = params?.id;
+    if (!id) return;
+    fetch(`/api/sessions/${id}`)
       .then((res) => res.json())
       .then((json: ApiResponse<SessionInfo> | ApiError) => {
         if ("error" in json) {
@@ -22,7 +24,7 @@ export default function SessionPage() {
         }
       })
       .catch((err) => setError(err.message));
-  }, [params.id]);
+  }, [params?.id]);
 
   if (error) {
     return (
@@ -40,7 +42,7 @@ export default function SessionPage() {
     );
   }
 
-  const workspaceId = searchParams.get("workspaceId");
+  const workspaceId = searchParams?.get("workspaceId") ?? null;
 
   return (
     <TerminalPage

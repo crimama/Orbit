@@ -8,7 +8,7 @@ import type { ProjectInfo, ApiResponse } from "@/lib/types";
 function GraphPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const projectId = searchParams.get("projectId");
+  const projectId = searchParams?.get("projectId") ?? null;
 
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [loadingProjects, setLoadingProjects] = useState(!projectId);

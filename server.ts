@@ -5,6 +5,7 @@ import { registerSocketHandlers } from "@/server/socket/handler";
 import { sessionManager } from "@/server/session/sessionManager";
 import { sshManager } from "@/server/ssh/sshManager";
 import { getConfiguredAccessTokenSync } from "@/server/auth/accessTokenStore";
+import { safeTokenCompare } from "@/lib/auth";
 import { SOCKET_PATH, DEFAULT_PORT } from "@/lib/constants";
 import type {
   ServerToClientEvents,
@@ -122,17 +123,17 @@ function hasValidSocketToken(socket: {
 
   const authTokenRaw = socket.handshake.auth?.token;
   const authToken = typeof authTokenRaw === "string" ? authTokenRaw.trim() : "";
-  if (authToken && authToken === accessToken) return true;
+  if (authToken && safeTokenCompare(authToken, accessToken)) return true;
 
   const headerToken =
     firstValue(socket.handshake.headers["x-orbit-token"])?.trim() ?? "";
-  if (headerToken && headerToken === accessToken) return true;
+  if (headerToken && safeTokenCompare(headerToken, accessToken)) return true;
 
   const authorization =
     firstValue(socket.handshake.headers.authorization)?.trim() ?? "";
   if (authorization.toLowerCase().startsWith("bearer ")) {
     const bearer = authorization.slice(7).trim();
-    if (bearer && bearer === accessToken) return true;
+    if (bearer && safeTokenCompare(bearer, accessToken)) return true;
   }
 
   const cookieToken =
@@ -140,10 +141,11 @@ function hasValidSocketToken(socket: {
       firstValue(socket.handshake.headers.cookie) ?? undefined,
       "orbit_token",
     )?.trim() ?? "";
-  if (cookieToken && cookieToken === accessToken) return true;
+  if (cookieToken && safeTokenCompare(cookieToken, accessToken)) return true;
 
+  // WARNING: Token in query string is visible in logs. Prefer cookie/header auth.
   const queryToken = firstValue(socket.handshake.query.token)?.trim() ?? "";
-  if (queryToken && queryToken === accessToken) return true;
+  if (queryToken && safeTokenCompare(queryToken, accessToken)) return true;
 
   return false;
 }
@@ -156,12 +158,12 @@ function hasValidHttpToken(
 
   const headerToken =
     firstValue(request.headers["x-orbit-token"])?.trim() ?? "";
-  if (headerToken && headerToken === accessToken) return true;
+  if (headerToken && safeTokenCompare(headerToken, accessToken)) return true;
 
   const authorization = firstValue(request.headers.authorization)?.trim() ?? "";
   if (authorization.toLowerCase().startsWith("bearer ")) {
     const bearer = authorization.slice(7).trim();
-    if (bearer && bearer === accessToken) return true;
+    if (bearer && safeTokenCompare(bearer, accessToken)) return true;
   }
 
   const cookieToken =
@@ -169,7 +171,7 @@ function hasValidHttpToken(
       firstValue(request.headers.cookie) ?? undefined,
       "orbit_token",
     )?.trim() ?? "";
-  if (cookieToken && cookieToken === accessToken) return true;
+  if (cookieToken && safeTokenCompare(cookieToken, accessToken)) return true;
 
   return false;
 }
@@ -226,8 +228,10 @@ async function main() {
       return;
     }
 
+    // WARNING: Token in URL query string is visible in server/proxy logs.
+    // Consume it immediately, set a cookie, and redirect to strip it from the URL.
     const tokenFromQuery = requestUrl.searchParams.get("token")?.trim() ?? "";
-    if (accessToken && tokenFromQuery && tokenFromQuery === accessToken) {
+    if (accessToken && tokenFromQuery && safeTokenCompare(tokenFromQuery, accessToken)) {
       requestUrl.searchParams.delete("token");
       const nextPath = `${requestUrl.pathname}${requestUrl.search}` || "/";
       const cookie =

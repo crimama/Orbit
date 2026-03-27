@@ -20,6 +20,9 @@ interface HeldApproval extends PendingApproval {
 type PendingCallback = (approval: PendingApproval) => void;
 type WarnCallback = (warning: InterceptorWarning) => void;
 
+/** Maximum input buffer size per session (64KB) — oversized pastes bypass rule checking */
+const MAX_INPUT_BUFFER = 64 * 1024;
+
 /** Allowlist deny rule — auto-block when command not in allowlist */
 const ALLOWLIST_DENY_RULE: InterceptorRuleInfo = {
   id: "allowlist-deny",
@@ -78,9 +81,22 @@ class CommandInterceptor {
     onPending: PendingCallback,
     onWarn: WarnCallback,
   ): Promise<boolean> {
+    // Ctrl+C (\x03), Ctrl+D (\x04), Ctrl+Z (\x1a) — clear buffer
+    if (data.includes("\x03") || data.includes("\x04") || data.includes("\x1a")) {
+      this.inputBuffers.delete(sessionId);
+      return true;
+    }
+
     // Accumulate input
     let buffer = this.inputBuffers.get(sessionId) ?? "";
     buffer += data;
+
+    // Buffer size cap — oversized pastes bypass rule checking
+    if (Buffer.byteLength(buffer, "utf-8") > MAX_INPUT_BUFFER) {
+      this.inputBuffers.set(sessionId, "");
+      return true;
+    }
+
     this.inputBuffers.set(sessionId, buffer);
 
     // Check for Enter key (\r or \n)
@@ -193,10 +209,37 @@ class CommandInterceptor {
   }
 
   /**
+   * Cancel all pending approvals for a session (auto-deny).
+   * Used when a session is detached to prevent orphaned approvals.
+   */
+  cancelPendingApprovals(sessionId: string): void {
+    Array.from(this.pendingApprovals.entries()).forEach(([id, held]) => {
+      if (held.sessionId === sessionId) {
+        clearTimeout(held.timer);
+        this.pendingApprovals.delete(id);
+      }
+    });
+  }
+
+  /**
+   * Approve all pending approvals (used when mode changes to yolo).
+   */
+  approveAllPending(): Array<{ sessionId: string; data: string }> {
+    const results: Array<{ sessionId: string; data: string }> = [];
+    Array.from(this.pendingApprovals.entries()).forEach(([id, held]) => {
+      clearTimeout(held.timer);
+      results.push({ sessionId: held.sessionId, data: held.heldData });
+      this.pendingApprovals.delete(id);
+    });
+    return results;
+  }
+
+  /**
    * Clear the input buffer for a session (e.g., on detach).
    */
   clearBuffer(sessionId: string): void {
     this.inputBuffers.delete(sessionId);
+    this.sessionModes.delete(sessionId);
   }
 
   // --- Per-session mode management ---
@@ -213,10 +256,15 @@ class CommandInterceptor {
     return this.sessionModes.get(sessionId) ?? null;
   }
 
-  /** Set global mode directly (bypasses DB cache) */
-  setGlobalModeDirect(mode: InterceptorMode): void {
+  /** Set global mode directly (bypasses DB cache).
+   *  When switching to yolo, auto-approves all pending approvals and returns them. */
+  setGlobalModeDirect(mode: InterceptorMode): Array<{ sessionId: string; data: string }> {
     this.cachedMode = mode;
     this.modeCacheTimestamp = Date.now();
+    if (mode === "yolo") {
+      return this.approveAllPending();
+    }
+    return [];
   }
 
   // --- Private helpers ---

@@ -107,7 +107,11 @@ export default function SidebarFileTree({
         );
         if (!res.ok) return;
         const json = (await res.json()) as ApiResponse<ProjectFileReadResponse>;
-        if (!("data" in json) || json.data.isBinary) return;
+        if (!("data" in json)) return;
+        if (json.data.isBinary) {
+          setError("Binary files cannot be opened in the editor");
+          return;
+        }
         onFileOpen(filePath, json.data.content ?? "");
       } finally {
         setLoadingFile(null);

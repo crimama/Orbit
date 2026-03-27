@@ -61,7 +61,14 @@ export function registerInterceptorHandlers(
       return;
     }
     await setInterceptorMode(mode);
-    commandInterceptor.setGlobalModeDirect(mode);
+    const autoApproved = commandInterceptor.setGlobalModeDirect(mode);
+    // Forward auto-approved held data to PTY backends
+    for (const { sessionId, data } of autoApproved) {
+      const backend = getPtyBackend(sessionId);
+      if (backend) {
+        backend.write(sessionId, data);
+      }
+    }
     io.emit("interceptor-mode-changed", mode);
     callback({ ok: true, mode });
   });

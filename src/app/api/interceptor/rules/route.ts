@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { commandInterceptor } from "@/server/pty/interceptor";
 import type { CreateInterceptorRuleRequest, InterceptorRuleInfo } from "@/lib/types";
 
 export async function GET() {
@@ -56,6 +57,8 @@ export async function POST(request: Request) {
       enabled: body.enabled ?? true,
     },
   });
+
+  commandInterceptor.invalidateCache();
 
   const data: InterceptorRuleInfo = {
     id: rule.id,
@@ -120,6 +123,8 @@ export async function PUT(request: Request) {
       data: updateData,
     });
 
+    commandInterceptor.invalidateCache();
+
     const data: InterceptorRuleInfo = {
       id: rule.id,
       pattern: rule.pattern,
@@ -146,6 +151,7 @@ export async function DELETE(request: Request) {
 
   try {
     await prisma.interceptorRule.delete({ where: { id } });
+    commandInterceptor.invalidateCache();
     return NextResponse.json({ data: { deleted: true } });
   } catch {
     return NextResponse.json({ error: "Rule not found" }, { status: 404 });

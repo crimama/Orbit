@@ -42,6 +42,7 @@ export default function TerminalView({
   const onExitRef = useRef(onExit);
   const fontSizeRef = useRef(fontSize);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const prevConnectedRef = useRef(activeConnected);
 
   useEffect(() => {
     onExitRef.current = onExit;
@@ -384,7 +385,22 @@ export default function TerminalView({
       termRef.current = null;
       fitAddonRef.current = null;
     };
-  }, [sessionId, activeSocket, activeConnected, handleResize, onInputReady, disableStdin]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- activeConnected intentionally excluded to avoid terminal teardown on reconnect
+  }, [sessionId, activeSocket, handleResize, onInputReady, disableStdin]);
+
+  // Re-attach session on socket reconnect without destroying the terminal
+  useEffect(() => {
+    const wasConnected = prevConnectedRef.current;
+    prevConnectedRef.current = activeConnected;
+
+    if (!wasConnected && activeConnected && activeSocket && termRef.current) {
+      activeSocket.emit("session-attach", sessionId, (res) => {
+        if (res.ok) {
+          attachedRef.current = true;
+        }
+      });
+    }
+  }, [activeConnected, activeSocket, sessionId]);
 
   useEffect(() => {
     if (!termRef.current) return;

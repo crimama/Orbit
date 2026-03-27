@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
+import { basename } from "path";
 import { prisma } from "@/lib/prisma";
+
+const ALLOWED_MCP_COMMANDS = ["node", "npx", "python", "python3", "uvx", "deno"];
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -37,6 +40,19 @@ export async function POST(request: Request) {
 
   if (!body.name) {
     return NextResponse.json({ error: "name is required" }, { status: 400 });
+  }
+
+  // Validate MCP command against allowlist
+  if (body.command) {
+    const baseCommand = basename(body.command.trim().split(/\s+/)[0] ?? "");
+    if (!ALLOWED_MCP_COMMANDS.includes(baseCommand)) {
+      return NextResponse.json(
+        {
+          error: `Command "${baseCommand}" is not allowed. Allowed commands: ${ALLOWED_MCP_COMMANDS.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
   }
 
   const server = await prisma.mcpServer.create({

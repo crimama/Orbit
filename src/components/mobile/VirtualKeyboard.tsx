@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface VirtualKeyboardProps {
   onKey: (data: string) => void;
   visible: boolean;
+  applicationCursorMode?: boolean;
 }
 
 type ModifierMode = "off" | "oneshot" | "locked";
@@ -29,6 +30,7 @@ function getModifierButtonClass(mode: ModifierMode, accentClass: string) {
 export default function VirtualKeyboard({
   onKey,
   visible,
+  applicationCursorMode = false,
 }: VirtualKeyboardProps) {
   const [ctrlMode, setCtrlMode] = useState<ModifierMode>("off");
   const [altMode, setAltMode] = useState<ModifierMode>("off");
@@ -284,7 +286,7 @@ export default function VirtualKeyboard({
               onTouchStart={(e) => {
                 e.preventDefault();
                 handleKeyTouchStart("up");
-                sendKey("\x1b[A");
+                sendKey(applicationCursorMode ? "\x1bOA" : "\x1b[A");
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
@@ -300,7 +302,7 @@ export default function VirtualKeyboard({
               onTouchStart={(e) => {
                 e.preventDefault();
                 handleKeyTouchStart("down");
-                sendKey("\x1b[B");
+                sendKey(applicationCursorMode ? "\x1bOB" : "\x1b[B");
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
@@ -316,7 +318,7 @@ export default function VirtualKeyboard({
               onTouchStart={(e) => {
                 e.preventDefault();
                 handleKeyTouchStart("left");
-                sendKey("\x1b[D");
+                sendKey(applicationCursorMode ? "\x1bOD" : "\x1b[D");
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();
@@ -332,7 +334,7 @@ export default function VirtualKeyboard({
               onTouchStart={(e) => {
                 e.preventDefault();
                 handleKeyTouchStart("right");
-                sendKey("\x1b[C");
+                sendKey(applicationCursorMode ? "\x1bOC" : "\x1b[C");
               }}
               onTouchEnd={(e) => {
                 e.preventDefault();

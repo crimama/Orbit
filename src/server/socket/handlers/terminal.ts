@@ -123,12 +123,16 @@ export function registerTerminalHandlers(
     function startStreaming() {
       const scrollback = resolvedBackend.getScrollback(sessionId);
       if (scrollback) {
-        const result = compressIfNeeded(scrollback);
-        if (result.compressed) {
-          socket.emit("terminal-data-compressed", result.payload as Buffer);
-        } else {
-          socket.emit("terminal-data", result.payload as string);
-        }
+        void compressIfNeeded(scrollback).then((result) => {
+          if (result.compressed) {
+            socket.emit("terminal-data-compressed", result.payload as Buffer);
+          } else {
+            socket.emit("terminal-data", result.payload as string);
+          }
+        }).catch((err) => {
+          console.error("[terminal] scrollback compression failed:", err);
+          socket.emit("terminal-data", scrollback);
+        });
       }
 
       batcher = new DeltaBatcher((payload, compressed) => {
@@ -217,7 +221,10 @@ export function registerTerminalHandlers(
 
   socket.on("session-detach", () => {
     const sid = socket.data.attachedSessionId;
-    if (sid) commandInterceptor.clearBuffer(sid);
+    if (sid) {
+      commandInterceptor.cancelPendingApprovals(sid);
+      commandInterceptor.clearBuffer(sid);
+    }
     detach();
   });
 

@@ -1,9 +1,12 @@
-import { deflateSync, inflateSync } from "zlib";
+import { deflate, inflateSync } from "zlib";
+import { promisify } from "util";
 import {
   DELTA_MIN_PAYLOAD_BYTES,
   DELTA_FLUSH_INTERVAL_MS,
   DELTA_FLUSH_THRESHOLD_BYTES,
 } from "@/lib/constants";
+
+const deflateAsync = promisify(deflate);
 
 export interface CompressResult {
   compressed: boolean;
@@ -14,9 +17,9 @@ export interface CompressResult {
  * Compress terminal data if it exceeds the minimum payload threshold.
  * Used for SSH terminal relay to reduce bandwidth on large outputs.
  */
-export function compressIfNeeded(data: string): CompressResult {
+export async function compressIfNeeded(data: string): Promise<CompressResult> {
   if (Buffer.byteLength(data, "utf-8") >= DELTA_MIN_PAYLOAD_BYTES) {
-    const deflated = deflateSync(Buffer.from(data, "utf-8"));
+    const deflated = await deflateAsync(Buffer.from(data, "utf-8"));
     return { compressed: true, payload: deflated };
   }
   return { compressed: false, payload: data };
@@ -67,9 +70,14 @@ export class DeltaBatcher {
       this.timer = null;
     }
     if (!this.buffer) return;
-    const { compressed, payload } = compressIfNeeded(this.buffer);
+    const data = this.buffer;
     this.buffer = "";
-    this.emitFn(payload, compressed);
+    void compressIfNeeded(data).then(({ compressed, payload }) => {
+      this.emitFn(payload, compressed);
+    }).catch((err) => {
+      console.error("[deltaStream] compression failed, sending raw:", err);
+      this.emitFn(data, false);
+    });
   }
 
   destroy(): void {

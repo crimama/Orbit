@@ -1,6 +1,23 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+/**
+ * Constant-time string comparison for Edge runtime (no Node crypto available).
+ * XORs every byte to avoid early-exit timing leaks.
+ */
+function safeTokenCompare(supplied: string, expected: string): boolean {
+  if (!supplied || !expected) return false;
+  const encoder = new TextEncoder();
+  const a = encoder.encode(supplied);
+  const b = encoder.encode(expected);
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a[i] ^ b[i];
+  }
+  return diff === 0;
+}
+
 const allowRemote = process.env.ORBIT_ALLOW_REMOTE === "true";
 const tokenCookieName = "orbit_token";
 const remoteScope =
@@ -64,7 +81,9 @@ function isAllowedRemoteIp(value: string | null): boolean {
   if (!value || !value.trim()) return true;
   if (isLoopbackIp(value)) return true;
   if (remoteScope === "tailscale") return isTailscaleIp(value);
-  return true;
+  // When remoteScope is "any" (default), allow all IPs — token auth is the gate.
+  // Only Tailscale mode restricts by IP range.
+  return remoteScope === "any";
 }
 
 function isAuthorizedByToken(request: NextRequest): boolean {
@@ -72,15 +91,15 @@ function isAuthorizedByToken(request: NextRequest): boolean {
   if (!accessToken) return false;
 
   const byCookie = request.cookies.get(tokenCookieName)?.value?.trim();
-  if (byCookie && byCookie === accessToken) return true;
+  if (byCookie && safeTokenCompare(byCookie, accessToken)) return true;
 
   const byHeader = request.headers.get("x-orbit-token")?.trim();
-  if (byHeader && byHeader === accessToken) return true;
+  if (byHeader && safeTokenCompare(byHeader, accessToken)) return true;
 
   const auth = request.headers.get("authorization")?.trim();
   if (auth?.toLowerCase().startsWith("bearer ")) {
     const byBearer = auth.slice(7).trim();
-    if (byBearer && byBearer === accessToken) return true;
+    if (byBearer && safeTokenCompare(byBearer, accessToken)) return true;
   }
 
   return false;
@@ -108,7 +127,9 @@ export function middleware(request: NextRequest) {
 
   const tokenFromQuery =
     request.nextUrl.searchParams.get("token")?.trim() ?? "";
-  if (accessToken && tokenFromQuery && tokenFromQuery === accessToken) {
+  // WARNING: Token in URL query string is logged by proxies/CDNs. We consume
+  // it immediately, set a cookie, and redirect to strip it from the URL.
+  if (accessToken && tokenFromQuery && safeTokenCompare(tokenFromQuery, accessToken)) {
     const url = request.nextUrl.clone();
     url.searchParams.delete("token");
     const response = NextResponse.redirect(url);

@@ -27,6 +27,34 @@ class SshManager {
   private connections = new Map<string, ConnectionEntry>();
   private connectPromises = new Map<string, Promise<void>>();
   private statusListeners = new Set<StatusCallback>();
+  private reconnectListeners = new Map<string, Set<() => void>>();
+  private lastStableAt = new Map<string, number>();
+
+  /** Register a callback to be fired after a successful reconnect for a given configId.
+   *  Returns an unsubscribe function. */
+  onReconnect(configId: string, cb: () => void): () => void {
+    let cbs = this.reconnectListeners.get(configId);
+    if (!cbs) {
+      cbs = new Set();
+      this.reconnectListeners.set(configId, cbs);
+    }
+    cbs.add(cb);
+    return () => {
+      cbs!.delete(cb);
+      if (cbs!.size === 0) this.reconnectListeners.delete(configId);
+    };
+  }
+
+  private fireReconnectListeners(configId: string): void {
+    const cbs = this.reconnectListeners.get(configId);
+    if (cbs) {
+      cbs.forEach((cb) => {
+        try { cb(); } catch (err) {
+          console.error(`[SSH] Reconnect listener error for ${configId}:`, err);
+        }
+      });
+    }
+  }
 
   private applyAuthConfig(
     connectConfig: Partial<ConnectConfig>,
@@ -122,13 +150,20 @@ class SshManager {
     this.emitStatus(configId);
 
     const connectPromise = new Promise<void>((resolve, reject) => {
+      let settled = false;
+
       const timeout = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        client.removeAllListeners("error");
         client.end();
         this.setState(configId, "error", "Connection timed out");
         reject(new Error("SSH connection timed out"));
       }, SSH_CONNECT_TIMEOUT_MS);
 
       client.on("ready", () => {
+        if (settled) return;
+        settled = true;
         clearTimeout(timeout);
         entry.state = "connected";
         entry.retryCount = 0;
@@ -144,7 +179,8 @@ class SshManager {
         console.error(`[SSH] Error for ${configId}:`, err.message);
         this.setState(configId, "error", err.message);
         // Only reject if this is the initial connect (not a reconnect attempt)
-        if (entry.retryCount === 0) {
+        if (!settled && entry.retryCount === 0) {
+          settled = true;
           reject(err);
         }
       });
@@ -158,7 +194,7 @@ class SshManager {
           console.log(
             `[SSH] Connection closed for ${configId}, attempting reconnect...`,
           );
-          this.scheduleReconnect(configId, config);
+          this.scheduleReconnect(configId);
         }
       });
 
@@ -185,6 +221,8 @@ class SshManager {
 
       const authError = this.applyAuthConfig(connectConfig, config);
       if (authError) {
+        if (settled) return;
+        settled = true;
         clearTimeout(timeout);
         this.setState(configId, "error", authError);
         reject(new Error(authError));
@@ -194,6 +232,7 @@ class SshManager {
       if (config.proxyConfigId) {
         this.connect(config.proxyConfigId)
           .then(() => {
+            if (settled) return;
             const proxyClient = this.getConnection(config.proxyConfigId!);
             if (!proxyClient) {
               throw new Error(
@@ -207,6 +246,8 @@ class SshManager {
               config.port,
               (err, stream) => {
                 if (err) {
+                  if (settled) return;
+                  settled = true;
                   clearTimeout(timeout);
                   this.setState(
                     configId,
@@ -222,6 +263,8 @@ class SshManager {
             );
           })
           .catch((err) => {
+            if (settled) return;
+            settled = true;
             clearTimeout(timeout);
             this.setState(
               configId,
@@ -243,20 +286,15 @@ class SshManager {
     }
   }
 
-  private scheduleReconnect(
-    configId: string,
-    config: {
-      host: string;
-      port: number;
-      username: string;
-      authMethod: string;
-      keyPath: string | null;
-      password: string | null;
-      proxyConfigId: string | null;
-    },
-  ): void {
+  private scheduleReconnect(configId: string): void {
     const entry = this.connections.get(configId);
     if (!entry) return;
+
+    // R-4: Only reset retry count if connection was stable for 60+ seconds
+    const stableTs = this.lastStableAt.get(configId);
+    if (stableTs && Date.now() - stableTs > 60_000) {
+      entry.retryCount = 0;
+    }
 
     if (entry.retryCount >= SSH_RECONNECT_MAX_RETRIES) {
       console.log(`[SSH] Max retries reached for ${configId}`);
@@ -275,6 +313,15 @@ class SshManager {
       const current = this.connections.get(configId);
       if (!current || current.configId !== configId) return;
 
+      // R-3: Re-fetch config from DB to get fresh credentials
+      const config = await prisma.sshConfig.findUnique({
+        where: { id: configId },
+      });
+      if (!config) {
+        this.setState(configId, "error", `SSH config not found: ${configId}`);
+        return;
+      }
+
       const newClient = new Client();
       current.client = newClient;
       current.state = "connecting";
@@ -282,11 +329,14 @@ class SshManager {
 
       newClient.on("ready", () => {
         current.state = "connected";
-        current.retryCount = 0;
+        // R-4: Record stable timestamp instead of resetting retryCount
+        this.lastStableAt.set(configId, Date.now());
         this.emitStatus(configId);
         console.log(
           `[SSH] Reconnected to ${config.host}:${config.port} (${configId})`,
         );
+        // R-1: Fire reconnect listeners so remotePtyManager can re-open channels
+        this.fireReconnectListeners(configId);
       });
 
       newClient.on("error", (err) => {
@@ -297,7 +347,7 @@ class SshManager {
       newClient.on("close", () => {
         const c = this.connections.get(configId);
         if (c && c.client === newClient && c.state === "connected") {
-          this.scheduleReconnect(configId, config);
+          this.scheduleReconnect(configId);
         }
       });
 
@@ -376,6 +426,8 @@ class SshManager {
     }
 
     this.connections.delete(configId);
+    this.reconnectListeners.delete(configId);
+    this.lastStableAt.delete(configId);
     this.emitStatus(configId);
     console.log(`[SSH] Disconnected: ${configId}`);
   }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const BACKGROUND_DISCONNECT_DELAY_MS = 30_000;
+const BACKGROUND_DISCONNECT_DELAY_MS = 300_000;
 
 function readVisibilityState(): DocumentVisibilityState {
   if (typeof document === "undefined") {

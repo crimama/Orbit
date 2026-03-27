@@ -1,4 +1,5 @@
 import type { ClientChannel } from "ssh2";
+import { StringDecoder } from "string_decoder";
 import type { PtyBackend } from "@/server/pty/ptyBackend";
 import {
   getScreenPreviewFromScrollback,
@@ -40,6 +41,8 @@ class RemotePtyManager implements PtyBackend {
   private readySessions = new Set<string>();
   private readyCallbacks = new Map<string, Set<() => void>>();
   private readyTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private decoders = new Map<string, StringDecoder>();
+  private reconnectUnsubs = new Map<string, () => void>();
 
   async create(
     sessionId: string,
@@ -70,6 +73,8 @@ class RemotePtyManager implements PtyBackend {
     this.outputBuffers.set(sessionId, "");
     this.dataListeners.set(sessionId, new Set());
     this.exitListeners.set(sessionId, new Set());
+    const decoder = new StringDecoder("utf8");
+    this.decoders.set(sessionId, decoder);
 
     // Start fallback ready timer
     const fallbackTimer = setTimeout(() => {
@@ -82,7 +87,7 @@ class RemotePtyManager implements PtyBackend {
 
     channel.on("data", (data: Buffer) => {
       session.lastActivity = Date.now();
-      let str = data.toString();
+      let str = decoder.write(data);
 
       // Check for ready marker before session is ready
       if (!this.readySessions.has(sessionId)) {
@@ -125,6 +130,16 @@ class RemotePtyManager implements PtyBackend {
     });
 
     channel.on("close", () => {
+      // Flush any remaining partial UTF-8 bytes
+      const remaining = decoder.end();
+      if (remaining.length > 0) {
+        let buf = this.outputBuffers.get(sessionId) ?? "";
+        buf += remaining;
+        this.outputBuffers.set(sessionId, buf);
+        const listeners = this.dataListeners.get(sessionId);
+        if (listeners) listeners.forEach((cb) => cb(remaining));
+      }
+
       const exitCbs = this.exitListeners.get(sessionId);
       if (exitCbs) {
         exitCbs.forEach((cb) => cb(0));
@@ -134,7 +149,7 @@ class RemotePtyManager implements PtyBackend {
 
     channel.stderr.on("data", (data: Buffer) => {
       session.lastActivity = Date.now();
-      const str = data.toString();
+      const str = decoder.write(data);
 
       let buf = this.outputBuffers.get(sessionId) ?? "";
       buf += str;
@@ -148,6 +163,12 @@ class RemotePtyManager implements PtyBackend {
         listeners.forEach((cb) => cb(str));
       }
     });
+
+    // R-1: Register reconnect listener to re-open shell channel on new SSH client
+    const unsub = sshManager.onReconnect(opts.sshConfigId, () => {
+      void this.reopenChannel(sessionId);
+    });
+    this.reconnectUnsubs.set(sessionId, unsub);
 
     return session;
   }
@@ -242,6 +263,79 @@ class RemotePtyManager implements PtyBackend {
     };
   }
 
+  /** Re-open a shell channel on a freshly reconnected SSH client */
+  private async reopenChannel(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (!session) return;
+
+    try {
+      const newChannel = await sshManager.createShell(session.sshConfigId, {
+        cols: session.cols,
+        rows: session.rows,
+      });
+
+      // Replace the dead channel with the new one
+      session.channel = newChannel;
+      session.lastActivity = Date.now();
+
+      // Reset decoder for fresh stream
+      const decoder = new StringDecoder("utf8");
+      this.decoders.set(sessionId, decoder);
+
+      // Re-wire data events on the new channel
+      newChannel.on("data", (data: Buffer) => {
+        session.lastActivity = Date.now();
+        const str = decoder.write(data);
+        if (!str) return;
+
+        let buf = this.outputBuffers.get(sessionId) ?? "";
+        buf += str;
+        if (buf.length > SCROLLBACK_LIMIT) {
+          buf = buf.slice(buf.length - SCROLLBACK_LIMIT);
+        }
+        this.outputBuffers.set(sessionId, buf);
+
+        const listeners = this.dataListeners.get(sessionId);
+        if (listeners) listeners.forEach((cb) => cb(str));
+      });
+
+      newChannel.on("close", () => {
+        const remaining = decoder.end();
+        if (remaining.length > 0) {
+          let buf = this.outputBuffers.get(sessionId) ?? "";
+          buf += remaining;
+          this.outputBuffers.set(sessionId, buf);
+          const listeners = this.dataListeners.get(sessionId);
+          if (listeners) listeners.forEach((cb) => cb(remaining));
+        }
+
+        const exitCbs = this.exitListeners.get(sessionId);
+        if (exitCbs) exitCbs.forEach((cb) => cb(0));
+        this.cleanup(sessionId);
+      });
+
+      newChannel.stderr.on("data", (data: Buffer) => {
+        session.lastActivity = Date.now();
+        const str = decoder.write(data);
+        if (!str) return;
+
+        let buf = this.outputBuffers.get(sessionId) ?? "";
+        buf += str;
+        if (buf.length > SCROLLBACK_LIMIT) {
+          buf = buf.slice(buf.length - SCROLLBACK_LIMIT);
+        }
+        this.outputBuffers.set(sessionId, buf);
+
+        const listeners = this.dataListeners.get(sessionId);
+        if (listeners) listeners.forEach((cb) => cb(str));
+      });
+
+      console.log(`[RemotePty] Re-opened channel for session ${sessionId}`);
+    } catch (err) {
+      console.error(`[RemotePty] Failed to re-open channel for ${sessionId}:`, err);
+    }
+  }
+
   destroy(sessionId: string): void {
     const session = this.sessions.get(sessionId);
     if (!session) return;
@@ -265,6 +359,12 @@ class RemotePtyManager implements PtyBackend {
     this.outputBuffers.delete(sessionId);
     this.dataListeners.delete(sessionId);
     this.exitListeners.delete(sessionId);
+    this.decoders.delete(sessionId);
+    const unsub = this.reconnectUnsubs.get(sessionId);
+    if (unsub) {
+      unsub();
+      this.reconnectUnsubs.delete(sessionId);
+    }
     this.readySessions.delete(sessionId);
     this.readyCallbacks.delete(sessionId);
     const timer = this.readyTimers.get(sessionId);

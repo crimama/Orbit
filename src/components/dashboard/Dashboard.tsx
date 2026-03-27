@@ -117,24 +117,35 @@ export default function Dashboard() {
   const [sshFormMode, setSshFormMode] = useState<SshFormMode>("project");
   const editingSshProfileId = sshFormMode === "vault" ? prefillSshProfileId : null;
   const [showInterceptorModal, setShowInterceptorModal] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const { socket } = useSocket();
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
   // Fetch projects
   const fetchProjects = useCallback(async () => {
-    const res = await fetch("/api/projects");
-    const json = (await res.json()) as ApiResponse<ProjectInfo[]>;
-    if ("data" in json) setProjects(json.data);
+    try {
+      setFetchError(null);
+      const res = await fetch("/api/projects");
+      const json = (await res.json()) as ApiResponse<ProjectInfo[]>;
+      if ("data" in json) setProjects(json.data);
+    } catch (err: unknown) {
+      setFetchError(err instanceof Error ? err.message : "Failed to fetch projects");
+    }
   }, []);
 
   // Fetch sessions
   const fetchSessions = useCallback(async (projectId?: string) => {
-    const url = projectId
-      ? `/api/sessions?projectId=${projectId}`
-      : "/api/sessions";
-    const res = await fetch(url);
-    const json = (await res.json()) as ApiResponse<SessionInfo[]>;
-    if ("data" in json) setSessions(json.data);
+    try {
+      setFetchError(null);
+      const url = projectId
+        ? `/api/sessions?projectId=${projectId}`
+        : "/api/sessions";
+      const res = await fetch(url);
+      const json = (await res.json()) as ApiResponse<SessionInfo[]>;
+      if ("data" in json) setSessions(json.data);
+    } catch (err: unknown) {
+      setFetchError(err instanceof Error ? err.message : "Failed to fetch sessions");
+    }
   }, []);
 
   useEffect(() => {
@@ -200,6 +211,12 @@ export default function Dashboard() {
     socket.emit("dashboard-join");
     socket.on("session-update", handleSessionUpdate);
 
+    // Re-join dashboard room after reconnect so live updates resume
+    const handleReconnect = () => {
+      socket.emit("dashboard-join");
+    };
+    socket.on("connect", handleReconnect);
+
     const handleSessionContext = (ctx: SessionContext) => {
       setSessionContexts((prev) => {
         const existing = prev.get(ctx.sessionId);
@@ -218,6 +235,7 @@ export default function Dashboard() {
 
     return () => {
       socket.off("session-update", handleSessionUpdate);
+      socket.off("connect", handleReconnect);
       socket.off("session-context" as never, handleSessionContext);
       socket.off("session-notify" as never, handleSessionNotify);
     };
@@ -797,6 +815,14 @@ export default function Dashboard() {
             setShowInterceptorModal(false);
           }}
         />
+      )}
+
+      {/* Fetch error banner */}
+      {fetchError && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
+          {fetchError}
+          <button onClick={() => { setFetchError(null); fetchProjects(); fetchSessions(); }} className="ml-2 underline">Retry</button>
+        </div>
       )}
 
       {/* Top Navigation Bar */}
