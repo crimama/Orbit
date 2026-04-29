@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type {
   AgentRunEventInfo,
@@ -15,6 +16,34 @@ const DEFAULT_RUN_LIMIT = 50;
 const MAX_RUN_LIMIT = 200;
 const ACTIVE_STATUSES = new Set(["running"]);
 const TERMINAL_STATUSES = new Set(["completed", "failed", "cancelled"]);
+const APPEND_EVENT_MAX_ATTEMPTS = 5;
+const SQLITE_BUSY_RETRY_MS = 10;
+
+function isKnownPrismaError(
+  err: unknown,
+): err is Prisma.PrismaClientKnownRequestError {
+  return err instanceof Prisma.PrismaClientKnownRequestError;
+}
+
+function isUniqueConstraintError(err: unknown): boolean {
+  return isKnownPrismaError(err) && err.code === "P2002";
+}
+
+function isRetryableTransactionError(err: unknown): boolean {
+  if (isKnownPrismaError(err)) {
+    return err.code === "P2002" || err.code === "P2034";
+  }
+
+  if (err instanceof Error) {
+    return /database is locked|SQLITE_BUSY/i.test(err.message);
+  }
+
+  return false;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function parseJsonObject(value: unknown): Record<string, unknown> {
   if (!value) return {};
@@ -150,18 +179,30 @@ class AgentRunLedger {
     });
     if (!session) return null;
 
-    const row = await prisma.agentRun.create({
-      data: {
-        projectId: session.projectId,
-        sessionId: session.id,
-        runRef: session.id,
-        agentType: session.agentType,
-        title: session.name,
-        metadata: stringifyMetadata({ createdFrom: "session" }),
-      },
-      include: { _count: { select: { events: true } } },
-    });
-    return toRunInfo(row);
+    try {
+      const row = await prisma.agentRun.create({
+        data: {
+          projectId: session.projectId,
+          sessionId: session.id,
+          runRef: session.id,
+          agentType: session.agentType,
+          title: session.name,
+          metadata: stringifyMetadata({ createdFrom: "session" }),
+        },
+        include: { _count: { select: { events: true } } },
+      });
+      return toRunInfo(row);
+    } catch (err) {
+      if (!isUniqueConstraintError(err)) throw err;
+
+      const row = await prisma.agentRun.findFirst({
+        where: { runRef: session.id, sessionId: session.id },
+        orderBy: { createdAt: "desc" },
+        include: { _count: { select: { events: true } } },
+      });
+      if (row) return toRunInfo(row);
+      throw err;
+    }
   }
 
   async listRuns(options: ListAgentRunsOptions = {}): Promise<AgentRunInfo[]> {
@@ -236,7 +277,7 @@ class AgentRunLedger {
     payload: unknown,
     source?: string,
   ): Promise<AgentRunEventInfo> {
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < APPEND_EVENT_MAX_ATTEMPTS; attempt += 1) {
       try {
         const row = await prisma.$transaction(async (tx) => {
           const latest = await tx.agentRunEvent.findFirst({
@@ -263,7 +304,11 @@ class AgentRunLedger {
         });
         return toEventInfo(row);
       } catch (err) {
-        if (attempt === 2) throw err;
+        const shouldRetry =
+          attempt < APPEND_EVENT_MAX_ATTEMPTS - 1 &&
+          isRetryableTransactionError(err);
+        if (!shouldRetry) throw err;
+        await delay(SQLITE_BUSY_RETRY_MS * (attempt + 1));
       }
     }
     throw new Error("Failed to append run event");
