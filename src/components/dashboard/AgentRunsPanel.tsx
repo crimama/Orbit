@@ -9,6 +9,10 @@ import type {
   ApiResponse,
 } from "@/lib/types";
 
+const RUNS_REFRESH_INTERVAL_MS = 5_000;
+const EVENTS_REFRESH_INTERVAL_MS = 3_000;
+const MAX_REFRESH_ATTEMPTS = 120;
+
 const STATUS_STYLES: Record<AgentRunStatus, string> = {
   running: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
   completed: "border-cyan-500/40 bg-cyan-500/10 text-cyan-300",
@@ -76,10 +80,10 @@ export default function AgentRunsPanel({
 
   useEffect(() => {
     let cancelled = false;
+    let refreshAttempts = 0;
 
-    async function loadRuns() {
-      setLoadingRuns(true);
-      setError(null);
+    async function loadRuns(showLoading: boolean) {
+      if (showLoading) setLoadingRuns(true);
 
       try {
         const response = await fetch("/api/agent-runs?limit=8", {
@@ -92,43 +96,59 @@ export default function AgentRunsPanel({
         if (cancelled) return;
 
         if (!response.ok || !("data" in json)) {
-          setRuns([]);
-          setSelectedRunId(null);
           setError("error" in json ? json.error : "Failed to load agent runs");
           return;
         }
 
+        setError(null);
         setRuns(json.data);
-        setSelectedRunId((current) => current ?? json.data[0]?.id ?? null);
+        setSelectedRunId((current) => {
+          if (current && json.data.some((run) => run.id === current)) {
+            return current;
+          }
+
+          return json.data[0]?.id ?? null;
+        });
       } catch {
         if (!cancelled) {
-          setRuns([]);
-          setSelectedRunId(null);
           setError("Failed to load agent runs");
         }
       } finally {
-        if (!cancelled) setLoadingRuns(false);
+        if (!cancelled && showLoading) setLoadingRuns(false);
       }
     }
 
-    void loadRuns();
+    const intervalId = window.setInterval(() => {
+      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        window.clearInterval(intervalId);
+        return;
+      }
+
+      refreshAttempts += 1;
+      void loadRuns(false);
+    }, RUNS_REFRESH_INTERVAL_MS);
+
+    void loadRuns(true);
 
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, []);
 
   useEffect(() => {
     if (!selectedRunId) {
       setEvents([]);
+      setLoadingEvents(false);
       return;
     }
 
     let cancelled = false;
+    let refreshAttempts = 0;
     const runId = selectedRunId;
 
-    async function loadEvents() {
-      setLoadingEvents(true);
+    async function loadEvents(showLoading: boolean) {
+      if (showLoading) setLoadingEvents(true);
 
       try {
         const response = await fetch(
@@ -142,26 +162,36 @@ export default function AgentRunsPanel({
         if (cancelled) return;
 
         if (!response.ok || !("data" in json)) {
-          setEvents([]);
           setError("error" in json ? json.error : "Failed to load run events");
           return;
         }
 
+        setError(null);
         setEvents(json.data.events);
       } catch {
         if (!cancelled) {
-          setEvents([]);
           setError("Failed to load run events");
         }
       } finally {
-        if (!cancelled) setLoadingEvents(false);
+        if (!cancelled && showLoading) setLoadingEvents(false);
       }
     }
 
-    void loadEvents();
+    const intervalId = window.setInterval(() => {
+      if (refreshAttempts >= MAX_REFRESH_ATTEMPTS) {
+        window.clearInterval(intervalId);
+        return;
+      }
+
+      refreshAttempts += 1;
+      void loadEvents(false);
+    }, EVENTS_REFRESH_INTERVAL_MS);
+
+    void loadEvents(true);
 
     return () => {
       cancelled = true;
+      window.clearInterval(intervalId);
     };
   }, [selectedRunId]);
 
