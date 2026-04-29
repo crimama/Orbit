@@ -11,6 +11,93 @@ import type {
   SessionContext,
 } from "@/lib/types";
 
+const RAW_IO_CAPTURE_ENV_KEYS = [
+  "ORBIT_AGENT_RUN_LEDGER_RAW_IO",
+  "ORBIT_CAPTURE_RAW_TERMINAL_IO",
+] as const;
+const LEDGER_PREVIEW_LIMIT = 512;
+const LEDGER_RAW_LIMIT = 8192;
+const OUTPUT_LEDGER_FLUSH_MS = 750;
+const OUTPUT_LEDGER_FLUSH_CHARS = 4096;
+
+type TerminalIoDirection = "input" | "output";
+
+interface TerminalIoPayload {
+  direction: TerminalIoDirection;
+  rawCaptured: boolean;
+  byteLength: number;
+  charLength: number;
+  lineCount: number;
+  preview: string;
+  previewTruncated: boolean;
+  redacted: boolean;
+  data?: string;
+  dataTruncated?: boolean;
+}
+
+function isRawIoCaptureEnabled(): boolean {
+  return RAW_IO_CAPTURE_ENV_KEYS.some((key) => {
+    const value = process.env[key];
+    return value === "1" || value?.toLowerCase() === "true";
+  });
+}
+
+function stripAnsi(value: string): string {
+  return value
+    .replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, "")
+    .replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "");
+}
+
+function redactTerminalPreview(value: string): {
+  value: string;
+  redacted: boolean;
+} {
+  const withoutAnsi = stripAnsi(value);
+  const redacted = withoutAnsi
+    .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{12,}/gi, "$1[REDACTED]")
+    .replace(
+      /((?:api[_-]?key|token|secret|password|passwd)\s*[:=]\s*)([^\s'";]+)/gi,
+      "$1[REDACTED]",
+    )
+    .replace(/\b(sk-[A-Za-z0-9_-]{16,})\b/g, "[REDACTED]");
+  return { value: redacted, redacted: redacted !== withoutAnsi };
+}
+
+function cap(
+  value: string,
+  limit: number,
+): { value: string; truncated: boolean } {
+  if (value.length <= limit) return { value, truncated: false };
+  return { value: value.slice(0, limit), truncated: true };
+}
+
+function createTerminalIoPayload(
+  direction: TerminalIoDirection,
+  data: string,
+): TerminalIoPayload {
+  const rawCaptured = isRawIoCaptureEnabled();
+  const redactedPreview = redactTerminalPreview(data);
+  const preview = cap(redactedPreview.value, LEDGER_PREVIEW_LIMIT);
+  const payload: TerminalIoPayload = {
+    direction,
+    rawCaptured,
+    byteLength: Buffer.byteLength(data),
+    charLength: data.length,
+    lineCount: data.length === 0 ? 0 : data.split(/\r\n|\r|\n/).length,
+    preview: preview.value,
+    previewTruncated: preview.truncated,
+    redacted: redactedPreview.redacted,
+  };
+
+  if (rawCaptured) {
+    const raw = cap(data, LEDGER_RAW_LIMIT);
+    payload.data = raw.value;
+    payload.dataTruncated = raw.truncated;
+  }
+
+  return payload;
+}
+
 function extractOscEvents(
   sessionId: string,
   data: string,
@@ -85,11 +172,60 @@ export function registerTerminalHandlers(
   let unsubReady: (() => void) | null = null;
   let batcher: DeltaBatcher | null = null;
   let sessionRoom: string | null = null;
+  let outputLedgerBuffer = "";
+  let outputLedgerFlushTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function clearOutputLedgerFlushTimer() {
+    if (outputLedgerFlushTimer) {
+      clearTimeout(outputLedgerFlushTimer);
+      outputLedgerFlushTimer = null;
+    }
+  }
+
+  function flushOutputLedger(sessionId: string) {
+    clearOutputLedgerFlushTimer();
+    if (!outputLedgerBuffer) return;
+
+    const data = outputLedgerBuffer;
+    outputLedgerBuffer = "";
+    void agentRunLedger
+      .appendEventBySession(
+        sessionId,
+        "terminal-output",
+        createTerminalIoPayload("output", data),
+        "pty",
+      )
+      .catch((err) => {
+        console.error("[AgentRunLedger] failed to record output:", err);
+      });
+  }
+
+  function queueOutputLedgerEvent(sessionId: string, data: string) {
+    outputLedgerBuffer += data;
+
+    if (outputLedgerBuffer.length >= OUTPUT_LEDGER_FLUSH_CHARS) {
+      flushOutputLedger(sessionId);
+      return;
+    }
+
+    if (!outputLedgerFlushTimer) {
+      outputLedgerFlushTimer = setTimeout(() => {
+        flushOutputLedger(sessionId);
+      }, OUTPUT_LEDGER_FLUSH_MS);
+    }
+  }
 
   function detach() {
     if (sessionRoom) {
       socket.leave(sessionRoom);
       sessionRoom = null;
+    }
+    const attachedSessionId = socket.data.attachedSessionId;
+    if (attachedSessionId) {
+      flushOutputLedger(attachedSessionId);
+    } else {
+      clearOutputLedgerFlushTimer();
+      outputLedgerBuffer = "";
     }
     batcher?.destroy();
     batcher = null;
@@ -165,17 +301,8 @@ export function registerTerminalHandlers(
         const cleaned = extractOscEvents(sessionId, data, socket);
         void tokenTracker.processOutput(sessionId, cleaned);
         if (cleaned) {
-          void agentRunLedger
-            .appendEventBySession(
-              sessionId,
-              "terminal-output",
-              { data: cleaned },
-              "pty",
-            )
-            .catch((err) => {
-              console.error("[AgentRunLedger] failed to record output:", err);
-            });
-          batcher!.push(cleaned);
+          queueOutputLedgerEvent(sessionId, cleaned);
+          batcher?.push(cleaned);
         }
       });
 
@@ -257,7 +384,12 @@ export function registerTerminalHandlers(
     if (forwarded) {
       sessionManager.bufferActivity(sid);
       void agentRunLedger
-        .appendEventBySession(sid, "terminal-input", { data }, "socket")
+        .appendEventBySession(
+          sid,
+          "terminal-input",
+          createTerminalIoPayload("input", data),
+          "socket",
+        )
         .catch((err) => {
           console.error("[AgentRunLedger] failed to record input:", err);
         });
