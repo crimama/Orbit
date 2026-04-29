@@ -18,6 +18,7 @@ model Project {
   adhoc       Boolean        @default(false)
   sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
   sessions    AgentSession[]
+  agentRuns   AgentRun[]
   agents      ProjectAgent[]
   skills      Skill[]
   tasks       AgentTask[]
@@ -100,6 +101,7 @@ model AgentSession {
   chatMessages SessionChatMessage[]
   tokenLogs   SessionTokenLog[]
   checkpoints SessionCheckpoint[]
+  agentRuns   AgentRun[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -253,4 +255,44 @@ model McpServer {
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// --- Durable Agent Run Ledger ---
+
+model AgentRun {
+  id          String          @id @default(uuid())
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     AgentSession?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  runRef      String          @unique
+  agentType   String
+  title       String?
+  status      String          @default("running") // "running" | "completed" | "failed" | "cancelled"
+  metadata    String          @default("{}")
+  events      AgentRunEvent[]
+  startedAt   DateTime        @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([projectId, updatedAt])
+  @@index([sessionId, updatedAt])
+  @@index([status, updatedAt])
+}
+
+model AgentRunEvent {
+  id        String   @id @default(uuid())
+  runId     String
+  run       AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  seq       Int
+  cursor    String   @unique
+  type      String
+  source    String?
+  payload   String
+  createdAt DateTime @default(now())
+
+  @@unique([runId, seq])
+  @@index([runId, createdAt])
+  @@index([type, createdAt])
 }
