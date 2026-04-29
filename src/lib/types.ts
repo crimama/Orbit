@@ -18,7 +18,10 @@ export interface ServerToClientEvents {
   "interceptor-resolved": (approvalId: string, approved: boolean) => void;
   "interceptor-warn": (warning: InterceptorWarning) => void;
   "interceptor-mode-changed": (mode: InterceptorMode) => void;
-  "session-mode-changed": (sessionId: string, mode: InterceptorMode | null) => void;
+  "session-mode-changed": (
+    sessionId: string,
+    mode: InterceptorMode | null,
+  ) => void;
   // Observability
   "session-event": (event: SessionEvent) => void;
   "session-metrics": (snapshot: SessionMetricsSnapshot) => void;
@@ -641,3 +644,71 @@ export interface FileLockInfo {
 export type FileLockEvent =
   | { type: "acquired"; lock: FileLockInfo }
   | { type: "released"; projectId: string; filePath: string };
+
+// --- Agent Run Ledger ---
+
+export type AgentRunStatus = "running" | "completed" | "failed" | "cancelled";
+
+export type AgentRunEventType =
+  | "run-created"
+  | "run-updated"
+  | "terminal-input"
+  | "terminal-output"
+  | "session-ready"
+  | "session-exit"
+  | "system";
+
+export interface AgentRunInfo {
+  id: string;
+  projectId: string;
+  sessionId: string | null;
+  runRef: string;
+  agentType: string;
+  title: string | null;
+  status: AgentRunStatus;
+  metadata: Record<string, unknown>;
+  startedAt: string;
+  endedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  eventCount: number;
+}
+
+export interface AgentRunEventInfo {
+  id: string;
+  runId: string;
+  seq: number;
+  cursor: string;
+  type: AgentRunEventType;
+  source: string | null;
+  payload: unknown;
+  createdAt: string;
+}
+
+export interface CreateAgentRunRequest {
+  projectId: string;
+  sessionId?: string | null;
+  runRef?: string;
+  agentType: string;
+  title?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
+export interface UpdateAgentRunRequest {
+  title?: string | null;
+  status?: AgentRunStatus;
+  metadata?: Record<string, unknown>;
+}
+
+export interface ListAgentRunsOptions {
+  projectId?: string;
+  sessionId?: string;
+  status?: AgentRunStatus;
+  limit?: number;
+}
+
+export interface ListAgentRunEventsOptions {
+  after?: string;
+  limit?: number;
+  type?: AgentRunEventType;
+}

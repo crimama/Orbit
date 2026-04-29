@@ -11,6 +11,7 @@ import { toClaudeProjectKey } from "@/server/session/claudeHistory";
 import { GC_IDLE_MS, GC_INTERVAL_MS } from "@/lib/constants";
 import { sessionMetricsManager } from "@/server/observability/sessionMetrics";
 import { auditLogger } from "@/server/audit/auditLogger";
+import { agentRunLedger } from "@/server/agentRuns/agentRunLedger";
 import type { SessionInfo, CreateSessionRequest } from "@/lib/types";
 import type { OrbitServer } from "@/server/socket/types";
 
@@ -462,6 +463,26 @@ class SessionManager {
       projectId: session.projectId,
     });
 
+    void agentRunLedger
+      .ensureRunForSession(session.id)
+      .then((run) =>
+        run
+          ? agentRunLedger.appendEvent(
+              run.id,
+              "run-created",
+              {
+                sessionId: session.id,
+                projectId: session.projectId,
+                agentType: session.agentType,
+              },
+              "session-manager",
+            )
+          : null,
+      )
+      .catch((err) => {
+        console.error("[AgentRunLedger] failed to create session run:", err);
+      });
+
     return toSessionInfo({
       ...session,
       sessionRef: req.resumeSessionRef?.trim() || session.id,
@@ -493,6 +514,24 @@ class SessionManager {
       action: `Terminated session ${sessionId}`,
       sessionId,
     });
+    void agentRunLedger
+      .ensureRunForSession(sessionId)
+      .then((run) =>
+        run
+          ? Promise.all([
+              agentRunLedger.appendEvent(
+                run.id,
+                "session-exit",
+                { status: "terminated" },
+                "session-manager",
+              ),
+              agentRunLedger.updateRun(run.id, { status: "cancelled" }),
+            ])
+          : null,
+      )
+      .catch((err) => {
+        console.error("[AgentRunLedger] failed to terminate run:", err);
+      });
   }
 
   async sendInput(sessionId: string, input: string): Promise<void> {
