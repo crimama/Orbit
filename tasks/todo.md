@@ -1,5 +1,29 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 AgentRun ledger review fixes team execution)
+
+- [x] 개발 전 rollback tag 생성
+- [x] `$team` launch context snapshot 작성
+- [ ] OMX team 런타임 시작 및 worker ACK/status 확인
+- [ ] 조치사항 병렬 구현: ledger 동시성, IO capture policy, API validation, dashboard refresh
+- [ ] 구현 완료 후 평가 에이전트로 review findings 반영 여부 확인
+- [ ] 타입/린트/schema/build 및 concurrency 검증
+
+## 계획 (AgentRun ledger review fixes team execution)
+
+1. 현재 HEAD를 rollback 가능한 tag로 고정한다.
+2. code-review findings와 파일별 ownership을 `.omx/context/` snapshot으로 공유한다.
+3. `omx team` worker들에게 겹치지 않는 lane을 배정해 병렬 진행한다.
+4. worker 결과를 통합하고 충돌/누락 조치사항을 leader가 정리한다.
+5. 별도 평가 에이전트로 HIGH/MEDIUM/LOW finding 반영 여부를 검증한다.
+6. `npx tsc --noEmit`, `npm run lint`, `npx prisma validate`, 가능한 build/concurrency smoke로 완료 증거를 남긴다.
+
+## 결과
+
+- [ ] 진행 중
+
+---
+
 ## 현재 작업 (2026-04-29 Warp-inspired agent ledger team execution)
 
 - [x] 개발 전 rollback tag 생성
