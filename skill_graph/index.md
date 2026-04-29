@@ -88,6 +88,10 @@
 | **session**         | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
 | **dashboard**       | [Phase 1 인프라](features/2026-02-27_phase1-infra.md)                                                               | feature           |
 | **SSH**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
+| **project-add**     | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
+| **ssh-vault**       | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
+| **vault**           | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
+| **sshConfigId**     | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
 | **PWA**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
 | **모바일**          | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
 | **스킬그래프**      | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |

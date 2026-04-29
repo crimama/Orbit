@@ -1,5 +1,34 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 project add SSH vault reuse)
+
+- [x] 프로젝트 추가 flow의 현재 SSH vault/profile 재사용 경로 확인
+- [x] Add SSH Project form에서 기존 vault 선택/경로 지정 지원
+- [x] Vault panel의 New Project handoff와 일반 Add Project modal 상태 일관화
+- [x] 타입/린트/빌드 검증
+
+## 계획 (project add SSH vault reuse)
+
+1. 기존 `/api/ssh-configs`와 `/api/projects` 계약을 확인해 재사용 가능한 backend 경로를 확정한다.
+2. 프로젝트 생성 모드에서 saved vault 선택 UI를 제공하고, 선택된 vault의 host/path/docker 기본값을 폼에 반영한다.
+3. 기존 vault를 선택한 경우 새 SSH config를 만들거나 재검증을 강제하지 않고 `sshConfigId`로 프로젝트를 생성한다.
+4. 새 연결 생성/테스트 flow와 vault profile 편집 flow의 기존 동작은 유지한다.
+5. 타입/린트/빌드 검증 후 결과를 기록한다.
+
+## 결과
+
+- [x] `AddSshProjectForm` 프로젝트 모드에 `SSH Vault` / `New Host` source 추가
+- [x] 기존 vault 선택 시 새 SSH config 생성/재검증 없이 선택된 `sshConfigId`로 프로젝트 생성
+- [x] vault 선택 시 default path/default docker container를 remote path/target 초기값으로 반영
+- [x] 기존 vault 선택 상태에서도 remote directory browse와 remote Docker container 조회가 선택된 vault id를 사용
+- [x] 일반 SSH 프로젝트 탭 진입 시 이전 vault edit/prefill 상태 초기화
+- [x] `npx tsc --noEmit` 통과
+- [x] `npm run lint` 통과
+- [x] `npm run build` 통과
+- [x] 기존 dev server 확인: `curl -I http://127.0.0.1:3000` -> `302 /login?next=%2F`
+
+---
+
 ## 현재 작업 (2026-04-30 AgentRun ledger review fixes team execution)
 
 - [x] 개발 전 rollback tag 생성

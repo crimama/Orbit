@@ -1260,7 +1260,11 @@ export default function Dashboard() {
                   Local
                 </button>
                 <button
-                  onClick={() => setAddProjectMode("ssh")}
+                  onClick={() => {
+                    setPrefillSshProfileId(null);
+                    setSshFormMode("project");
+                    setAddProjectMode("ssh");
+                  }}
                   className={`flex-1 rounded px-2 py-1 text-xs ${
                     addProjectMode === "ssh"
                       ? "bg-neutral-700 text-neutral-100"
@@ -1328,11 +1332,15 @@ export default function Dashboard() {
                       Home
                     </button>
                     <button
-                      onClick={() =>
+                      onClick={() => {
+                        if (addProjectMode === null) {
+                          setPrefillSshProfileId(null);
+                          setSshFormMode("project");
+                        }
                         setAddProjectMode(
                           addProjectMode === null ? "local" : null,
-                        )
-                      }
+                        );
+                      }}
                       className="rounded px-2 py-1 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
                     >
                       {addProjectMode === null ? "+ Project" : "Cancel"}
