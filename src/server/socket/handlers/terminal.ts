@@ -60,7 +60,7 @@ function redactTerminalPreview(value: string): {
       "$1[REDACTED]",
     )
     .replace(/\b(sk-[A-Za-z0-9_-]{16,})\b/g, "[REDACTED]");
-  return { value: redacted, redacted: redacted !== value };
+  return { value: redacted, redacted: redacted !== withoutAnsi };
 }
 
 function cap(
