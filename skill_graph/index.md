@@ -168,6 +168,10 @@
 | **nested-split**    | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
 | **workspace-tab**   | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
 | **tab-color**       | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **AgentRun**        | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
+| **ledger**          | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
+| **runtime-validation** | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
+| **concurrency**     | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
 
 ---
 
@@ -200,6 +204,7 @@
 | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
 | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
 | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | 🟢   | 파일 뷰/사이드바 안정화 | `markdown` `preview` `sidebar` `upload` `file-view` |
+| [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | 🟢 | durable run replay 안정화 | `AgentRun` `ledger` `terminal-output` `terminal-input` `Prisma` `SQLite` `dashboard` `runtime-validation` `concurrency` |
 
 ### refactor/
 

@@ -4,10 +4,10 @@
 
 - [x] 개발 전 rollback tag 생성
 - [x] `$team` launch context snapshot 작성
-- [ ] OMX team 런타임 시작 및 worker ACK/status 확인
-- [ ] 조치사항 병렬 구현: ledger 동시성, IO capture policy, API validation, dashboard refresh
-- [ ] 구현 완료 후 평가 에이전트로 review findings 반영 여부 확인
-- [ ] 타입/린트/schema/build 및 concurrency 검증
+- [x] OMX team 런타임 시작 및 worker ACK/status 확인
+- [x] 조치사항 병렬 구현: ledger 동시성, IO capture policy, API validation, dashboard refresh
+- [x] 구현 완료 후 평가 에이전트로 review findings 반영 여부 확인
+- [x] 타입/린트/schema/build 및 concurrency 검증
 
 ## 계획 (AgentRun ledger review fixes team execution)
 
@@ -20,7 +20,19 @@
 
 ## 결과
 
-- [ ] 진행 중
+- [x] rollback 기준점 고정: `rollback/pre-agent-ledger-review-fixes-20260429T161320Z`
+- [x] OMX team `agentrun-ledger-review-fixes-s` 시작, worker 4개 ACK/claim 확인
+- [x] Lane A: `AgentRunLedger` session-run 생성 race와 event append race 보강
+- [x] Lane B: terminal input/output raw payload default persistence 제거, env gate/cap/redaction/buffering 추가
+- [x] Lane C: AgentRun API body/query/id/event type runtime validation 추가
+- [x] Lane D: AgentRunsPanel bounded polling과 stale error/selection 정리
+- [x] 평가 에이전트 1차 FAIL 항목(concurrent append, create API edge)을 leader follow-up fix로 보완
+- [x] `npx tsc --noEmit` 통과
+- [x] `npm run lint` 통과
+- [x] `npx prisma validate` 통과
+- [x] `npm run build` 통과
+- [x] 임시 SQLite DB 50-way `appendEvent` concurrency smoke 통과: `fulfilled=50`, `rejected=0`, `count=50`, `contiguous=true`
+- [x] create API edge smoke 통과: `runRef: null`, blank `runRef`, blank `sessionId` 모두 400 반환
 
 ---
 

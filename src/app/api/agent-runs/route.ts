@@ -65,9 +65,18 @@ function parseCreateBody(body: unknown): CreateAgentRunRequest | NextResponse {
   if (sessionId === undefined && "sessionId" in body) {
     return badRequest("sessionId must be a string or null");
   }
+  if (typeof sessionId === "string" && !sessionId.trim()) {
+    return badRequest("sessionId must be a non-empty string or null");
+  }
   const runRef = optionalString(body, "runRef");
-  if (runRef === undefined && "runRef" in body) {
-    return badRequest("runRef must be a string");
+  if (
+    (runRef === undefined && "runRef" in body) ||
+    (runRef === null && "runRef" in body)
+  ) {
+    return badRequest("runRef must be a non-empty string");
+  }
+  if (typeof runRef === "string" && !runRef.trim()) {
+    return badRequest("runRef must be a non-empty string");
   }
   const title = optionalString(body, "title");
   if (title === undefined && "title" in body) {

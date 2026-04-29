@@ -133,6 +133,8 @@ function seqFromCursor(cursor: string | undefined): number | undefined {
 }
 
 class AgentRunLedger {
+  private appendQueues = new Map<string, Promise<unknown>>();
+
   async createRun(req: CreateAgentRunRequest): Promise<AgentRunInfo> {
     const project = await prisma.project.findUnique({
       where: { id: req.projectId },
@@ -272,6 +274,34 @@ class AgentRunLedger {
   }
 
   async appendEvent(
+    runId: string,
+    type: AgentRunEventType,
+    payload: unknown,
+    source?: string,
+  ): Promise<AgentRunEventInfo> {
+    return this.enqueueRunAppend(runId, () =>
+      this.appendEventWithRetry(runId, type, payload, source),
+    );
+  }
+
+  private async enqueueRunAppend<T>(
+    runId: string,
+    work: () => Promise<T>,
+  ): Promise<T> {
+    const previous = this.appendQueues.get(runId) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(work);
+    this.appendQueues.set(runId, current);
+
+    try {
+      return await current;
+    } finally {
+      if (this.appendQueues.get(runId) === current) {
+        this.appendQueues.delete(runId);
+      }
+    }
+  }
+
+  private async appendEventWithRetry(
     runId: string,
     type: AgentRunEventType,
     payload: unknown,
