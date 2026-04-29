@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import MultiTerminal from "./MultiTerminal";
 import SessionMetricsPanel from "./SessionMetricsPanel";
 import SessionNextSteps from "./SessionNextSteps";
+import AgentRunLedgerPanel from "./AgentRunLedgerPanel";
 import SessionChatbotView from "./SessionChatbotView";
 import type { SessionInfo, ApiResponse } from "@/lib/types";
 
@@ -107,12 +108,12 @@ export default function TerminalPage({
   }
 
   return (
-    <div className="bg-orbit-bg-primary text-orbit-text-primary flex h-[100dvh] flex-col">
-      <div className="border-orbit-border-subtle bg-orbit-surface-card/95 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2.5 backdrop-blur sm:px-4">
+    <div className="flex h-[100dvh] flex-col bg-orbit-bg-primary text-orbit-text-primary">
+      <div className="sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 border-b border-orbit-border-subtle bg-orbit-surface-card/95 px-3 py-2.5 backdrop-blur sm:px-4">
         <div className="flex min-w-0 items-center gap-3">
           <button
             onClick={() => router.push("/")}
-            className="border-orbit-border-default bg-orbit-bg-tertiary text-orbit-text-primary rounded-full border px-3 py-1 text-sm hover:bg-neutral-800"
+            className="rounded-full border border-orbit-border-default bg-orbit-bg-tertiary px-3 py-1 text-sm text-orbit-text-primary hover:bg-neutral-800"
           >
             &larr; Back
           </button>
@@ -122,24 +123,24 @@ export default function TerminalPage({
                 <input
                   value={titleDraft}
                   onChange={(e) => setTitleDraft(e.target.value)}
-                  className="border-orbit-border-default bg-orbit-bg-secondary text-orbit-text-primary w-full max-w-sm rounded-full border px-3 py-1 text-sm"
+                  className="w-full max-w-sm rounded-full border border-orbit-border-default bg-orbit-bg-secondary px-3 py-1 text-sm text-orbit-text-primary"
                   placeholder="Session title"
                 />
                 <button
                   type="button"
                   onClick={() => void saveTitle()}
                   disabled={savingTitle}
-                  className="bg-orbit-accent-primary hover:bg-orbit-accent-hover rounded-full px-2.5 py-1 text-xs font-medium text-black"
+                  className="rounded-full bg-orbit-accent-primary px-2.5 py-1 text-xs font-medium text-black hover:bg-orbit-accent-hover"
                 >
                   {savingTitle ? "Saving" : "Save"}
                 </button>
               </div>
             ) : (
               <div className="flex min-w-0 items-center gap-2">
-                <span className="text-orbit-text-primary truncate text-base font-medium">
+                <span className="truncate text-base font-medium text-orbit-text-primary">
                   {headerTitle}
                 </span>
-                <span className="bg-orbit-bg-tertiary text-orbit-text-secondary rounded-full px-2 py-0.5 font-mono text-xs">
+                <span className="rounded-full bg-orbit-bg-tertiary px-2 py-0.5 font-mono text-xs text-orbit-text-secondary">
                   {sessionId.slice(0, 8)}
                 </span>
               </div>
@@ -147,7 +148,7 @@ export default function TerminalPage({
           </div>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          <div className="border-orbit-border-default bg-orbit-bg-secondary hidden rounded-full border p-0.5 sm:flex">
+          <div className="hidden rounded-full border border-orbit-border-default bg-orbit-bg-secondary p-0.5 sm:flex">
             <button
               type="button"
               onClick={() => setViewMode("chat")}
@@ -182,7 +183,7 @@ export default function TerminalPage({
                   router.push(`/sessions/${next}`);
                 }
               }}
-              className="border-orbit-border-default bg-orbit-bg-secondary text-orbit-text-primary min-w-0 flex-1 rounded-full border px-3 py-1.5 text-sm shadow-sm focus:border-border-focus focus:outline-none sm:max-w-56 sm:flex-none"
+              className="min-w-0 flex-1 rounded-full border border-orbit-border-default bg-orbit-bg-secondary px-3 py-1.5 text-sm text-orbit-text-primary shadow-sm focus:border-border-focus focus:outline-none sm:max-w-56 sm:flex-none"
             >
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -200,7 +201,7 @@ export default function TerminalPage({
           <button
             type="button"
             onClick={() => setEditingTitle((prev) => !prev)}
-            className="border-orbit-border-default bg-orbit-bg-secondary text-orbit-text-secondary hover:text-orbit-text-primary rounded-full border px-2.5 py-1 text-xs"
+            className="rounded-full border border-orbit-border-default bg-orbit-bg-secondary px-2.5 py-1 text-xs text-orbit-text-secondary hover:text-orbit-text-primary"
           >
             Rename
           </button>
@@ -209,7 +210,7 @@ export default function TerminalPage({
             onClick={() => {
               void navigator.clipboard.writeText(sessionId);
             }}
-            className="border-orbit-border-default bg-orbit-bg-secondary text-orbit-text-secondary hover:text-orbit-text-primary rounded-full border px-2.5 py-1 text-xs"
+            className="rounded-full border border-orbit-border-default bg-orbit-bg-secondary px-2.5 py-1 text-xs text-orbit-text-secondary hover:text-orbit-text-primary"
           >
             Copy ID
           </button>
@@ -224,14 +225,15 @@ export default function TerminalPage({
       </div>
 
       <div className="flex-1 overflow-hidden p-2 sm:p-4">
-        <div className="border-orbit-border-subtle bg-orbit-surface-card mx-auto flex h-full w-full max-w-[1040px] flex-col overflow-hidden rounded-3xl border shadow-[0_24px_60px_-34px_rgba(0,0,0,0.6)]">
-          <div className="border-orbit-border-subtle bg-orbit-bg-secondary/90 sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-2 text-sm backdrop-blur">
-            <span className="border-orbit-border-default bg-orbit-bg-tertiary text-orbit-text-secondary rounded-full border px-2 py-0.5">
+        <div className="mx-auto flex h-full w-full max-w-[1040px] flex-col overflow-hidden rounded-3xl border border-orbit-border-subtle bg-orbit-surface-card shadow-[0_24px_60px_-34px_rgba(0,0,0,0.6)]">
+          <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-orbit-border-subtle bg-orbit-bg-secondary/90 px-3 py-2 text-sm backdrop-blur">
+            <span className="rounded-full border border-orbit-border-default bg-orbit-bg-tertiary px-2 py-0.5 text-orbit-text-secondary">
               Session
             </span>
             <span className="text-orbit-text-muted">Timeline Workspace</span>
           </div>
           <SessionNextSteps sessionId={sessionId} />
+          <AgentRunLedgerPanel sessionId={sessionId} />
           <SessionMetricsPanel sessionId={sessionId} />
           <div className="min-h-0 flex-1">
             {viewMode === "chat" ? (
