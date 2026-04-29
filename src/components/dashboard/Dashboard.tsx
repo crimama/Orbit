@@ -13,6 +13,7 @@ import InterceptorModal from "./InterceptorModal";
 import BorderlessWorkspace from "./BorderlessWorkspace";
 import SshVaultPanel from "./SshVaultPanel";
 import CostDashboard from "./CostDashboard";
+import AgentRunsPanel from "./AgentRunsPanel";
 import AuditLogPanel from "./AuditLogPanel";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useSocket } from "@/lib/useSocket";
@@ -1738,6 +1739,19 @@ export default function Dashboard() {
                     onNewProject={(profileId) => openSshProjectForm(profileId)}
                     onEditProfile={(profileId) => openSshVaultForm(profileId)}
                     onAddProfile={() => openSshVaultForm()}
+                  />
+
+                  <AgentRunsPanel
+                    onNavigateSession={(sessionId) => {
+                      const session = sessions.find((s) => s.id === sessionId);
+                      if (session) {
+                        const project = projects.find(
+                          (p) => p.id === session.projectId,
+                        );
+                        if (project) setSelectedProject(project);
+                        setInlineSessionId(sessionId);
+                      }
+                    }}
                   />
 
                   <AuditLogPanel
