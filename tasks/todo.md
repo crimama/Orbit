@@ -5,9 +5,9 @@
 - [x] 개발 전 rollback tag 생성
 - [x] tracked dirty snapshot stash 생성
 - [x] `$team` launch context snapshot 작성
-- [ ] OMX team 런타임 시작 및 worker ACK 확인
-- [ ] P0/P1 구현 범위 확정 후 팀 개발 진행
-- [ ] 타입/빌드/관련 테스트 검증
+- [x] OMX team 런타임 시작 및 worker ACK 확인
+- [x] P0/P1 구현 범위 확정 후 팀 개발 진행
+- [x] 타입/빌드/관련 테스트 검증
 
 ## 계획 (Warp-inspired agent ledger team execution)
 
@@ -19,7 +19,16 @@
 
 ## 결과
 
-- 진행 중
+- [x] rollback 기준점 고정: `rollback/pre-team-warp-agent-ledger-20260429T061410Z`, `rollback/pre-team-warp-agent-ledger-source-20260429T061410Z`, tracked stash snapshot 생성
+- [x] durable `AgentRun` / `AgentRunEvent` Prisma ledger 추가
+- [x] `/api/agent-runs`, `/api/agent-runs/[id]`, `/api/agent-runs/[id]/events` 읽기/관리 API 추가
+- [x] session/socket lifecycle에서 `run-created`, `session-ready`, `terminal-input`, `terminal-output`, `session-exit` event 기록
+- [x] dashboard에 최근 AgentRun과 replay event cursor를 확인하는 얇은 read surface 추가
+- [x] 범위를 벗어난 terminal 내부 실험 패널은 제거하고 dashboard read surface만 유지
+- [x] `npx tsc --noEmit` 통과
+- [x] `npm run lint` 통과
+- [x] `npx prisma validate` 통과
+- [x] `DATABASE_URL=file:/tmp/orbit-agent-run-ledger-final.db npm run build` 통과
 
 ---
 

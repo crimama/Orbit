@@ -8,6 +8,8 @@ import type { InterceptorMode } from "@/lib/types";
 
 const VALID_MODES: InterceptorMode[] = ["blacklist", "allowlist", "hybrid", "yolo"];
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const mode = await getInterceptorMode();
   return NextResponse.json({ data: { mode } });
