@@ -8,25 +8,26 @@ datasource db {
 }
 
 model Project {
-  id          String         @id @default(uuid())
-  name        String
-  type        String         // "LOCAL" | "SSH" | "DOCKER"
-  color       String         @default("#64748b")
-  path        String
-  sshConfigId String?
+  id              String                @id @default(uuid())
+  name            String
+  type            String // "LOCAL" | "SSH" | "DOCKER"
+  color           String                @default("#64748b")
+  path            String
+  sshConfigId     String?
   dockerContainer String?
-  adhoc       Boolean        @default(false)
-  sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
-  sessions    AgentSession[]
-  agents      ProjectAgent[]
-  skills      Skill[]
-  tasks       AgentTask[]
-  fileLocks   FileLock[]
-  mcpServers  McpServer[]
-  harnessConfig ProjectHarnessConfig?
-  workspaces  WorkspaceLayout[]
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  adhoc           Boolean               @default(false)
+  sshConfig       SshConfig?            @relation(fields: [sshConfigId], references: [id])
+  sessions        AgentSession[]
+  agentRuns       AgentRun[]
+  agents          ProjectAgent[]
+  skills          Skill[]
+  tasks           AgentTask[]
+  fileLocks       FileLock[]
+  mcpServers      McpServer[]
+  harnessConfig   ProjectHarnessConfig?
+  workspaces      WorkspaceLayout[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
 }
 
 model WorkspaceLayout {
@@ -34,7 +35,7 @@ model WorkspaceLayout {
   projectId    String?
   project      Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name         String
-  tree         String   // Serialized PaneNode JSON
+  tree         String // Serialized PaneNode JSON
   activePaneId String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -57,58 +58,59 @@ model ProjectHarnessConfig {
 }
 
 model ProjectAgent {
-  id          String   @id @default(uuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  name        String
-  agentType   String   // "terminal" | "claude-code" | "codex" | "opencode"
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  agentType String // "terminal" | "claude-code" | "codex" | "opencode"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([projectId, name])
 }
 
 model SshConfig {
-  id            String      @id @default(uuid())
-  label         String?
-  tags          String?
-  host          String
-  port          Int         @default(22)
-  username      String
-  authMethod    String      // "key" or "password"
-  keyPath       String?
-  password      String?
-  defaultPath   String?
+  id                     String      @id @default(uuid())
+  label                  String?
+  tags                   String?
+  host                   String
+  port                   Int         @default(22)
+  username               String
+  authMethod             String // "key" or "password"
+  keyPath                String?
+  password               String?
+  defaultPath            String?
   defaultDockerContainer String?
-  proxyConfigId String?
-  proxyConfig   SshConfig?  @relation("SshProxy", fields: [proxyConfigId], references: [id], onDelete: SetNull)
-  proxiedBy     SshConfig[] @relation("SshProxy")
-  projects      Project[]
-  createdAt     DateTime    @default(now())
+  proxyConfigId          String?
+  proxyConfig            SshConfig?  @relation("SshProxy", fields: [proxyConfigId], references: [id], onDelete: SetNull)
+  proxiedBy              SshConfig[] @relation("SshProxy")
+  projects               Project[]
+  createdAt              DateTime    @default(now())
 }
 
 model AgentSession {
-  id          String   @id @default(uuid())
-  projectId   String
-  project     Project  @relation(fields: [projectId], references: [id])
-  name        String?  // 세션 이름 (자동 또는 사용자 지정)
-  userRenamed Boolean  @default(false) // 사용자가 직접 이름을 지정한 경우 자동 갱신 방지
-  agentType   String   // "claude-code", "codex", "opencode", etc.
-  sessionRef  String   // 에이전트 고유 세션 ID (resume용)
-  lastContext String?  // 마지막 대화 맥락 요약
-  status      String   @default("active") // "active", "paused", "terminated"
+  id           String               @id @default(uuid())
+  projectId    String
+  project      Project              @relation(fields: [projectId], references: [id])
+  name         String? // 세션 이름 (자동 또는 사용자 지정)
+  userRenamed  Boolean              @default(false) // 사용자가 직접 이름을 지정한 경우 자동 갱신 방지
+  agentType    String // "claude-code", "codex", "opencode", etc.
+  sessionRef   String // 에이전트 고유 세션 ID (resume용)
+  lastContext  String? // 마지막 대화 맥락 요약
+  status       String               @default("active") // "active", "paused", "terminated"
   chatMessages SessionChatMessage[]
-  tokenLogs   SessionTokenLog[]
-  checkpoints SessionCheckpoint[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  tokenLogs    SessionTokenLog[]
+  checkpoints  SessionCheckpoint[]
+  agentRuns    AgentRun[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 }
 
 model SessionChatMessage {
   id        String       @id @default(uuid())
   sessionId String
   session   AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  role      String       // "user" | "assistant"
+  role      String // "user" | "assistant"
   text      String
   position  Int
   createdAt DateTime     @default(now())
@@ -135,13 +137,13 @@ model Skill {
 }
 
 model SkillEdge {
-  id       String @id @default(uuid())
-  sourceId String
-  targetId String
-  source   Skill  @relation("EdgeSource", fields: [sourceId], references: [id], onDelete: Cascade)
-  target   Skill  @relation("EdgeTarget", fields: [targetId], references: [id], onDelete: Cascade)
-  label    String?
-  animated Boolean @default(false)
+  id        String   @id @default(uuid())
+  sourceId  String
+  targetId  String
+  source    Skill    @relation("EdgeSource", fields: [sourceId], references: [id], onDelete: Cascade)
+  target    Skill    @relation("EdgeTarget", fields: [targetId], references: [id], onDelete: Cascade)
+  label     String?
+  animated  Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@unique([sourceId, targetId])
@@ -153,28 +155,29 @@ model InterceptorRule {
   description String
   severity    String   @default("block") // "warn" | "block" | "allow"
   riskTier    String   @default("WRITE") // "READ" | "WRITE" | "DESTRUCTIVE"
-  riskScore   Int      @default(50)      // 0-100
+  riskScore   Int      @default(50) // 0-100
   enabled     Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model InterceptorConfig {
-  id    String @id @default("singleton")
-  mode  String @default("hybrid")  // "blacklist" | "allowlist" | "hybrid"
+  id   String @id @default("singleton")
+  mode String @default("hybrid") // "blacklist" | "allowlist" | "hybrid"
 }
 
 // --- Agent Intelligence: Token/Cost Tracking ---
 
 model SessionTokenLog {
-  id           String       @id @default(uuid())
-  sessionId    String
-  inputTokens  Int          @default(0)
-  outputTokens Int          @default(0)
-  estimatedCost Float       @default(0)
-  model        String?
-  session      AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  createdAt    DateTime     @default(now())
+  id            String       @id @default(uuid())
+  sessionId     String
+  inputTokens   Int          @default(0)
+  outputTokens  Int          @default(0)
+  estimatedCost Float        @default(0)
+  model         String?
+  session       AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+
   @@index([sessionId, createdAt])
 }
 
@@ -184,10 +187,11 @@ model AuditLog {
   id        String   @id @default(uuid())
   sessionId String?
   projectId String?
-  eventType String   // "interceptor_approve" | "interceptor_deny" | "session_create" | "session_terminate" | "ssh_connect" | "mode_change"
+  eventType String // "interceptor_approve" | "interceptor_deny" | "session_create" | "session_terminate" | "ssh_connect" | "mode_change"
   action    String
-  detail    String?  // JSON
+  detail    String? // JSON
   createdAt DateTime @default(now())
+
   @@index([sessionId, createdAt])
   @@index([projectId, createdAt])
   @@index([eventType, createdAt])
@@ -201,9 +205,10 @@ model SessionCheckpoint {
   name       String
   cwd        String?
   scrollback Bytes?
-  metadata   String?      // JSON: { gitBranch, env, etc. }
+  metadata   String? // JSON: { gitBranch, env, etc. }
   session    AgentSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   createdAt  DateTime     @default(now())
+
   @@index([sessionId, createdAt])
 }
 
@@ -218,12 +223,13 @@ model AgentTask {
   status      String   @default("pending") // "pending" | "in_progress" | "done" | "blocked"
   priority    Int      @default(0)
   assignee    String?
-  deps        String?  // JSON array of task IDs
-  files       String?  // JSON array of file paths
+  deps        String? // JSON array of task IDs
+  files       String? // JSON array of file paths
   result      String?
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
   @@index([projectId, status])
 }
 
@@ -236,6 +242,7 @@ model FileLock {
   description String?
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+
   @@unique([projectId, filePath])
 }
 
@@ -246,11 +253,51 @@ model McpServer {
   projectId String?
   name      String
   transport String   @default("stdio") // "stdio" | "sse"
-  command   String?  // stdio: command to run
-  args      String?  // JSON array of args
-  url       String?  // sse: endpoint URL
+  command   String? // stdio: command to run
+  args      String? // JSON array of args
+  url       String? // sse: endpoint URL
   enabled   Boolean  @default(true)
   project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// --- Durable Agent Run Ledger ---
+
+model AgentRun {
+  id        String          @id @default(uuid())
+  projectId String
+  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessionId String?
+  session   AgentSession?   @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  runRef    String          @unique
+  agentType String
+  title     String?
+  status    String          @default("running") // "running" | "completed" | "failed" | "cancelled"
+  metadata  String          @default("{}")
+  events    AgentRunEvent[]
+  startedAt DateTime        @default(now())
+  endedAt   DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([projectId, updatedAt])
+  @@index([sessionId, updatedAt])
+  @@index([status, updatedAt])
+}
+
+model AgentRunEvent {
+  id        String   @id @default(uuid())
+  runId     String
+  run       AgentRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  seq       Int
+  cursor    String   @unique
+  type      String
+  source    String?
+  payload   String
+  createdAt DateTime @default(now())
+
+  @@unique([runId, seq])
+  @@index([runId, createdAt])
+  @@index([type, createdAt])
 }

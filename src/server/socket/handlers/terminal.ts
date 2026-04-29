@@ -4,7 +4,12 @@ import { commandInterceptor } from "@/server/pty/interceptor";
 import { sessionManager } from "@/server/session/sessionManager";
 import { compressIfNeeded, DeltaBatcher } from "@/server/ssh/deltaStream";
 import { tokenTracker } from "@/server/observability/tokenTracker";
-import type { SessionInfo, SessionNotification, SessionContext } from "@/lib/types";
+import { agentRunLedger } from "@/server/agentRuns/agentRunLedger";
+import type {
+  SessionInfo,
+  SessionNotification,
+  SessionContext,
+} from "@/lib/types";
 
 function extractOscEvents(
   sessionId: string,
@@ -32,7 +37,10 @@ function extractOscEvents(
 
   // Extract cwd
   while ((match = oscCwdRe.exec(data)) !== null) {
-    const ctx: SessionContext = { sessionId, cwd: decodeURIComponent(match[1]) };
+    const ctx: SessionContext = {
+      sessionId,
+      cwd: decodeURIComponent(match[1]),
+    };
     socket.emit("session-context", ctx);
   }
   cleaned = cleaned.replace(oscCwdRe, "");
@@ -40,19 +48,27 @@ function extractOscEvents(
   // Agent Teams pattern detection (non-destructive, no g flag needed)
   if (/\[Agent Teams?\]\s*(?:teammate|agent)\s+\S+\s+is idle/i.test(data)) {
     socket.emit("session-notify", {
-      sessionId, title: "Agent Idle", body: "A teammate has finished and is waiting for work",
+      sessionId,
+      title: "Agent Idle",
+      body: "A teammate has finished and is waiting for work",
       timestamp: new Date().toISOString(),
     });
   }
   if (/\[Agent Teams?\]\s*(?:task|work)\s+completed/i.test(data)) {
     socket.emit("session-notify", {
-      sessionId, title: "Task Completed", body: "An agent task has been completed",
+      sessionId,
+      title: "Task Completed",
+      body: "An agent task has been completed",
       timestamp: new Date().toISOString(),
     });
   }
-  if (/\[Agent Teams?\]\s*(?:question|elicitation|waiting for input)/i.test(data)) {
+  if (
+    /\[Agent Teams?\]\s*(?:question|elicitation|waiting for input)/i.test(data)
+  ) {
     socket.emit("session-notify", {
-      sessionId, title: "Agent Question", body: "An agent is waiting for your input",
+      sessionId,
+      title: "Agent Question",
+      body: "An agent is waiting for your input",
       timestamp: new Date().toISOString(),
     });
   }
@@ -123,16 +139,18 @@ export function registerTerminalHandlers(
     function startStreaming() {
       const scrollback = resolvedBackend.getScrollback(sessionId);
       if (scrollback) {
-        void compressIfNeeded(scrollback).then((result) => {
-          if (result.compressed) {
-            socket.emit("terminal-data-compressed", result.payload as Buffer);
-          } else {
-            socket.emit("terminal-data", result.payload as string);
-          }
-        }).catch((err) => {
-          console.error("[terminal] scrollback compression failed:", err);
-          socket.emit("terminal-data", scrollback);
-        });
+        void compressIfNeeded(scrollback)
+          .then((result) => {
+            if (result.compressed) {
+              socket.emit("terminal-data-compressed", result.payload as Buffer);
+            } else {
+              socket.emit("terminal-data", result.payload as string);
+            }
+          })
+          .catch((err) => {
+            console.error("[terminal] scrollback compression failed:", err);
+            socket.emit("terminal-data", scrollback);
+          });
       }
 
       batcher = new DeltaBatcher((payload, compressed) => {
@@ -146,15 +164,47 @@ export function registerTerminalHandlers(
       unsubData = resolvedBackend.onData(sessionId, (data) => {
         const cleaned = extractOscEvents(sessionId, data, socket);
         void tokenTracker.processOutput(sessionId, cleaned);
-        if (cleaned) batcher!.push(cleaned);
+        if (cleaned) {
+          void agentRunLedger
+            .appendEventBySession(
+              sessionId,
+              "terminal-output",
+              { data: cleaned },
+              "pty",
+            )
+            .catch((err) => {
+              console.error("[AgentRunLedger] failed to record output:", err);
+            });
+          batcher!.push(cleaned);
+        }
       });
 
       socket.emit("session-ready", sessionId);
+      void agentRunLedger
+        .appendEventBySession(sessionId, "session-ready", {}, "socket")
+        .catch((err) => {
+          console.error(
+            "[AgentRunLedger] failed to record session-ready:",
+            err,
+          );
+        });
     }
 
     unsubExit = resolvedBackend.onExit(sessionId, async (exitCode) => {
       const preview = resolvedBackend.getScreenPreview(sessionId);
       socket.emit("session-exit", sessionId, exitCode);
+      void agentRunLedger
+        .appendEventBySession(sessionId, "session-exit", { exitCode }, "socket")
+        .then(async (event) => {
+          if (event) {
+            const run = await agentRunLedger.ensureRunForSession(sessionId);
+            if (run)
+              await agentRunLedger.updateRun(run.id, { status: "completed" });
+          }
+        })
+        .catch((err) => {
+          console.error("[AgentRunLedger] failed to record session-exit:", err);
+        });
       const session = await sessionManager.getSession(sessionId);
       if (session) {
         const sessionUpdate: SessionInfo = {
@@ -192,16 +242,25 @@ export function registerTerminalHandlers(
       forwarded = await commandInterceptor.intercept(
         sid,
         data,
-        (approval) => io.to(`session:${sid}`).emit("interceptor-pending", approval),
+        (approval) =>
+          io.to(`session:${sid}`).emit("interceptor-pending", approval),
         (warning) => io.to(`session:${sid}`).emit("interceptor-warn", warning),
       );
     } catch (err) {
-      console.error("[terminal-data] interceptor error, forwarding anyway:", err);
+      console.error(
+        "[terminal-data] interceptor error, forwarding anyway:",
+        err,
+      );
       forwarded = true;
     }
 
     if (forwarded) {
       sessionManager.bufferActivity(sid);
+      void agentRunLedger
+        .appendEventBySession(sid, "terminal-input", { data }, "socket")
+        .catch((err) => {
+          console.error("[AgentRunLedger] failed to record input:", err);
+        });
       backend.write(sid, data);
 
       // Auto-rename session based on user input (fire-and-forget)
@@ -229,9 +288,7 @@ export function registerTerminalHandlers(
   });
 
   socket.on("session-list", async (projectId, callback) => {
-    const sessions = await sessionManager.listSessions(
-      projectId ?? undefined,
-    );
+    const sessions = await sessionManager.listSessions(projectId ?? undefined);
     callback(
       sessions.map((session) => {
         const backend = getPtyBackend(session.id);
