@@ -6,10 +6,10 @@
     "orbit": "./bin/orbit.ts"
   },
   "scripts": {
-    "dev": "rm -rf .next && tsx watch server.ts",
+    "dev": "rm -rf .next && tsx watch --tsconfig tsconfig.server.json server.ts",
     "dev:tailnet": "bash scripts/run-tailscale.sh",
     "build": "next build",
-    "start": "NODE_ENV=production tsx server.ts",
+    "start": "NODE_ENV=production tsx --tsconfig tsconfig.server.json server.ts",
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -41,6 +41,7 @@
     "ssh2": "^1.17.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.44.1",
     "@types/express": "^5.0.6",
     "@types/node": "^20",
     "@types/pako": "^2.0.4",

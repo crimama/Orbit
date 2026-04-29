@@ -7,10 +7,28 @@ This file provides guidance to Codex when working in this repository. It mirrors
 At the start of each meaningful task, review these files in order:
 
 1. `CLAUDE.md`
-2. `tasks/lessons.md`
-3. `tasks/todo.md`
+2. `LLM_WIKI.md`
+3. `tasks/lessons.md`
+4. `tasks/todo.md`
 
 Treat `CLAUDE.md` as the primary project playbook unless a direct user instruction overrides it.
+
+## External Knowledge Base
+
+If repo-local context is insufficient, consult `LLM_WIKI.md` before redoing research.
+
+- Central vault: `/home/hun/GoogleDrive/LLM-WIKI`
+- Project-specific hub: `/home/hun/GoogleDrive/LLM-WIKI/wiki/projects/devleopment-orbit.md`
+- Zotero-backed CLI: `python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py ...`
+
+## Shared Wiki Writeback
+
+When you add or materially update reusable project knowledge, enqueue it for the future `LLM-WIKI` manager before reporting completion.
+
+- Typical targets: `skill_graph/**/*.md`, `analysis/**/*.md`, ADRs, experiment summaries, research notes.
+- Command: `python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py queue-project-update --cwd --path <changed-path> --summary "<what changed>"`
+- Optional check: `python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py inbox --kind project`
+- Code-only changes without durable knowledge do not require a queue item.
 
 ## Core Working Rules
 

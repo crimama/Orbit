@@ -17,6 +17,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > 개발 아웃라인: → [OUTLINE.md](./OUTLINE.md)
 
+## External Knowledge Base First
+
+이 repo 안에서 필요한 맥락이 충분하지 않으면, 새 리서치를 시작하기 전에 반드시 `LLM_WIKI.md`와 중앙 위키를 먼저 조회한다.
+
+- Local bridge: `LLM_WIKI.md`
+- Central vault: `/home/hun/GoogleDrive/LLM-WIKI`
+- Project hub: `/home/hun/GoogleDrive/LLM-WIKI/wiki/projects/devleopment-orbit.md`
+- CLI:
+
+```bash
+python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py project --cwd
+python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py search-notes "<query>" --cwd
+python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py search-papers "<query>"
+```
+
+기존 설계 결정, 과거 실패, 논문 메타데이터가 중앙 위키에 있으면 그것을 우선 재사용하고, 그 다음에만 repo-local 분석이나 새로운 문헌 탐색을 확장한다.
+
+## Shared Wiki Writeback
+
+이 repo 안의 장기 지식 문서를 추가하거나 의미 있게 수정했으면, 완료 전에 큐를 남겨서 나중에 `LLM-WIKI` 전담 에이전트가 처리할 수 있게 한다.
+
+```bash
+python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py queue-project-update --cwd --path <changed-path> --summary "<what changed>"
+python3 /home/hun/GoogleDrive/LLM-WIKI/tools/llm_wiki_cli.py inbox --kind project
+```
+
+대상은 보통 `skill_graph/**/*.md`, `analysis/**/*.md`, ADR, 실험 요약, 연구 메모다. 코드만 바뀐 경우는 생략 가능하다.
+
 ## Commands
 
 ```bash

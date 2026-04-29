@@ -30,6 +30,31 @@ const config: Config = {
           DEFAULT: "var(--accent)",
           hover: "var(--accent-hover)",
         },
+        orbit: {
+          bg: {
+            primary: "#0a0a0a",
+            secondary: "#0f0f0f",
+            tertiary: "#1a1a1a",
+          },
+          text: {
+            primary: "#f5f5f5",
+            secondary: "#a3a3a3",
+            muted: "#737373",
+          },
+          border: {
+            default: "#404040",
+            subtle: "#2a2a2a",
+          },
+          accent: {
+            primary: "#22d3ee",
+            hover: "#67e8f9",
+          },
+          surface: {
+            card: "#171717",
+            panel: "#111111",
+            overlay: "rgba(0,0,0,0.8)",
+          },
+        },
       },
     },
   },

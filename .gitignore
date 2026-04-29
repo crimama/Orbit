@@ -46,5 +46,15 @@ prisma/*.db-journal
 # agent lock files
 .locks/
 
+# local agent/runtime artifacts
+.claude/evals/
+.claude/worktrees/
+.clone/
+.codex
+.orchestrator/
+.sisyphus/
+tests/e2e/artifacts/
+tests/e2e/playwright-report/
+
 # python
 __pycache__/

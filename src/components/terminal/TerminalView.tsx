@@ -53,7 +53,10 @@ export default function TerminalView({
   }, [fontSize]);
 
   const handleResize = useCallback(() => {
-    if (!fitAddonRef.current || !termRef.current) return;
+    const container = containerRef.current;
+    if (!fitAddonRef.current || !termRef.current || !container) return;
+    const rect = container.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     fitAddonRef.current.fit();
     if (activeSocket && attachedRef.current) {
       activeSocket.emit("terminal-resize", {
@@ -63,8 +66,20 @@ export default function TerminalView({
     }
   }, [activeSocket]);
 
+  const schedulePostAttachResize = useCallback(() => {
+    if (typeof window === "undefined") {
+      handleResize();
+      return;
+    }
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        handleResize();
+      });
+    });
+  }, [handleResize]);
+
   useEffect(() => {
-    if (!containerRef.current || !activeSocket || !activeConnected) return;
+    if (!containerRef.current || !activeSocket) return;
     const socket = activeSocket;
 
     let disposed = false;
@@ -82,9 +97,17 @@ export default function TerminalView({
     socket.on("session-ready", onSessionReady);
 
     // OSC 777 notify → browser Notification
-    const onSessionNotify = (n: { sessionId: string; title: string; body: string }) => {
+    const onSessionNotify = (n: {
+      sessionId: string;
+      title: string;
+      body: string;
+    }) => {
       if (n.sessionId !== sessionId) return;
-      if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+      if (
+        document.hidden &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
         new Notification(n.title, { body: n.body, icon: "/icon-192x192.png" });
       }
     };
@@ -116,7 +139,10 @@ export default function TerminalView({
       socket.emit("terminal-data", data);
     };
 
-    const getArrowSequence = (term: import("@xterm/xterm").Terminal, direction: "up" | "down" | "left" | "right") => {
+    const getArrowSequence = (
+      term: import("@xterm/xterm").Terminal,
+      direction: "up" | "down" | "left" | "right",
+    ) => {
       const applicationCursorKeysMode = (
         term as import("@xterm/xterm").Terminal & {
           modes?: { applicationCursorKeysMode?: boolean };
@@ -163,7 +189,12 @@ export default function TerminalView({
 
       const cellWidth = rect.width / Math.max(term.cols, 1);
       const cellHeight = rect.height / Math.max(term.rows, 1);
-      if (!Number.isFinite(cellWidth) || !Number.isFinite(cellHeight) || cellWidth <= 0 || cellHeight <= 0) {
+      if (
+        !Number.isFinite(cellWidth) ||
+        !Number.isFinite(cellHeight) ||
+        cellWidth <= 0 ||
+        cellHeight <= 0
+      ) {
         return;
       }
 
@@ -186,8 +217,12 @@ export default function TerminalView({
       }
 
       const payload =
-        getArrowSequence(term, deltaRow < 0 ? "up" : "down").repeat(Math.abs(deltaRow)) +
-        getArrowSequence(term, deltaCol < 0 ? "left" : "right").repeat(Math.abs(deltaCol));
+        getArrowSequence(term, deltaRow < 0 ? "up" : "down").repeat(
+          Math.abs(deltaRow),
+        ) +
+        getArrowSequence(term, deltaCol < 0 ? "left" : "right").repeat(
+          Math.abs(deltaCol),
+        );
 
       term.focus();
       sendInput(payload);
@@ -247,7 +282,10 @@ export default function TerminalView({
       detachWebglLossListener?.();
       detachWebglLossListener = null;
       setWebglState("fallback");
-      console.warn("[TerminalView] WebGL fallback active", { sessionId, reason });
+      console.warn("[TerminalView] WebGL fallback active", {
+        sessionId,
+        reason,
+      });
     };
 
     const initWebgl = async (term: import("@xterm/xterm").Terminal) => {
@@ -273,14 +311,21 @@ export default function TerminalView({
 
           canvas.addEventListener("webglcontextlost", onContextLost, false);
           detachWebglLossListener = () => {
-            canvas.removeEventListener("webglcontextlost", onContextLost, false);
+            canvas.removeEventListener(
+              "webglcontextlost",
+              onContextLost,
+              false,
+            );
           };
         }
       } catch (error) {
-        console.warn("[TerminalView] WebGL renderer unavailable, using canvas fallback", {
-          sessionId,
-          error,
-        });
+        console.warn(
+          "[TerminalView] WebGL renderer unavailable, using canvas fallback",
+          {
+            sessionId,
+            error,
+          },
+        );
         setWebglState("fallback");
       }
     };
@@ -323,9 +368,19 @@ export default function TerminalView({
 
       // Attach to session with retry (PTY may still be initializing)
       const tryAttach = (attempt: number) => {
+        if (disposed) return;
+        if (!socket.connected) {
+          // Socket not connected yet — wait and retry
+          if (attempt < 10) {
+            setTimeout(() => tryAttach(attempt), 500);
+          }
+          return;
+        }
         socket.emit("session-attach", sessionId, (res) => {
+          if (disposed) return;
           if (res.ok) {
             attachedRef.current = true;
+            schedulePostAttachResize();
           } else if (attempt < 3) {
             setTimeout(() => tryAttach(attempt + 1), 1000);
           } else {
@@ -385,8 +440,15 @@ export default function TerminalView({
       termRef.current = null;
       fitAddonRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- activeConnected intentionally excluded to avoid terminal teardown on reconnect
-  }, [sessionId, activeSocket, handleResize, onInputReady, disableStdin]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- activeConnected intentionally excluded to avoid terminal teardown on reconnect
+  }, [
+    sessionId,
+    activeSocket,
+    handleResize,
+    schedulePostAttachResize,
+    onInputReady,
+    disableStdin,
+  ]);
 
   // Re-attach session on socket reconnect without destroying the terminal
   useEffect(() => {
@@ -397,10 +459,11 @@ export default function TerminalView({
       activeSocket.emit("session-attach", sessionId, (res) => {
         if (res.ok) {
           attachedRef.current = true;
+          schedulePostAttachResize();
         }
       });
     }
-  }, [activeConnected, activeSocket, sessionId]);
+  }, [activeConnected, activeSocket, schedulePostAttachResize, sessionId]);
 
   useEffect(() => {
     if (!termRef.current) return;
@@ -409,7 +472,10 @@ export default function TerminalView({
   }, [fontSize, handleResize]);
 
   return (
-    <div className="relative h-full w-full" style={{ backgroundColor: "var(--terminal-bg)" }}>
+    <div
+      className="relative h-full w-full"
+      style={{ backgroundColor: "var(--terminal-bg)" }}
+    >
       <div ref={containerRef} className="h-full w-full" />
       {!ready && (
         <div
@@ -424,7 +490,11 @@ export default function TerminalView({
                     webglState === "active" ? "bg-emerald-400" : "bg-sky-400"
                   }`}
                 />
-                <span>{webglState === "active" ? "WebGL active" : "Preparing session"}</span>
+                <span>
+                  {webglState === "active"
+                    ? "WebGL active"
+                    : "Preparing session"}
+                </span>
               </div>
               <div className="space-y-3">
                 {SKELETON_BARS.map((width, index) => (

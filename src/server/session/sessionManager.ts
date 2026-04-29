@@ -78,10 +78,38 @@ function toSessionInfo(row: {
 
 /** Trivial commands that should not trigger an auto-rename */
 const TRIVIAL_COMMANDS = new Set([
-  "ls", "ll", "la", "pwd", "cd", "clear", "cls", "exit", "quit",
-  "echo", "cat", "head", "tail", "less", "more", "man", "help",
-  "history", "whoami", "date", "uptime", "top", "htop", "df", "du",
-  "which", "where", "true", "false", "yes", "no", "",
+  "ls",
+  "ll",
+  "la",
+  "pwd",
+  "cd",
+  "clear",
+  "cls",
+  "exit",
+  "quit",
+  "echo",
+  "cat",
+  "head",
+  "tail",
+  "less",
+  "more",
+  "man",
+  "help",
+  "history",
+  "whoami",
+  "date",
+  "uptime",
+  "top",
+  "htop",
+  "df",
+  "du",
+  "which",
+  "where",
+  "true",
+  "false",
+  "yes",
+  "no",
+  "",
 ]);
 
 /** Minimum interval (ms) between auto-renames for the same session */
@@ -97,7 +125,10 @@ class SessionManager {
   private activityFlushTimer: ReturnType<typeof setInterval> | null = null;
   private socketServer: OrbitServer | null = null;
   private pendingSessionUpdates = new Map<string, SessionInfo>();
-  private sessionUpdateTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private sessionUpdateTimers = new Map<
+    string,
+    ReturnType<typeof setTimeout>
+  >();
   private lastAutoRename = new Map<string, number>();
   private ensureRunningPromises = new Map<string, Promise<boolean>>();
 
@@ -194,7 +225,11 @@ class SessionManager {
     agentType: string,
     resumeSessionRef: string | undefined,
     remoteProject: { path: string; dockerContainer: string | null },
-    options?: { cols?: number; rows?: number; dangerouslySkipPermissions?: boolean },
+    options?: {
+      cols?: number;
+      rows?: number;
+      dangerouslySkipPermissions?: boolean;
+    },
   ): Promise<void> {
     const status = sshManager.getStatus(sshConfigId);
     if (status.state !== "connected") {
@@ -209,7 +244,11 @@ class SessionManager {
 
     this.bootstrapRemoteAgent(
       sessionId,
-      { agentType, resumeSessionRef, dangerouslySkipPermissions: options?.dangerouslySkipPermissions },
+      {
+        agentType,
+        resumeSessionRef,
+        dangerouslySkipPermissions: options?.dangerouslySkipPermissions,
+      },
       remoteProject,
     );
     this.registerExitHandler(sessionId, "remote");
@@ -253,7 +292,9 @@ class SessionManager {
     try {
       const resolved = await realpath(raw);
       if (resolved.trim().length > 0) {
-        dirs.add(join(homedir(), ".claude", "projects", toClaudeProjectKey(resolved)));
+        dirs.add(
+          join(homedir(), ".claude", "projects", toClaudeProjectKey(resolved)),
+        );
       }
     } catch {
       // Project path may not resolve locally; keep the raw key only.
@@ -285,21 +326,19 @@ class SessionManager {
     return undefined;
   }
 
-  private async captureClaudeSessionRef(
+  private async captureClaudeSessionRefOnce(
     sessionId: string,
     projectPath: string,
-  ): Promise<void> {
-    await new Promise<void>((resolve) => {
-      setTimeout(resolve, 3000);
-    });
-
+  ): Promise<boolean> {
     const projectKey = toClaudeProjectKey(projectPath);
     const claudeDir = join(homedir(), ".claude", "projects", projectKey);
 
     try {
       const files = await readdir(claudeDir, { withFileTypes: true });
-      const jsonlFiles = files.filter((file) => file.isFile() && file.name.endsWith(".jsonl"));
-      if (jsonlFiles.length === 0) return;
+      const jsonlFiles = files.filter(
+        (file) => file.isFile() && file.name.endsWith(".jsonl"),
+      );
+      if (jsonlFiles.length === 0) return false;
 
       const entries = await Promise.all(
         jsonlFiles.map(async (file) => {
@@ -313,20 +352,42 @@ class SessionManager {
         entry.mtimeMs > latest.mtimeMs ? entry : latest,
       );
       const claudeSessionId = basename(newest.filePath, ".jsonl");
-      if (!claudeSessionId) return;
+      if (!claudeSessionId) return false;
 
       const current = await prisma.agentSession.findUnique({
         where: { id: sessionId },
         select: { sessionRef: true },
       });
-      if (!current || current.sessionRef === claudeSessionId) return;
+      if (!current) return true;
+      if (current.sessionRef === claudeSessionId) return true;
 
       await prisma.agentSession.update({
         where: { id: sessionId },
         data: { sessionRef: claudeSessionId },
       });
+      return true;
     } catch {
       // Best-effort capture only; session creation must not fail here.
+      return false;
+    }
+  }
+
+  private async captureClaudeSessionRef(
+    sessionId: string,
+    projectPath: string,
+  ): Promise<void> {
+    const retryDelays = [3000, 5000, 8000];
+    for (const delay of retryDelays) {
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, delay);
+      });
+      const captured = await this.captureClaudeSessionRefOnce(
+        sessionId,
+        projectPath,
+      );
+      if (captured) {
+        return;
+      }
     }
   }
 
@@ -364,7 +425,11 @@ class SessionManager {
     });
 
     // Validate Docker config upfront
-    if ((isRemote || isDocker) && project.type === "DOCKER" && !project.dockerContainer) {
+    if (
+      (isRemote || isDocker) &&
+      project.type === "DOCKER" &&
+      !project.dockerContainer
+    ) {
       await prisma.agentSession.delete({ where: { id: session.id } });
       throw new Error("dockerContainer is not configured for this project");
     }
@@ -543,7 +608,10 @@ class SessionManager {
       } else {
         // Use original create options for brand-new sessions,
         // fall back to recover options for restarted sessions.
-        if (createOpts.resumeSessionRef || !this.hasValidClaudeRef(row.sessionRef, sessionId)) {
+        if (
+          createOpts.resumeSessionRef ||
+          !this.hasValidClaudeRef(row.sessionRef, sessionId)
+        ) {
           ptyManager.create(
             sessionId,
             this.getPtyOptionsForCreate(
@@ -553,7 +621,8 @@ class SessionManager {
                 resumeSessionRef: createOpts.resumeSessionRef,
                 cols: createOpts.cols,
                 rows: createOpts.rows,
-                dangerouslySkipPermissions: createOpts.dangerouslySkipPermissions,
+                dangerouslySkipPermissions:
+                  createOpts.dangerouslySkipPermissions,
               },
               {
                 type: row.project.type,
@@ -576,15 +645,11 @@ class SessionManager {
 
           ptyManager.create(
             sessionId,
-            this.getPtyOptionsForRecover(
-              row.agentType,
-              resumeSessionRef,
-              {
-                type: row.project.type,
-                path: row.project.path,
-                dockerContainer: row.project.dockerContainer,
-              },
-            ),
+            this.getPtyOptionsForRecover(row.agentType, resumeSessionRef, {
+              type: row.project.type,
+              path: row.project.path,
+              dockerContainer: row.project.dockerContainer,
+            }),
           );
         }
         this.registerExitHandler(sessionId, "local");
@@ -599,19 +664,27 @@ class SessionManager {
       }
 
       // Always clear _createOpts from lastContext after successful PTY start
-      await prisma.agentSession.update({
-        where: { id: sessionId },
-        data: { lastContext: null },
-      }).catch(() => {});
+      await prisma.agentSession
+        .update({
+          where: { id: sessionId },
+          data: { lastContext: null },
+        })
+        .catch(() => {});
 
       // Capture Claude session ref for brand-new sessions
-      if (row.agentType === AGENT_TYPES.CLAUDE && !createOpts.resumeSessionRef) {
+      if (
+        row.agentType === AGENT_TYPES.CLAUDE &&
+        !createOpts.resumeSessionRef
+      ) {
         void this.captureClaudeSessionRef(sessionId, row.project.path);
       }
 
       return true;
     } catch (err) {
-      console.error(`[SessionManager] ensureSessionRunning failed for ${sessionId}:`, err);
+      console.error(
+        `[SessionManager] ensureSessionRunning failed for ${sessionId}:`,
+        err,
+      );
       await prisma.agentSession.update({
         where: { id: sessionId },
         data: { status: "terminated" },
@@ -674,9 +747,7 @@ class SessionManager {
     }
 
     const resumeRef = req.resumeSessionRef?.trim();
-    const args: string[] = resumeRef
-      ? ["--resume", resumeRef]
-      : [];
+    const args: string[] = resumeRef ? ["--resume", resumeRef] : [];
     if (req.dangerouslySkipPermissions) {
       args.push("--dangerously-skip-permissions");
     }
@@ -727,7 +798,9 @@ class SessionManager {
       };
     }
 
-    const args: string[] = resumeSessionRef ? ["--resume", resumeSessionRef] : [];
+    const args: string[] = resumeSessionRef
+      ? ["--resume", resumeSessionRef]
+      : [];
     // Note: dangerouslySkipPermissions is not persisted per-session,
     // so recovered sessions start in normal permission mode.
     return {
@@ -755,7 +828,10 @@ class SessionManager {
 
   private bootstrapRemoteAgent(
     sessionId: string,
-    req: Pick<CreateSessionRequest, "agentType" | "resumeSessionRef" | "dangerouslySkipPermissions">,
+    req: Pick<
+      CreateSessionRequest,
+      "agentType" | "resumeSessionRef" | "dangerouslySkipPermissions"
+    >,
     remoteProject: { path: string; dockerContainer: string | null },
   ): void {
     const pathPart = remoteProject.path.trim() || "$HOME";
@@ -802,7 +878,9 @@ class SessionManager {
     if (agentType === AGENT_TYPES.OPENCODE) {
       return `cd ${qPath} && ${READY_MARKER_CMD} && opencode\r`;
     }
-    const skipFlag = dangerouslySkipPermissions ? " --dangerously-skip-permissions" : "";
+    const skipFlag = dangerouslySkipPermissions
+      ? " --dangerously-skip-permissions"
+      : "";
     if (resumeSessionRef?.trim()) {
       return `cd ${qPath} && ${READY_MARKER_CMD} && claude --resume ${shellQuote(resumeSessionRef.trim())}${skipFlag}\r`;
     }
@@ -841,8 +919,8 @@ class SessionManager {
 
     const onData = (data: string) => {
       outputAccum += data;
-      const matched = SessionManager.DOCKER_ERROR_PATTERNS.some(
-        (pattern) => outputAccum.includes(pattern),
+      const matched = SessionManager.DOCKER_ERROR_PATTERNS.some((pattern) =>
+        outputAccum.includes(pattern),
       );
       if (matched) {
         cleanup();
@@ -878,12 +956,18 @@ class SessionManager {
    * Auto-rename a session based on the latest user input.
    * Skips trivial shell commands, debounces, and respects userRenamed flag.
    */
-  async autoRenameFromInput(sessionId: string, rawInput: string): Promise<void> {
+  async autoRenameFromInput(
+    sessionId: string,
+    rawInput: string,
+  ): Promise<void> {
     const command = rawInput.replace(/[\r\n]+$/, "").trim();
     if (!command) return;
 
     // Extract first word to check triviality
-    const firstWord = command.split(/\s+/)[0].toLowerCase().replace(/^.*\//, "");
+    const firstWord = command
+      .split(/\s+/)[0]
+      .toLowerCase()
+      .replace(/^.*\//, "");
     if (TRIVIAL_COMMANDS.has(firstWord)) return;
 
     // Debounce

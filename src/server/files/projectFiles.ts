@@ -88,7 +88,8 @@ function bytesToText(buffer: Buffer): {
 } {
   const isBinary = buffer.includes(0);
   if (isBinary) {
-    return { isBinary: true, content: null, encoding: "binary" };
+    // Preserve raw bytes as base64 so download endpoints can reconstruct the file.
+    return { isBinary: true, content: buffer.toString("base64"), encoding: "binary" };
   }
   return {
     isBinary: false,

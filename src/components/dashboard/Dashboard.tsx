@@ -16,6 +16,8 @@ import CostDashboard from "./CostDashboard";
 import AuditLogPanel from "./AuditLogPanel";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 import { useSocket } from "@/lib/useSocket";
+import { useToast } from "@/hooks/useToast";
+import { useConfirmContext } from "@/components/ui/ConfirmDialog";
 import type {
   ProjectInfo,
   SessionInfo,
@@ -34,6 +36,98 @@ type NewSessionAgent = "terminal" | "claude-code" | "codex" | "opencode";
 type SessionViewMode = "active" | "all";
 type ProjectPaneMode = "terminal" | "files" | "harness";
 type ProjectFocusTab = "sessions" | "files" | "harness";
+
+type DashboardResumeSnapshot = {
+  selectedProjectId: string | null;
+  inlineSessionId: string | null;
+  inlineWorkspaceId: string | null;
+  sessionViewMode: SessionViewMode;
+  projectPaneMode: ProjectPaneMode;
+  projectFocusTab: ProjectFocusTab;
+};
+
+const DASHBOARD_RESUME_STORAGE_KEY = "orbit:dashboard-resume";
+const RECENT_FILES_STORAGE_KEY = "orbit:recent-files";
+const RECENT_FILES_LIMIT = 10;
+
+type RecentFileShortcut = {
+  projectId: string;
+  projectName: string;
+  path: string;
+  name: string;
+  mtimeMs: number;
+  openedAt: number;
+};
+
+function readDashboardResumeSnapshot(): DashboardResumeSnapshot | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(DASHBOARD_RESUME_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<DashboardResumeSnapshot>;
+
+    return {
+      selectedProjectId: parsed.selectedProjectId ?? null,
+      inlineSessionId: parsed.inlineSessionId ?? null,
+      inlineWorkspaceId: parsed.inlineWorkspaceId ?? null,
+      sessionViewMode: parsed.sessionViewMode ?? "active",
+      projectPaneMode: parsed.projectPaneMode ?? "terminal",
+      projectFocusTab: parsed.projectFocusTab ?? "sessions",
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeDashboardResumeSnapshot(snapshot: DashboardResumeSnapshot): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      DASHBOARD_RESUME_STORAGE_KEY,
+      JSON.stringify(snapshot),
+    );
+  } catch {
+    // ignore storage failures; resume persistence is best-effort
+  }
+}
+
+function readRecentFileShortcuts(): RecentFileShortcut[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(RECENT_FILES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Partial<RecentFileShortcut>[];
+    return parsed
+      .filter(
+        (item): item is RecentFileShortcut =>
+          typeof item.projectId === "string" &&
+          typeof item.projectName === "string" &&
+          typeof item.path === "string" &&
+          typeof item.name === "string" &&
+          typeof item.mtimeMs === "number" &&
+          typeof item.openedAt === "number",
+      )
+      .slice(0, RECENT_FILES_LIMIT);
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentFileShortcuts(items: RecentFileShortcut[]): void {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      RECENT_FILES_STORAGE_KEY,
+      JSON.stringify(items.slice(0, RECENT_FILES_LIMIT)),
+    );
+  } catch {
+    // Recent file shortcuts are best-effort.
+  }
+}
 
 type GlobalFileIndexEntry = {
   projectId: string;
@@ -61,10 +155,15 @@ function matchesQuery(item: CommandPaletteItem, query: string): boolean {
 }
 
 export default function Dashboard() {
+  const toast = useToast();
+  const { confirm } = useConfirmContext();
   const LEFT_PANEL_MIN_WIDTH = 200;
   const LEFT_PANEL_MAX_WIDTH = 560;
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
   const [sessions, setSessions] = useState<SessionInfo[]>([]);
+  const [projectsLoaded, setProjectsLoaded] = useState(false);
+  const [sessionsLoaded, setSessionsLoaded] = useState(false);
+  const [resumeReady, setResumeReady] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectInfo | null>(
     null,
   );
@@ -89,7 +188,9 @@ export default function Dashboard() {
   const [quickSessionName, setQuickSessionName] = useState("");
   const [projectSessionName, setProjectSessionName] = useState("");
   const [skipPermissions, setSkipPermissions] = useState(false);
-  const [sessionContexts, setSessionContexts] = useState<Map<string, SessionContext>>(new Map());
+  const [sessionContexts, setSessionContexts] = useState<
+    Map<string, SessionContext>
+  >(new Map());
   const [notifications, setNotifications] = useState<SessionNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifBellRef = useRef<HTMLButtonElement>(null);
@@ -97,10 +198,15 @@ export default function Dashboard() {
   const [globalFileIndex, setGlobalFileIndex] = useState<
     GlobalFileIndexEntry[]
   >([]);
+  const [recentFiles, setRecentFiles] = useState<RecentFileShortcut[]>(() =>
+    readRecentFileShortcuts(),
+  );
   const [viewedFile, setViewedFile] = useState<{
     projectId: string;
     path: string;
     content: string;
+    mtimeMs: number;
+    requestId: string;
   } | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState("");
@@ -108,19 +214,62 @@ export default function Dashboard() {
   const layoutSplitRef = useRef<HTMLDivElement>(null);
   const paletteInputRef = useRef<HTMLInputElement>(null);
   const [skillCount, setSkillCount] = useState(0);
-  const [projectDirMap, setProjectDirMap] = useState<Record<string, string>>({});
+  const [projectDirMap, setProjectDirMap] = useState<Record<string, string>>(
+    {},
+  );
   const [editingProjectName, setEditingProjectName] = useState(false);
   const [editingProjectNameValue, setEditingProjectNameValue] = useState("");
   const [prefillSshProfileId, setPrefillSshProfileId] = useState<string | null>(
     null,
   );
   const [sshFormMode, setSshFormMode] = useState<SshFormMode>("project");
-  const editingSshProfileId = sshFormMode === "vault" ? prefillSshProfileId : null;
+  const editingSshProfileId =
+    sshFormMode === "vault" ? prefillSshProfileId : null;
   const [showInterceptorModal, setShowInterceptorModal] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const resumeSnapshotRef = useRef<DashboardResumeSnapshot | null>(
+    readDashboardResumeSnapshot(),
+  );
   const { socket } = useSocket();
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
+  const showResumeLoading = !resumeReady;
+
+  const openViewedFile = useCallback(
+    (path: string, content: string, mtimeMs: number) => {
+      if (!selectedProject) return;
+
+      setViewedFile({
+        projectId: selectedProject.id,
+        path,
+        content,
+        mtimeMs,
+        requestId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      });
+
+      setRecentFiles((prev) => {
+        const name = path.split("/").filter(Boolean).pop() ?? path;
+        const next: RecentFileShortcut[] = [
+          {
+            projectId: selectedProject.id,
+            projectName: selectedProject.name,
+            path,
+            name,
+            mtimeMs,
+            openedAt: Date.now(),
+          },
+          ...prev.filter(
+            (item) =>
+              item.projectId !== selectedProject.id || item.path !== path,
+          ),
+        ].slice(0, RECENT_FILES_LIMIT);
+        writeRecentFileShortcuts(next);
+        return next;
+      });
+    },
+    [selectedProject],
+  );
+
   // Fetch projects
   const fetchProjects = useCallback(async () => {
     try {
@@ -129,7 +278,11 @@ export default function Dashboard() {
       const json = (await res.json()) as ApiResponse<ProjectInfo[]>;
       if ("data" in json) setProjects(json.data);
     } catch (err: unknown) {
-      setFetchError(err instanceof Error ? err.message : "Failed to fetch projects");
+      setFetchError(
+        err instanceof Error ? err.message : "Failed to fetch projects",
+      );
+    } finally {
+      setProjectsLoaded(true);
     }
   }, []);
 
@@ -144,7 +297,11 @@ export default function Dashboard() {
       const json = (await res.json()) as ApiResponse<SessionInfo[]>;
       if ("data" in json) setSessions(json.data);
     } catch (err: unknown) {
-      setFetchError(err instanceof Error ? err.message : "Failed to fetch sessions");
+      setFetchError(
+        err instanceof Error ? err.message : "Failed to fetch sessions",
+      );
+    } finally {
+      setSessionsLoaded(true);
     }
   }, []);
 
@@ -153,13 +310,73 @@ export default function Dashboard() {
     fetchSessions();
   }, [fetchProjects, fetchSessions]);
 
+  useEffect(() => {
+    if (!projectsLoaded || !sessionsLoaded || resumeReady) return;
+
+    const snapshot = resumeSnapshotRef.current;
+    if (!snapshot) {
+      setResumeReady(true);
+      return;
+    }
+
+    const projectFromSelection = snapshot.selectedProjectId
+      ? (projects.find(
+          (project) => project.id === snapshot.selectedProjectId,
+        ) ?? null)
+      : null;
+    const sessionFromSelection = snapshot.inlineSessionId
+      ? (sessions.find((session) => session.id === snapshot.inlineSessionId) ??
+        null)
+      : null;
+    const projectFromSession = sessionFromSelection
+      ? (projects.find(
+          (project) => project.id === sessionFromSelection.projectId,
+        ) ?? null)
+      : null;
+    const restoredProject = projectFromSession ?? projectFromSelection;
+
+    if (restoredProject) {
+      setSelectedProject(restoredProject);
+    }
+
+    setSessionViewMode(snapshot.sessionViewMode);
+    setProjectFocusTab(snapshot.projectFocusTab);
+    setProjectPaneMode(snapshot.projectPaneMode);
+    setInlineSessionId(sessionFromSelection?.id ?? null);
+    setInlineWorkspaceId(snapshot.inlineWorkspaceId ?? null);
+    setResumeReady(true);
+  }, [projects, projectsLoaded, resumeReady, sessions, sessionsLoaded]);
+
+  useEffect(() => {
+    if (!resumeReady) return;
+
+    writeDashboardResumeSnapshot({
+      selectedProjectId: selectedProject?.id ?? null,
+      inlineSessionId,
+      inlineWorkspaceId,
+      sessionViewMode,
+      projectPaneMode,
+      projectFocusTab,
+    });
+  }, [
+    inlineSessionId,
+    inlineWorkspaceId,
+    projectFocusTab,
+    projectPaneMode,
+    resumeReady,
+    selectedProject,
+    sessionViewMode,
+  ]);
+
   // Close notification panel on outside click
   useEffect(() => {
     if (!showNotifications) return;
     function handleClick(e: MouseEvent) {
       if (
-        notifPanelRef.current && !notifPanelRef.current.contains(e.target as Node) &&
-        notifBellRef.current && !notifBellRef.current.contains(e.target as Node)
+        notifPanelRef.current &&
+        !notifPanelRef.current.contains(e.target as Node) &&
+        notifBellRef.current &&
+        !notifBellRef.current.contains(e.target as Node)
       ) {
         setShowNotifications(false);
       }
@@ -180,8 +397,7 @@ export default function Dashboard() {
     const handleSessionUpdate = (session: SessionInfo) => {
       setSessions((prev) => {
         const existingIndex = prev.findIndex((item) => item.id === session.id);
-        const previous =
-          existingIndex >= 0 ? prev[existingIndex] : null;
+        const previous = existingIndex >= 0 ? prev[existingIndex] : null;
 
         if (
           previous?.status !== "terminated" &&
@@ -220,7 +436,8 @@ export default function Dashboard() {
     const handleSessionContext = (ctx: SessionContext) => {
       setSessionContexts((prev) => {
         const existing = prev.get(ctx.sessionId);
-        if (existing?.cwd === ctx.cwd && existing?.gitBranch === ctx.gitBranch) return prev;
+        if (existing?.cwd === ctx.cwd && existing?.gitBranch === ctx.gitBranch)
+          return prev;
         const next = new Map(prev);
         next.set(ctx.sessionId, { ...existing, ...ctx });
         return next;
@@ -264,7 +481,7 @@ export default function Dashboard() {
       if (projectPaneMode === "files") {
         setProjectPaneMode("terminal");
       }
-      fetchSessions();
+      fetchSessions(project.id);
     },
     [fetchSessions, projectPaneMode],
   );
@@ -321,25 +538,48 @@ export default function Dashboard() {
 
   const handleDeleteProject = useCallback(
     async (id: string) => {
-      await fetch(`/api/projects/${id}`, { method: "DELETE" });
-      if (selectedProject?.id === id) {
-        setSelectedProject(null);
-        fetchSessions();
+      const project = projects.find((p) => p.id === id);
+      const projectName = project?.name ?? "this project";
+      const confirmed = await confirm({
+        title: "Delete Project",
+        description: `Are you sure you want to delete "${projectName}"? This cannot be undone.`,
+        confirmLabel: "Delete",
+        variant: "danger",
+      });
+      if (!confirmed) return;
+
+      try {
+        const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to delete project");
+        if (selectedProject?.id === id) {
+          setSelectedProject(null);
+          fetchSessions();
+        }
+        fetchProjects();
+        toast.success(`Project "${projectName}" deleted`);
+      } catch {
+        toast.error("Failed to delete project");
       }
-      fetchProjects();
     },
-    [selectedProject, fetchProjects, fetchSessions],
+    [projects, selectedProject, fetchProjects, fetchSessions, confirm, toast],
   );
 
   const [killedSessionId, setKilledSessionId] = useState<string | null>(null);
 
   const handleTerminateSession = useCallback(
     async (id: string) => {
-      await fetch(`/api/sessions/${id}`, { method: "DELETE" });
-      setKilledSessionId(id);
-      fetchSessions();
+      const target = sessions.find((item) => item.id === id);
+      try {
+        const res = await fetch(`/api/sessions/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error("Failed to terminate session");
+        setKilledSessionId(id);
+        fetchSessions(target?.projectId ?? selectedProject?.id);
+        toast.success("Session terminated");
+      } catch {
+        toast.error("Failed to terminate session");
+      }
     },
-    [fetchSessions],
+    [sessions, selectedProject, fetchSessions, toast],
   );
 
   const handleTerminateAndRestart = useCallback(
@@ -360,7 +600,7 @@ export default function Dashboard() {
       if ("data" in json) {
         setInlineSessionId(json.data.id);
       }
-      fetchSessions();
+      fetchSessions(session.projectId);
     },
     [sessions, fetchSessions],
   );
@@ -372,9 +612,9 @@ export default function Dashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName }),
       });
-      fetchSessions();
+      fetchSessions(selectedProject?.id);
     },
-    [fetchSessions],
+    [selectedProject, fetchSessions],
   );
 
   const createSession = useCallback(
@@ -395,7 +635,7 @@ export default function Dashboard() {
             setInlineSessionId(json.data.id);
             setInlineWorkspaceId(null);
           }
-          await fetchSessions();
+          await fetchSessions(request.projectId);
         } else {
           console.error("[createSession] API error:", json);
         }
@@ -442,13 +682,18 @@ export default function Dashboard() {
     setShowHarnessManager(false);
     setProjectPaneMode("terminal");
 
-    const autoName = quickSessionName.trim() || `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const autoName =
+      quickSessionName.trim() ||
+      `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     await createSession(
       {
         projectId,
         agentType: quickSessionAgent,
         name: autoName,
-        ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
+        ...(skipPermissions &&
+          quickSessionAgent === "claude-code" && {
+            dangerouslySkipPermissions: true,
+          }),
       },
       { activateInWorkspace: false },
     );
@@ -467,18 +712,29 @@ export default function Dashboard() {
 
     setSessionViewMode("active");
 
-    const autoName = projectSessionName.trim() || `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    const autoName =
+      projectSessionName.trim() ||
+      `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
     await createSession(
       {
         projectId: selectedProject.id,
         agentType: quickSessionAgent,
         name: autoName,
-        ...(skipPermissions && quickSessionAgent === "claude-code" && { dangerouslySkipPermissions: true }),
+        ...(skipPermissions &&
+          quickSessionAgent === "claude-code" && {
+            dangerouslySkipPermissions: true,
+          }),
       },
       { activateInWorkspace: false },
     );
     setProjectSessionName("");
-  }, [selectedProject, createSession, quickSessionAgent, projectSessionName, skipPermissions]);
+  }, [
+    selectedProject,
+    createSession,
+    quickSessionAgent,
+    projectSessionName,
+    skipPermissions,
+  ]);
 
   const handleProjectCreated = useCallback(
     (project: ProjectInfo) => {
@@ -492,15 +748,12 @@ export default function Dashboard() {
     [handleSelectProject],
   );
 
-  const handleVaultQuickConnect = useCallback(
-    (session: SessionInfo) => {
-      setInlineSessionId(session.id);
-      setSessions((prev) =>
-        prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
-      );
-    },
-    [],
-  );
+  const handleVaultQuickConnect = useCallback((session: SessionInfo) => {
+    setInlineSessionId(session.id);
+    setSessions((prev) =>
+      prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
+    );
+  }, []);
 
   const openSshProjectForm = useCallback((profileId?: string | null) => {
     setPrefillSshProfileId(profileId ?? null);
@@ -513,7 +766,6 @@ export default function Dashboard() {
     setSshFormMode("vault");
     setAddProjectMode("ssh");
   }, []);
-
 
   const visibleSessions = useMemo(() => {
     if (sessionViewMode === "all") return sessions;
@@ -581,7 +833,7 @@ export default function Dashboard() {
       setProjectPaneMode("terminal");
       setInlineSessionId(session.id);
       setInlineWorkspaceId(null);
-      void fetchSessions();
+      void fetchSessions(session.projectId);
     },
     [projects, fetchSessions],
   );
@@ -596,8 +848,6 @@ export default function Dashboard() {
     },
     [projects],
   );
-
-
 
   useEffect(() => {
     let cancelled = false;
@@ -794,7 +1044,7 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-y-auto bg-[#0a0a0a] pb-12 text-neutral-200 md:h-[100dvh] md:overflow-hidden md:pb-0">
+    <div className="flex min-h-[100dvh] flex-col overflow-y-auto bg-orbit-bg-primary pb-12 text-orbit-text-primary md:h-[100dvh] md:overflow-hidden md:pb-0">
       {/* Interceptor Banner */}
       <InterceptorBanner
         pendingCount={pendingApprovals.length}
@@ -819,15 +1069,24 @@ export default function Dashboard() {
 
       {/* Fetch error banner */}
       {fetchError && (
-        <div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-2 rounded-lg text-sm">
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-400">
           {fetchError}
-          <button onClick={() => { setFetchError(null); fetchProjects(); fetchSessions(); }} className="ml-2 underline">Retry</button>
+          <button
+            onClick={() => {
+              setFetchError(null);
+              fetchProjects();
+              fetchSessions();
+            }}
+            className="ml-2 underline"
+          >
+            Retry
+          </button>
         </div>
       )}
 
       {/* Top Navigation Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-800 px-3 py-1 sm:px-4">
-        <h1 className="text-sm font-bold tracking-wide text-neutral-300">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-orbit-border-subtle px-3 py-1 sm:px-4">
+        <h1 className="text-sm font-bold tracking-wide text-orbit-text-primary">
           Agent Orbit
         </h1>
         <div className="relative flex flex-wrap items-center gap-1 sm:gap-2">
@@ -841,8 +1100,18 @@ export default function Dashboard() {
             }`}
             title="Notifications"
           >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+            <svg
+              className="h-3.5 w-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"
+              />
             </svg>
             {notifications.length > 0 && (
               <span className="absolute -right-1 -top-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold text-black">
@@ -857,7 +1126,9 @@ export default function Dashboard() {
               className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-neutral-700 bg-neutral-900 shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-neutral-800 px-3 py-2">
-                <span className="text-xs font-medium text-neutral-300">Notifications</span>
+                <span className="text-xs font-medium text-neutral-300">
+                  Notifications
+                </span>
                 {notifications.length > 0 && (
                   <button
                     onClick={() => setNotifications([])}
@@ -878,16 +1149,19 @@ export default function Dashboard() {
                     const timeAgo = (() => {
                       const diff = Date.now() - new Date(n.timestamp).getTime();
                       if (diff < 60000) return "just now";
-                      if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+                      if (diff < 3600000)
+                        return `${Math.floor(diff / 60000)}m ago`;
                       return `${Math.floor(diff / 3600000)}h ago`;
                     })();
                     return (
                       <div
                         key={`${n.sessionId}-${n.timestamp}-${i}`}
-                        className="cursor-pointer border-b border-neutral-800/50 px-3 py-2.5 transition hover:bg-neutral-800/50 last:border-b-0"
+                        className="cursor-pointer border-b border-neutral-800/50 px-3 py-2.5 transition last:border-b-0 hover:bg-neutral-800/50"
                         onClick={() => {
                           if (session) {
-                            const project = projects.find((p) => p.id === session.projectId);
+                            const project = projects.find(
+                              (p) => p.id === session.projectId,
+                            );
                             if (project) setSelectedProject(project);
                             setInlineSessionId(session.id);
                           }
@@ -900,16 +1174,24 @@ export default function Dashboard() {
                               {session && (
                                 <span
                                   className="inline-block h-2 w-2 shrink-0 rounded-full"
-                                  style={{ backgroundColor: session.projectColor }}
+                                  style={{
+                                    backgroundColor: session.projectColor,
+                                  }}
                                 />
                               )}
-                              <span className="truncate text-xs font-medium text-neutral-200">{n.title}</span>
+                              <span className="truncate text-xs font-medium text-neutral-200">
+                                {n.title}
+                              </span>
                             </div>
                             {n.body && (
-                              <div className="mt-0.5 truncate text-[11px] text-neutral-400">{n.body}</div>
+                              <div className="mt-0.5 truncate text-[11px] text-neutral-400">
+                                {n.body}
+                              </div>
                             )}
                           </div>
-                          <span className="shrink-0 text-[10px] text-neutral-600">{timeAgo}</span>
+                          <span className="shrink-0 text-[10px] text-neutral-600">
+                            {timeAgo}
+                          </span>
                         </div>
                       </div>
                     );
@@ -1007,7 +1289,6 @@ export default function Dashboard() {
                     setAddProjectMode(null);
                     setPrefillSshProfileId(null);
                     setSshFormMode("project");
-              
                   }}
                   initialProfileId={prefillSshProfileId}
                   editingProfileId={editingSshProfileId}
@@ -1020,7 +1301,9 @@ export default function Dashboard() {
             </div>
           ) : null}
 
-          <div className={`flex min-h-0 flex-1 flex-col ${selectedProject ? "" : "overflow-y-auto"}`}>
+          <div
+            className={`flex min-h-0 flex-1 flex-col ${selectedProject ? "" : "overflow-y-auto"}`}
+          >
             {isProjectsListCollapsed ? (
               <div className="px-2 py-4 text-center text-xs tracking-wide text-neutral-500">
                 Projects
@@ -1067,12 +1350,17 @@ export default function Dashboard() {
                         <input
                           autoFocus
                           value={editingProjectNameValue}
-                          onChange={(e) => setEditingProjectNameValue(e.target.value)}
+                          onChange={(e) =>
+                            setEditingProjectNameValue(e.target.value)
+                          }
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               const trimmed = editingProjectNameValue.trim();
                               if (trimmed && trimmed !== selectedProject.name) {
-                                handleRenameProject(selectedProject.id, trimmed);
+                                handleRenameProject(
+                                  selectedProject.id,
+                                  trimmed,
+                                );
                               }
                               setEditingProjectName(false);
                             } else if (e.key === "Escape") {
@@ -1130,7 +1418,6 @@ export default function Dashboard() {
                       >
                         Files
                       </button>
-                      {false && (
                       <button
                         onClick={() => {
                           setProjectFocusTab("harness");
@@ -1145,7 +1432,6 @@ export default function Dashboard() {
                       >
                         Harness
                       </button>
-                      )}
                     </div>
 
                     {projectFocusTab === "sessions" ? (
@@ -1237,19 +1523,26 @@ export default function Dashboard() {
                         key={selectedProject.id}
                         projectId={selectedProject.id}
                         files={selectedProjectFiles}
-                        activePath={viewedFile?.projectId === selectedProject.id ? viewedFile.path : null}
-                        initialDir={projectDirMap[selectedProject.id]}
-                        onFileOpen={(path, content) =>
-                          setViewedFile({ projectId: selectedProject.id, path, content })
+                        activePath={
+                          viewedFile?.projectId === selectedProject.id
+                            ? viewedFile.path
+                            : null
                         }
+                        initialDir={projectDirMap[selectedProject.id]}
+                        recentFiles={recentFiles.filter(
+                          (item) => item.projectId === selectedProject.id,
+                        )}
+                        onFileOpen={openViewedFile}
                         onDirChange={(dir) =>
-                          setProjectDirMap((prev) => ({ ...prev, [selectedProject.id]: dir }))
+                          setProjectDirMap((prev) => ({
+                            ...prev,
+                            [selectedProject.id]: dir,
+                          }))
                         }
                       />
                     ) : null}
 
-
-                    {false && projectFocusTab === "harness" ? (
+                    {projectFocusTab === "harness" ? (
                       <div className="rounded border border-neutral-800 bg-neutral-900/40 p-3">
                         <div className="mb-2 text-xs text-neutral-400">
                           Skills linked to this project
@@ -1279,7 +1572,9 @@ export default function Dashboard() {
                   </div>
                 ) : null}
 
-                <div className={`shrink-0 ${selectedProject ? "min-h-0 basis-1/2 overflow-y-auto border-t border-neutral-800" : ""}`}>
+                <div
+                  className={`shrink-0 ${selectedProject ? "min-h-0 basis-1/2 overflow-y-auto border-t border-neutral-800" : ""}`}
+                >
                   <ProjectList
                     projects={projects}
                     selectedId={selectedProject?.id ?? null}
@@ -1317,127 +1612,150 @@ export default function Dashboard() {
             </button>
           ) : null}
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {/* Workspace — kept mounted (hidden) to preserve tab state */}
-            <div className={`flex h-full min-h-0 flex-col overflow-hidden ${
-              selectedProject || inlineSessionId ? "" : "hidden"
-            }`}>
-              <div className="min-h-0 flex-1 overflow-hidden p-0">
-                {!inlineSessionId && !viewedFile && (selectedProject || inlineSessionId) ? (
-                  <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
-                    Select a session or file from the left panel.
+            {showResumeLoading ? (
+              <div className="flex h-full min-h-[320px] items-center justify-center p-6">
+                <div className="w-full max-w-lg rounded-xl border border-neutral-800 bg-neutral-950/70 p-6 text-center">
+                  <div className="mb-2 text-sm font-medium text-neutral-200">
+                    Restoring your last workspace…
                   </div>
-                ) : (
-                  <BorderlessWorkspace
-                    sessions={sessions}
-                    selectedProject={selectedProject}
-                    projectPaneMode={projectPaneMode}
-                    inlineSessionId={inlineSessionId}
-                    inlineWorkspaceId={inlineWorkspaceId}
-                    viewedFile={viewedFile}
-                    onCloseFile={() => setViewedFile(null)}
-                    onKillSession={handleTerminateSession}
-                    killedSessionId={killedSessionId}
-                    onEmpty={() => {
-                      setInlineSessionId(null);
-                      setSelectedProject(null);
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-            {/* Home screen */}
-            <div className={`space-y-4 overflow-y-auto p-4 ${
-              selectedProject || inlineSessionId ? "hidden" : ""
-            }`}>
-                <CostDashboard />
-
-                <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
-                  <div className="mb-2 text-xs text-neutral-500">
-                    Quick Session Launch
+                  <div className="text-xs text-neutral-500">
+                    Orbit is rebuilding the last project and session context
+                    before rendering.
                   </div>
-                  {projects.length === 0 ? (
-                    <p className="text-sm text-neutral-600">
-                      Add a project first, then launch sessions here.
-                    </p>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_160px_auto]">
-                      <input
-                        value={quickSessionName}
-                        onChange={(e) => setQuickSessionName(e.target.value)}
-                        placeholder="Session name (recommended)"
-                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
-                      />
-                      <select
-                        value={quickSessionProjectId}
-                        onChange={(e) =>
-                          setQuickSessionProjectId(e.target.value)
-                        }
-                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
-                      >
-                        {projects.map((project) => (
-                          <option key={project.id} value={project.id}>
-                            {project.name}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        value={quickSessionAgent}
-                        onChange={(e) =>
-                          setQuickSessionAgent(
-                            e.target.value as NewSessionAgent,
-                          )
-                        }
-                        className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
-                      >
-                        <option value="terminal">Terminal</option>
-                        <option value="claude-code">Claude Code</option>
-                        <option value="codex">Codex</option>
-                        <option value="opencode">OpenCode</option>
-                      </select>
-                      {quickSessionAgent === "claude-code" && (
-                        <button
-                          onClick={() => setSkipPermissions((v) => !v)}
-                          className={`rounded border px-2 py-1.5 text-[10px] font-medium transition ${
-                            skipPermissions
-                              ? "border-amber-500/50 bg-amber-500/15 text-amber-400"
-                              : "border-neutral-700 text-neutral-500 hover:text-neutral-300"
-                          }`}
-                          title="dangerously-skip-permissions"
-                        >
-                          YOLO
-                        </button>
-                      )}
-                      <button
-                        onClick={handleQuickCreateSession}
-                        disabled={creatingSession}
-                        className="rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50"
-                      >
-                        {creatingSession ? "Starting..." : "Start"}
-                      </button>
-                    </div>
-                  )}
                 </div>
+              </div>
+            ) : (
+              <>
+                {/* Workspace — kept mounted (hidden) to preserve tab state */}
+                <div
+                  className={`flex h-full min-h-0 flex-col overflow-hidden ${
+                    selectedProject || inlineSessionId ? "" : "hidden"
+                  }`}
+                >
+                  <div className="min-h-0 flex-1 overflow-hidden p-0">
+                    {!inlineSessionId &&
+                    !viewedFile &&
+                    (selectedProject || inlineSessionId) ? (
+                      <div className="flex h-full min-h-[320px] items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950/60 p-6 text-center text-sm text-neutral-500">
+                        Select a session or file from the left panel.
+                      </div>
+                    ) : (
+                      <BorderlessWorkspace
+                        sessions={sessions}
+                        selectedProject={selectedProject}
+                        projectPaneMode={projectPaneMode}
+                        inlineSessionId={inlineSessionId}
+                        inlineWorkspaceId={inlineWorkspaceId}
+                        viewedFile={viewedFile}
+                        onCloseFile={() => setViewedFile(null)}
+                        onKillSession={handleTerminateSession}
+                        killedSessionId={killedSessionId}
+                        onEmpty={() => {
+                          setInlineSessionId(null);
+                          setSelectedProject(null);
+                        }}
+                      />
+                    )}
+                  </div>
+                </div>
+                {/* Home screen */}
+                <div
+                  className={`space-y-4 overflow-y-auto p-4 ${
+                    selectedProject || inlineSessionId ? "hidden" : ""
+                  }`}
+                >
+                  <CostDashboard />
 
-                <SshVaultPanel
-                  onQuickConnect={handleVaultQuickConnect}
-                  onNewProject={(profileId) => openSshProjectForm(profileId)}
-                  onEditProfile={(profileId) => openSshVaultForm(profileId)}
-                  onAddProfile={() => openSshVaultForm()}
-                />
+                  <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
+                    <div className="mb-2 text-xs text-neutral-500">
+                      Quick Session Launch
+                    </div>
+                    {projects.length === 0 ? (
+                      <p className="text-sm text-neutral-600">
+                        Add a project first, then launch sessions here.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_150px_160px_auto]">
+                        <input
+                          value={quickSessionName}
+                          onChange={(e) => setQuickSessionName(e.target.value)}
+                          placeholder="Session name (recommended)"
+                          className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
+                        />
+                        <select
+                          value={quickSessionProjectId}
+                          onChange={(e) =>
+                            setQuickSessionProjectId(e.target.value)
+                          }
+                          className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
+                        >
+                          {projects.map((project) => (
+                            <option key={project.id} value={project.id}>
+                              {project.name}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={quickSessionAgent}
+                          onChange={(e) =>
+                            setQuickSessionAgent(
+                              e.target.value as NewSessionAgent,
+                            )
+                          }
+                          className="rounded border border-neutral-700 bg-neutral-900 px-2 py-1.5 text-xs text-neutral-300 focus:border-border-focus focus:outline-none"
+                        >
+                          <option value="terminal">Terminal</option>
+                          <option value="claude-code">Claude Code</option>
+                          <option value="codex">Codex</option>
+                          <option value="opencode">OpenCode</option>
+                        </select>
+                        {quickSessionAgent === "claude-code" && (
+                          <button
+                            onClick={() => setSkipPermissions((v) => !v)}
+                            className={`rounded border px-2 py-1.5 text-[10px] font-medium transition ${
+                              skipPermissions
+                                ? "border-amber-500/50 bg-amber-500/15 text-amber-400"
+                                : "border-neutral-700 text-neutral-500 hover:text-neutral-300"
+                            }`}
+                            title="dangerously-skip-permissions"
+                          >
+                            YOLO
+                          </button>
+                        )}
+                        <button
+                          onClick={handleQuickCreateSession}
+                          disabled={creatingSession}
+                          className="rounded border border-neutral-700 px-3 py-1.5 text-xs text-neutral-300 hover:bg-neutral-800 disabled:opacity-50"
+                        >
+                          {creatingSession ? "Starting..." : "Start"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
-                <AuditLogPanel
+                  <SshVaultPanel
+                    onQuickConnect={handleVaultQuickConnect}
+                    onNewProject={(profileId) => openSshProjectForm(profileId)}
+                    onEditProfile={(profileId) => openSshVaultForm(profileId)}
+                    onAddProfile={() => openSshVaultForm()}
+                  />
+
+                  <AuditLogPanel
                     activeSessions={activeSessions}
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
-                        const project = projects.find((p) => p.id === session.projectId);
+                        const project = projects.find(
+                          (p) => p.id === session.projectId,
+                        );
                         if (project) setSelectedProject(project);
                         setInlineSessionId(sessionId);
                       }
                     }}
                   />
-
-              </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -1494,7 +1812,6 @@ export default function Dashboard() {
           </div>
         </div>
       ) : null}
-
     </div>
   );
 }

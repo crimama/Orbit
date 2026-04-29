@@ -10,7 +10,12 @@ export async function POST(
   request: Request,
   { params }: { params: { id: string } },
 ) {
-  const body = (await request.json()) as SendCommandRequest;
+  let body: SendCommandRequest;
+  try {
+    body = (await request.json()) as SendCommandRequest;
+  } catch {
+    return NextResponse.json({ error: "input is required" }, { status: 400 });
+  }
   const input = typeof body.input === "string" ? body.input : "";
 
   if (!input.trim()) {

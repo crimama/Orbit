@@ -46,7 +46,10 @@ const ANSI_RE = /\u001b\[[0-9;]*[A-Za-z]/g;
 const COLLAPSE_LINES = 20;
 
 function makeId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -70,10 +73,9 @@ function decodeCompressedPayload(payload: unknown): string {
     "data" in payload &&
     Array.isArray((payload as { data?: unknown }).data)
   ) {
-    return pako.inflate(
-      new Uint8Array((payload as { data: number[] }).data),
-      { to: "string" },
-    );
+    return pako.inflate(new Uint8Array((payload as { data: number[] }).data), {
+      to: "string",
+    });
   }
   return "";
 }
@@ -82,11 +84,7 @@ function decodeCompressedPayload(payload: unknown): string {
 // Collapsible message bubble
 // ---------------------------------------------------------------------------
 
-function MessageBubble({
-  msg,
-}: {
-  msg: ChatMessage;
-}) {
+function MessageBubble({ msg }: { msg: ChatMessage }) {
   const lines = msg.text.split("\n");
   const isLong = lines.length > COLLAPSE_LINES;
   const [expanded, setExpanded] = useState(false);
@@ -154,12 +152,15 @@ export default function MobileChatTerminal({
   const [streaming, setStreaming] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [approvals, setApprovals] = useState<ApprovalCard[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const inputValueRef = useRef("");
   const viewportRef = useRef<HTMLDivElement>(null);
   const pendingAssistantIdRef = useRef<string | null>(null);
   const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attachRetryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const attachAttemptRef = useRef(0);
   const yoloModeRef = useRef(yoloMode);
   yoloModeRef.current = yoloMode;
 
@@ -168,9 +169,10 @@ export default function MobileChatTerminal({
   // -----------------------------------------------------------------------
   const statusText = useMemo(() => {
     if (!connected) return "Offline";
+    if (attachError) return attachError;
     if (!attached) return "Connecting...";
     return streaming ? "Responding..." : "Ready";
-  }, [connected, attached, streaming]);
+  }, [attachError, connected, attached, streaming]);
 
   // -----------------------------------------------------------------------
   // Auto-scroll
@@ -232,6 +234,45 @@ export default function MobileChatTerminal({
   useEffect(() => {
     if (!socket || !connected) return;
 
+    let cancelled = false;
+    attachAttemptRef.current = 0;
+
+    function clearAttachRetry() {
+      if (!attachRetryRef.current) return;
+      clearTimeout(attachRetryRef.current);
+      attachRetryRef.current = null;
+    }
+
+    function scheduleAttachRetry(message: string) {
+      setAttached(false);
+      setAttachError(message);
+      const nextAttempt = attachAttemptRef.current + 1;
+      attachAttemptRef.current = nextAttempt;
+      if (nextAttempt > 5) return;
+      const delay = Math.min(500 * nextAttempt, 2_000);
+      clearAttachRetry();
+      attachRetryRef.current = setTimeout(() => {
+        if (!cancelled) {
+          tryAttach();
+        }
+      }, delay);
+    }
+
+    function tryAttach() {
+      if (cancelled) return;
+      socket.emit("session-attach", sessionId, (res) => {
+        if (cancelled) return;
+        if (!res.ok) {
+          scheduleAttachRetry(res.error ?? "Attach failed");
+          return;
+        }
+        clearAttachRetry();
+        attachAttemptRef.current = 0;
+        setAttachError(null);
+        setAttached(true);
+      });
+    }
+
     function pushAssistantChunk(chunk: string) {
       const text = sanitizeText(chunk);
       if (!text) return;
@@ -266,6 +307,7 @@ export default function MobileChatTerminal({
       pendingAssistantIdRef.current = null;
       setStreaming(false);
       setAttached(false);
+      setAttachError("Session ended");
       onExit();
     };
 
@@ -295,10 +337,8 @@ export default function MobileChatTerminal({
       );
     };
 
-    socket.emit("session-attach", sessionId, (res) => {
-      if (!res.ok) return;
-      setAttached(true);
-    });
+    setAttachError(null);
+    tryAttach();
 
     socket.on("terminal-data", onTerminalData);
     socket.on("terminal-data-compressed", onCompressedData);
@@ -313,6 +353,9 @@ export default function MobileChatTerminal({
     onInputReady?.(sendInput);
 
     return () => {
+      cancelled = true;
+      clearAttachRetry();
+      attachAttemptRef.current = 0;
       socket.off("terminal-data", onTerminalData);
       socket.off("terminal-data-compressed", onCompressedData);
       socket.off("session-exit", onSessionExit);
@@ -320,6 +363,7 @@ export default function MobileChatTerminal({
       socket.off("interceptor-resolved", onResolved);
       socket.emit("session-detach");
       setAttached(false);
+      setAttachError(null);
       onInputReady?.(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -343,7 +387,7 @@ export default function MobileChatTerminal({
   // -----------------------------------------------------------------------
   const handleSubmit = useCallback(() => {
     const value = inputValueRef.current.trim();
-    if (!value || !socket || !attached) return;
+    if (!value) return;
 
     // Finalize current assistant message
     pendingAssistantIdRef.current = null;
@@ -354,15 +398,38 @@ export default function MobileChatTerminal({
       { id: makeId(), role: "user", text: value },
     ]);
 
-    // Send to PTY via socket (not REST) — socket handlers share the same
-    // ptyManager instance, whereas Next.js API routes get a separate module
-    // instance that doesn't have the running PTY processes.
-    socket.emit("terminal-data", value + "\r");
+    setAttachError(null);
+    setStreaming(true);
 
     setInput("");
     inputValueRef.current = "";
-    setStreaming(true);
-  }, [socket, attached]);
+
+    void fetch(`/api/sessions/${sessionId}/command`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ input: value, appendNewline: true }),
+    })
+      .then(async (res) => {
+        const json = (await res.json()) as { error?: string };
+        if (!res.ok) {
+          throw new Error(json.error ?? "Failed to send command");
+        }
+      })
+      .catch((err: unknown) => {
+        setMessages((prev) =>
+          prev.filter((msg) => msg.text !== value || msg.role !== "user")
+            .length === prev.length
+            ? prev
+            : prev.slice(0, -1),
+        );
+        setInput(value);
+        inputValueRef.current = value;
+        setStreaming(false);
+        setAttachError(
+          err instanceof Error ? err.message : "Failed to send command",
+        );
+      });
+  }, [sessionId]);
 
   // -----------------------------------------------------------------------
   // Approval actions
@@ -415,7 +482,7 @@ export default function MobileChatTerminal({
 
         {messages.length === 0 && loaded && (
           <div className="rounded-xl bg-neutral-900 px-3 py-2.5 text-[12px] text-neutral-500">
-            Type a command below. Output appears here as chat bubbles.
+            Send a message below. Orbit replies here in a chat-style timeline.
           </div>
         )}
 
@@ -492,13 +559,13 @@ export default function MobileChatTerminal({
               handleSubmit();
             }
           }}
-          placeholder={attached ? "Type command..." : "Connecting..."}
+          placeholder={attached ? "Ask Orbit…" : "Ask Orbit while it connects…"}
           className="min-h-[40px] min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 text-base text-neutral-100 placeholder-neutral-500 outline-none focus:border-border-focus"
         />
         <button
           type="button"
           onClick={handleSubmit}
-          disabled={!input.trim() || !attached}
+          disabled={!input.trim()}
           className="min-h-[40px] rounded-lg bg-sky-600 px-3.5 text-sm font-semibold text-white transition active:bg-sky-500 disabled:opacity-40"
         >
           Send

@@ -156,6 +156,18 @@
 | **streaming-ui**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
 | **bottom-sheet**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
 | **empty-states**    | [Visual UI References](decisions/2026-03-14_visual-ui-references.md) | decision/research |
+| **markdown**        | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | bugfix |
+| **preview**         | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | bugfix |
+| **sidebar**         | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | bugfix |
+| **upload**          | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | bugfix |
+| **file-view**       | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | bugfix |
+| **autosave**        | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **recent-files**    | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **workspace-split** | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **multi-split**     | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **nested-split**    | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **workspace-tab**   | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
+| **tab-color**       | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | feature |
 
 ---
 
@@ -169,6 +181,7 @@
 | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                            | 2/3/4 | 🟢   | `SSH` `PWA` `모바일` `스킬그래프` `React Flow` `인터셉터` `Delta` `A/B비교` |
 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
+| [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | dashboard | 🟢 | `markdown` `autosave` `recent-files` `workspace-split` `multi-split` `nested-split` `workspace-tab` `tab-color` `file-view` `dashboard` |
 
 ### decisions/
 
@@ -186,6 +199,7 @@
 | 문서                                                                       | 상태 | 영향                    | 키워드                                 |
 | -------------------------------------------------------------------------- | ---- | ----------------------- | -------------------------------------- |
 | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md) | 🟢   | 모바일 명령 실행 안정화 | `mobile` `terminal` `session` `command` `pty` |
+| [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | 🟢   | 파일 뷰/사이드바 안정화 | `markdown` `preview` `sidebar` `upload` `file-view` |
 
 ### refactor/
 

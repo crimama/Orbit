@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { commandInterceptor } from "@/server/pty/interceptor";
 import type { CreateInterceptorRuleRequest, InterceptorRuleInfo } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const rules = await prisma.interceptorRule.findMany({
     orderBy: { createdAt: "asc" },

@@ -15,12 +15,19 @@ interface FileEntry {
   isDir: boolean;
 }
 
+interface RecentFileShortcut {
+  path: string;
+  name: string;
+  openedAt: number;
+}
+
 interface SidebarFileTreeProps {
   projectId: string;
   files: FileEntry[];
   activePath?: string | null;
   initialDir?: string;
-  onFileOpen?: (path: string, content: string) => void;
+  recentFiles?: RecentFileShortcut[];
+  onFileOpen?: (path: string, content: string, mtimeMs: number) => void;
   onDirChange?: (dir: string) => void;
 }
 
@@ -30,11 +37,21 @@ function parentPath(p: string): string {
   return parts.join("/");
 }
 
+class FetchError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 export default function SidebarFileTree({
   projectId,
   files,
   activePath,
   initialDir,
+  recentFiles = [],
   onFileOpen,
   onDirChange,
 }: SidebarFileTreeProps) {
@@ -112,7 +129,7 @@ export default function SidebarFileTree({
           setError("Binary files cannot be opened in the editor");
           return;
         }
-        onFileOpen(filePath, json.data.content ?? "");
+        onFileOpen(filePath, json.data.content ?? "", json.data.mtimeMs);
       } finally {
         setLoadingFile(null);
       }
@@ -128,14 +145,6 @@ export default function SidebarFileTree({
   }, [currentDir, navigateTo]);
 
   // --- File operations ---
-  class FetchError extends Error {
-    status: number;
-    constructor(message: string, status: number) {
-      super(message);
-      this.status = status;
-    }
-  }
-
   const doFetch = useCallback(
     async (endpoint: string, body: Record<string, unknown>) => {
       setError(null);
@@ -284,6 +293,56 @@ export default function SidebarFileTree({
     [currentDir, doFetch, navigateTo],
   );
 
+  const downloadFile = useCallback(
+    async (entry: FileEntry) => {
+      if (entry.isDir) return;
+      setError(null);
+
+      let objectUrl: string | null = null;
+      try {
+        const query = new URLSearchParams({ path: entry.path }).toString();
+        const res = await fetch(
+          `/api/projects/${projectId}/files/download?${query}`,
+          { method: "GET" },
+        );
+
+        if (!res.ok) {
+          let message = "Failed to download file";
+          const contentType = res.headers.get("content-type") ?? "";
+          if (contentType.includes("application/json")) {
+            const json = (await res.json()) as ApiError;
+            if ("error" in json && json.error) {
+              message = json.error;
+            }
+          }
+          throw new Error(message);
+        }
+
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+
+        const anchor = document.createElement("a");
+        anchor.href = objectUrl;
+        anchor.download = entry.name;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        const urlToRevoke = objectUrl;
+        window.setTimeout(() => {
+          URL.revokeObjectURL(urlToRevoke);
+        }, 0);
+        objectUrl = null;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to download file");
+      } finally {
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
+        }
+      }
+    },
+    [projectId],
+  );
+
   // --- Native contextmenu listener ---
   useEffect(() => {
     const el = listRef.current;
@@ -358,6 +417,32 @@ export default function SidebarFileTree({
       </div>
 
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-1">
+        {recentFiles.length > 0 ? (
+          <div className="mb-1 border-b border-neutral-800 pb-1">
+            <div className="px-2 pb-1 text-[10px] font-medium uppercase text-neutral-500">
+              Recent
+            </div>
+            {recentFiles.slice(0, 5).map((item) => (
+              <button
+                key={`${item.path}:${item.openedAt}`}
+                type="button"
+                onClick={() => void openFile(item.path)}
+                className={`flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs hover:bg-neutral-800 ${
+                  activePath === item.path
+                    ? "bg-neutral-800 text-neutral-100"
+                    : "text-cyan-200/90"
+                }`}
+                title={item.path}
+              >
+                <span className="w-4 shrink-0 text-center text-[11px] text-neutral-500">
+                  ↻
+                </span>
+                <span className="min-w-0 flex-1 truncate">{item.name}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {/* Go up entry */}
         {currentDir && (
           <button
@@ -428,6 +513,15 @@ export default function SidebarFileTree({
         >
           {ctxMenu.entry ? (
             <>
+              {!ctxMenu.entry.isDir ? (
+                <button
+                  onClick={() => void downloadFile(ctxMenu.entry!)}
+                  className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                  type="button"
+                >
+                  Download
+                </button>
+              ) : null}
               <button
                 onClick={() => openCopyPicker(ctxMenu.entry!)}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"

@@ -1,7 +1,15 @@
 "use client";
 
-import { useEffect, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import TerminalView from "./TerminalView";
+import VirtualKeyboard from "@/components/mobile/VirtualKeyboard";
+import MobileChatTerminal from "./MobileChatTerminal";
 import { useMobile } from "@/lib/hooks/useMobile";
 import type { OrbitSocket } from "@/lib/socketClient";
 import type { SessionInfo, WorkspaceLayoutInfo } from "@/lib/types";
@@ -72,8 +80,21 @@ export default function TerminalPane({
     "top" | "bottom" | "left" | "right" | "center" | null
   >(null);
   const [keyboardInset, setKeyboardInset] = useState(0);
+  const [chatMode, setChatMode] = useState(false);
   const { isMobile } = useMobile();
   const projectColor = currentSession?.projectColor;
+  const sendInputRef = useRef<((data: string) => void) | null>(null);
+
+  const handleInputReady = useCallback(
+    (sendInput: ((data: string) => void) | null) => {
+      sendInputRef.current = sendInput;
+    },
+    [],
+  );
+
+  const handleVirtualKey = useCallback((data: string) => {
+    sendInputRef.current?.(data);
+  }, []);
 
   const readDraggedSessionId = (e: DragEvent<HTMLDivElement>) => {
     const custom = e.dataTransfer.getData("application/x-orbit-session-id");
@@ -119,7 +140,10 @@ export default function TerminalPane({
 
   const hasDraggedSession = (e: DragEvent<HTMLDivElement>) => {
     const types = Array.from(e.dataTransfer.types);
-    return types.includes("application/x-orbit-session-id") || types.includes("text/plain");
+    return (
+      types.includes("application/x-orbit-session-id") ||
+      types.includes("text/plain")
+    );
   };
 
   const hasDraggedPane = (e: DragEvent<HTMLDivElement>) => {
@@ -174,7 +198,10 @@ export default function TerminalPane({
         isDropTarget
           ? { boxShadow: "inset 0 0 0 2px #38bdf8" }
           : needsAttention && !isActive
-            ? { boxShadow: "inset 0 0 0 1px rgba(245,158,11,0.4), 0 0 8px rgba(245,158,11,0.15)" }
+            ? {
+                boxShadow:
+                  "inset 0 0 0 1px rgba(245,158,11,0.4), 0 0 8px rgba(245,158,11,0.15)",
+              }
             : isActive && projectColor
               ? { boxShadow: `inset 0 0 0 1px ${projectColor}50` }
               : undefined
@@ -314,6 +341,18 @@ export default function TerminalPane({
         )}
 
         <div className="ml-auto flex items-center gap-0.5">
+          {isMobile && sessionId && socket && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setChatMode((prev) => !prev);
+              }}
+              title={chatMode ? "Switch to Terminal" : "Switch to Chat"}
+              className="rounded px-1.5 py-0.5 text-[11px] text-neutral-500 hover:bg-neutral-700 hover:text-neutral-200"
+            >
+              {chatMode ? "Term" : "Chat"}
+            </button>
+          )}
           <span
             title="Drag pane"
             className="cursor-grab rounded px-1 py-0.5 text-xs text-neutral-600"
@@ -380,13 +419,31 @@ export default function TerminalPane({
       >
         <div className="min-h-0 flex-1 overflow-hidden">
           {sessionId && socket ? (
-            <TerminalView
-              key={`${paneId}-${sessionId}`}
-              sessionId={sessionId}
-              socket={socket}
-              connected={connected}
-              onExit={onExit}
-            />
+            isMobile && chatMode ? (
+              <MobileChatTerminal
+                key={`${paneId}-${sessionId}-chat`}
+                sessionId={sessionId}
+                socket={socket}
+                connected={connected}
+                yoloMode={false}
+                onExit={onExit}
+                onInputReady={handleInputReady}
+              />
+            ) : (
+              <div
+                className="h-full touch-manipulation"
+                style={{ touchAction: "manipulation" }}
+              >
+                <TerminalView
+                  key={`${paneId}-${sessionId}`}
+                  sessionId={sessionId}
+                  socket={socket}
+                  connected={connected}
+                  onExit={onExit}
+                  onInputReady={handleInputReady}
+                />
+              </div>
+            )
           ) : (
             <div className="flex h-full items-center justify-center bg-neutral-950">
               <p className="text-base font-medium text-neutral-500">
@@ -395,6 +452,10 @@ export default function TerminalPane({
             </div>
           )}
         </div>
+        <VirtualKeyboard
+          visible={isMobile && sessionId != null && socket != null && !chatMode}
+          onKey={handleVirtualKey}
+        />
       </div>
     </div>
   );
