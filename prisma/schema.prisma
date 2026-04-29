@@ -15,19 +15,19 @@ model Project {
   path            String
   sshConfigId     String?
   dockerContainer String?
-  adhoc           Boolean               @default(false)
-  sshConfig       SshConfig?            @relation(fields: [sshConfigId], references: [id])
-  sessions        AgentSession[]
-  agentRuns       AgentRun[]
-  agents          ProjectAgent[]
-  skills          Skill[]
-  tasks           AgentTask[]
-  fileLocks       FileLock[]
-  mcpServers      McpServer[]
-  harnessConfig   ProjectHarnessConfig?
-  workspaces      WorkspaceLayout[]
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  adhoc       Boolean        @default(false)
+  sshConfig   SshConfig?     @relation(fields: [sshConfigId], references: [id])
+  sessions    AgentSession[]
+  agentRuns   AgentRun[]
+  agents      ProjectAgent[]
+  skills      Skill[]
+  tasks       AgentTask[]
+  fileLocks   FileLock[]
+  mcpServers  McpServer[]
+  harnessConfig ProjectHarnessConfig?
+  workspaces  WorkspaceLayout[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 model WorkspaceLayout {
@@ -99,11 +99,11 @@ model AgentSession {
   lastContext  String? // 마지막 대화 맥락 요약
   status       String               @default("active") // "active", "paused", "terminated"
   chatMessages SessionChatMessage[]
-  tokenLogs    SessionTokenLog[]
-  checkpoints  SessionCheckpoint[]
-  agentRuns    AgentRun[]
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
+  tokenLogs   SessionTokenLog[]
+  checkpoints SessionCheckpoint[]
+  agentRuns   AgentRun[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model SessionChatMessage {
@@ -265,21 +265,21 @@ model McpServer {
 // --- Durable Agent Run Ledger ---
 
 model AgentRun {
-  id        String          @id @default(uuid())
-  projectId String
-  project   Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  sessionId String?
-  session   AgentSession?   @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  runRef    String          @unique
-  agentType String
-  title     String?
-  status    String          @default("running") // "running" | "completed" | "failed" | "cancelled"
-  metadata  String          @default("{}")
-  events    AgentRunEvent[]
-  startedAt DateTime        @default(now())
-  endedAt   DateTime?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id          String          @id @default(uuid())
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sessionId   String?
+  session     AgentSession?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  runRef      String          @unique
+  agentType   String
+  title       String?
+  status      String          @default("running") // "running" | "completed" | "failed" | "cancelled"
+  metadata    String          @default("{}")
+  events      AgentRunEvent[]
+  startedAt   DateTime        @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 
   @@index([projectId, updatedAt])
   @@index([sessionId, updatedAt])
