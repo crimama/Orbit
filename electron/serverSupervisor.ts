@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { createServer, request as httpRequest } from "node:http";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { ensureOrbitDesktopPaths, type OrbitDesktopPaths } from "./desktopPaths.js";
@@ -45,6 +46,19 @@ function createSessionAccessToken(): string {
   return randomBytes(32).toString("base64url");
 }
 
+function resolveNodeBinary(cwd: string): string {
+  const explicit = process.env.ORBIT_DESKTOP_NODE_BINARY?.trim();
+  if (explicit) return explicit;
+
+  const bundledNode = join(cwd, "node_modules", ".bin", process.platform === "win32" ? "node.cmd" : "node");
+  if (existsSync(bundledNode)) return bundledNode;
+
+  const execName = process.platform === "win32" ? "node.exe" : "node";
+  if (!process.execPath.toLowerCase().includes("electron")) return process.execPath;
+
+  return execName;
+}
+
 async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   let lastError: Error | undefined;
@@ -85,7 +99,7 @@ function spawnChecked(command: string, args: string[], cwd: string, env: NodeJS.
 
 async function runDbBootstrap(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const child = spawnChecked(process.execPath, ["scripts/desktop-db-bootstrap.mjs"], cwd, env);
+    const child = spawnChecked(resolveNodeBinary(cwd), ["scripts/desktop-db-bootstrap.mjs"], cwd, env);
     const stderr: Buffer[] = [];
     child.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk));
     child.stdout?.pipe(process.stdout);
@@ -138,12 +152,7 @@ export async function startOrbitLocalServer(
 
   await runDbBootstrap(cwd, env);
 
-  const child = spawnChecked(
-    process.execPath,
-    ["--import", "tsx", join(cwd, "server.ts")],
-    cwd,
-    env,
-  );
+  const child = spawnChecked(resolveNodeBinary(cwd), ["--import", "tsx", join(cwd, "server.ts")], cwd, env);
   child.stdout?.pipe(process.stdout);
   child.stderr?.pipe(process.stderr);
 

@@ -86,6 +86,7 @@ const checks = [
     pass:
       exists("electron/serverSupervisor.ts") &&
       has("electron/serverSupervisor.ts", /spawn\s*\(/) &&
+      has("electron/serverSupervisor.ts", /resolveNodeBinary/) &&
       has("electron/serverSupervisor.ts", /ORBIT_DESKTOP_LOCAL/) &&
       has("electron/serverSupervisor.ts", /DATABASE_URL/) &&
       has("electron/serverSupervisor.ts", /desktop-db-bootstrap/),
