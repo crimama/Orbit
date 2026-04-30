@@ -289,6 +289,16 @@ node scripts/desktop-smoke.mjs
 
 The smoke checks for the Electron package surface, shell files, BrowserWindow hardening, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop implementation gaps remain so CI or a release checklist cannot accidentally treat the desktop preview as complete.
 
+<<<<<<< HEAD
+Current worktree status at the time this verification lane ran:
+
+- Electron source directory was not present yet, so shell, preload, picker, profile, URL validation, and tunnel checks fail until implementation lanes land their work.
+- `package.json` did not yet expose `desktop:dev`, `desktop:build`, or `desktop:pack`, and no Electron dependency was declared in this worktree.
+- `server.ts` did not yet expose a detectable `ORBIT_DESKTOP_LOCAL` loopback-only auth/cookie path.
+- No explicit desktop DB bootstrap helper was present; fresh-userData local readiness remains unverified until the server/package lane lands bootstrap support.
+- Packaging/notarization/native rebuild/Prisma risks are documented above, but packaged runtime verification still needs to run after implementation lands.
+
+=======
 Current worktree status at the time this verification lane reran after the first
 team checkpoints were merged:
 
@@ -307,6 +317,7 @@ Latest verification evidence from this lane:
 - `npm run desktop:smoke` → FAIL, `3/12` checks passed. Passing checks: shell files, navigation guardrails, packaging-risk docs. Failing checks: package scripts, Electron dependency, BrowserWindow sandbox hardening, local server supervisor, remote preload isolation, profile/tunnel modules, SSH argv safety, desktop-local auth, DB bootstrap.
 - `npm run desktop:typecheck` → FAIL because `electron` module/type declarations are not installed; follow-on implicit-any errors are downstream of the missing Electron types.
 
+>>>>>>> main
 Recommended verification sequence after the implementation lanes merge:
 
 1. `node scripts/desktop-smoke.mjs`
