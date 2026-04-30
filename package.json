@@ -13,9 +13,9 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
-    "desktop:smoke": "node scripts/desktop-smoke.mjs",
-    "desktop:build": "npm run build && npm run desktop:typecheck && npm run desktop:smoke"
+    "desktop:dev": "electron electron/bootstrap.cjs",
+    "desktop:build": "tsc --noEmit",
+    "desktop:pack": "npm run desktop:build && electron electron/bootstrap.cjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -61,7 +61,8 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.0.5"
   },
-  "main": "electron/main.js"
+  "main": "electron/bootstrap.cjs"
 }

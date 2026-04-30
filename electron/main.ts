@@ -21,7 +21,7 @@ function profilesPath() {
 }
 
 function preloadPath() {
-  return path.join(__dirname, "preload.ts");
+  return path.join(__dirname, "preload.cjs");
 }
 
 function connectionHtmlPath() {
