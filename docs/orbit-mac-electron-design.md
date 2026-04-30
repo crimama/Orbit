@@ -289,13 +289,23 @@ node scripts/desktop-smoke.mjs
 
 The smoke checks for the Electron package surface, shell files, BrowserWindow hardening, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop implementation gaps remain so CI or a release checklist cannot accidentally treat the desktop preview as complete.
 
-Current worktree status at the time this verification lane ran:
+Current worktree status at the time this verification lane reran after the first
+team checkpoints were merged:
 
-- Electron source directory was not present yet, so shell, preload, picker, profile, URL validation, and tunnel checks fail until implementation lanes land their work.
-- `package.json` did not yet expose `desktop:dev`, `desktop:build`, or `desktop:pack`, and no Electron dependency was declared in this worktree.
-- `server.ts` did not yet expose a detectable `ORBIT_DESKTOP_LOCAL` loopback-only auth/cookie path.
-- No explicit desktop DB bootstrap helper was present; fresh-userData local readiness remains unverified until the server/package lane lands bootstrap support.
+- `electron/main.ts`, `electron/preload.ts`, and `electron/connection.html` are present, so the basic shell-file smoke now passes.
+- `electron/main.ts` currently sets `sandbox: false`; this does **not** meet the design security contract of `sandbox: true` when compatible with the preload bridge.
+- Remote URL mode currently loads through the same privileged window/preload path. IPC handlers are origin-guarded, but remote pages can still see the `window.orbitDesktop` bridge; this does **not** yet satisfy the "remote pages must not receive desktop IPC capabilities" criterion.
+- `package.json` exposes `desktop:typecheck`, `desktop:smoke`, and `desktop:build`, but still lacks `desktop:dev` and `desktop:pack`, and no Electron dependency is declared in the current merged checkpoint.
+- `npm run desktop:typecheck` fails before implementation type validation because the Electron package/types are missing.
+- No `electron/profileStore.ts`, `electron/urlValidation.ts`, `electron/tunnel.ts`, or `electron/serverSupervisor.ts` module is present in the merged checkpoint yet, so profile/tunnel/local-supervisor acceptance checks fail.
+- `server.ts` does not yet expose a detectable `ORBIT_DESKTOP_LOCAL` loopback-only auth/cookie path.
+- No explicit desktop DB bootstrap helper is present; fresh-userData local readiness remains unverified until the server/package lane lands bootstrap support.
 - Packaging/notarization/native rebuild/Prisma risks are documented above, but packaged runtime verification still needs to run after implementation lands.
+
+Latest verification evidence from this lane:
+
+- `npm run desktop:smoke` → FAIL, `3/12` checks passed. Passing checks: shell files, navigation guardrails, packaging-risk docs. Failing checks: package scripts, Electron dependency, BrowserWindow sandbox hardening, local server supervisor, remote preload isolation, profile/tunnel modules, SSH argv safety, desktop-local auth, DB bootstrap.
+- `npm run desktop:typecheck` → FAIL because `electron` module/type declarations are not installed; follow-on implicit-any errors are downstream of the missing Electron types.
 
 Recommended verification sequence after the implementation lanes merge:
 

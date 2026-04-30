@@ -22,6 +22,10 @@
 ## 결과
 
 - [ ] 진행 중
+- [x] verification/docs lane 초기 smoke 추가 및 1차 체크포인트 검증
+- [x] `npm run desktop:smoke` 현재 `3/12` 통과, 미충족 설계 항목을 구체적 gap으로 출력
+- [x] `npm run desktop:typecheck` 현재 Electron dependency/types 누락으로 실패 확인
+- [ ] Electron dependency/scripts, sandbox hardening, remote preload isolation, local server supervisor, profile/tunnel modules, desktop-local auth, DB bootstrap 반영 후 재검증 필요
 
 ---
 
