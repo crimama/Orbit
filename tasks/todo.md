@@ -1,5 +1,30 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 Orbit macOS Electron app)
+
+- [x] 원본 Orbit을 `~/Orbit-mac`으로 복사
+- [x] 복사본 baseline commit 및 rollback tag 생성
+- [x] Electron mac app 설계안 작성
+- [x] 평가 에이전트 설계 리뷰 및 피드백 반영
+- [ ] `$team`으로 Electron mac app 구현
+- [ ] 구현 결과 평가 에이전트 검토
+- [ ] 필요한 수정 반영 및 검증
+
+## 계획 (Orbit macOS Electron app)
+
+1. `~/Orbit-mac` 복사본에서만 mac app 작업을 진행한다.
+2. Electron shell이 Orbit local server, remote URL, SSH tunnel connection profile을 선택할 수 있는 구조를 설계한다.
+3. 설계 문서를 평가 에이전트에 검토시키고, 피드백을 반영해 최종 설계로 고정한다.
+4. OMX `$team` worker들에게 app shell, server bootstrap/package, connection profile UX, verification/docs lane을 나눠 구현시킨다.
+5. 구현 후 평가 에이전트가 설계 대비 반영 여부를 검토하고, 누락/위험 항목을 leader가 수정한다.
+6. 타입/린트/빌드/Electron smoke 수준의 검증 증거를 남긴다.
+
+## 결과
+
+- [ ] 진행 중
+
+---
+
 ## 현재 작업 (2026-04-30 project add SSH vault reuse)
 
 - [x] 프로젝트 추가 flow의 현재 SSH vault/profile 재사용 경로 확인
