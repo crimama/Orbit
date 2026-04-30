@@ -278,3 +278,31 @@ Security contract:
 - Replaced plaintext token profile fields with `tokenKey` and Keychain/session-only storage policy.
 - Expanded SSH tunnel argv/readiness/error handling.
 - Split team lanes by ownership and made acceptance criteria testable.
+
+## Verification Status — 2026-04-30 Team Pass
+
+Verification lane added `scripts/desktop-smoke.mjs` as a dependency-free acceptance smoke for the Electron macOS preview. Run it from the repository root with:
+
+```bash
+node scripts/desktop-smoke.mjs
+```
+
+The smoke checks for the Electron package surface, shell files, BrowserWindow hardening, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop implementation gaps remain so CI or a release checklist cannot accidentally treat the desktop preview as complete.
+
+Current worktree status at the time this verification lane ran:
+
+- Electron source directory was not present yet, so shell, preload, picker, profile, URL validation, and tunnel checks fail until implementation lanes land their work.
+- `package.json` did not yet expose `desktop:dev`, `desktop:build`, or `desktop:pack`, and no Electron dependency was declared in this worktree.
+- `server.ts` did not yet expose a detectable `ORBIT_DESKTOP_LOCAL` loopback-only auth/cookie path.
+- No explicit desktop DB bootstrap helper was present; fresh-userData local readiness remains unverified until the server/package lane lands bootstrap support.
+- Packaging/notarization/native rebuild/Prisma risks are documented above, but packaged runtime verification still needs to run after implementation lands.
+
+Recommended verification sequence after the implementation lanes merge:
+
+1. `node scripts/desktop-smoke.mjs`
+2. `npx tsc --noEmit`
+3. Electron compile/build command, preferably `npm run desktop:build` once package scripts exist.
+4. Existing web app build: `npm run build`.
+5. Focused runtime smoke for local mode with a fresh temporary userData directory, confirming DB bootstrap reaches HTTP readiness or reports a clear bootstrap error.
+6. Remote URL smoke confirming no local server child is started and privileged preload APIs are unavailable to remote content.
+7. SSH tunnel smoke confirming safe argv construction and either a working local forward or an explicit disabled/preview gate.
