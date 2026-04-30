@@ -12,7 +12,10 @@
     "start": "NODE_ENV=production tsx --tsconfig tsconfig.server.json server.ts",
     "lint": "next lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
+    "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "desktop:build": "npm run build && npm run desktop:typecheck && npm run desktop:smoke"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
