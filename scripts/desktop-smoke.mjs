@@ -48,6 +48,12 @@ const checks = [
     gap: "Declare Electron as a dependency or devDependency for the desktop shell.",
   },
   {
+    id: "desktop-dev-build-prerequisite",
+    label: "desktop:dev builds Next before starting Electron local mode",
+    pass: /npm run build/.test(scripts["desktop:dev"] ?? "") && /electron/.test(scripts["desktop:dev"] ?? ""),
+    gap: "Run next build before Electron so This Mac production child server can find .next/BUILD_ID.",
+  },
+  {
     id: "electron-shell-files",
     label: "Electron main, preload, and connection picker files exist",
     pass: ["electron/main.ts", "electron/preload.ts", "electron/preload.cjs", "electron/connection.html"].every(exists),

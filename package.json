@@ -13,7 +13,7 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "desktop:dev": "electron electron/bootstrap.cjs",
+    "desktop:dev": "npm run build && electron electron/bootstrap.cjs",
     "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
     "desktop:smoke": "node scripts/desktop-smoke.mjs",
     "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke",
