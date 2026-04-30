@@ -6,6 +6,8 @@ import {
   registerProject,
 } from "@/server/project/projectRegistry";
 
+export const dynamic = "force-dynamic";
+
 const STALE_MS = 24 * 60 * 60 * 1000;
 
 export async function GET() {

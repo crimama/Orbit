@@ -50,7 +50,11 @@ const checks = [
   {
     id: "desktop-dev-build-prerequisite",
     label: "desktop:dev builds Next before starting Electron local mode",
-    pass: /npm run build/.test(scripts["desktop:dev"] ?? "") && /electron/.test(scripts["desktop:dev"] ?? ""),
+    pass:
+      /desktop-dev\.mjs/.test(scripts["desktop:dev"] ?? "") &&
+      has("scripts/desktop-dev.mjs", /DATABASE_URL/) &&
+      has("scripts/desktop-dev.mjs", /npm[\s\S]*run[\s\S]*build/) &&
+      has("scripts/desktop-dev.mjs", /electron\/bootstrap\.cjs/),
     gap: "Run next build before Electron so This Mac production child server can find .next/BUILD_ID.",
   },
   {
@@ -120,6 +124,12 @@ const checks = [
     label: "Server has ORBIT_DESKTOP_LOCAL loopback cookie handling",
     pass: has("server.ts", /ORBIT_DESKTOP_LOCAL/) && has("server.ts", /isDesktopLocalHttpRequest|desktopLocal/i),
     gap: "Add loopback-only ORBIT_DESKTOP_LOCAL cookie relaxation/token support.",
+  },
+  {
+    id: "dynamic-project-registry-api",
+    label: "Project registry API is excluded from build-time prerender DB access",
+    pass: has("src/app/api/resources/projects/registry/route.ts", /dynamic\s*=\s*["']force-dynamic["']/),
+    gap: "Mark the registry API route force-dynamic so next build does not query Prisma without a runtime database.",
   },
   {
     id: "session-only-desktop-secrets",
