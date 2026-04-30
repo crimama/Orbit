@@ -117,6 +117,8 @@ Remote URL 전용 `.app` 다음 단계로, packaged Electron app 안에서 `This
 - packaged local runtime은 `.next/BUILD_ID`, `dist/server.js`, `scripts/desktop-db-bootstrap.mjs`, `prisma/schema.prisma`가 앱 root에 있을 때만 활성화한다.
 - `server.ts`는 `tsconfig.server.json`으로 `dist/server.js`에 컴파일하고, `@/...` require를 풀기 위해 `dist/node_modules/@/{server,lib}` alias shim을 생성한다.
 - local package는 `asar: false`를 사용한다. Electron-as-Node child process가 `.next`, compiled server, Prisma, native modules를 실제 파일 경로에서 읽게 하기 위해서다.
+- local package는 `npmRebuild: false`로 electron-builder의 전체 native rebuild를 끈다. `ssh2`의 optional `cpu-features` rebuild가 `This Mac`과 무관하게 실패할 수 있기 때문이다.
+- 필요한 native module은 `desktop:rebuild:local-native`에서 `electron-rebuild -f -w node-pty`로 좁혀서 처리한다.
 - app-data SQLite DB와 session-only access token 모델은 기존 desktop local supervisor 흐름을 그대로 유지한다.
 
 ### 검증
@@ -130,6 +132,6 @@ Remote URL 전용 `.app` 다음 단계로, packaged Electron app 안에서 `This
 
 ### 남은 macOS 검증
 
-- `npm run desktop:pack:local`은 Linux에서 macOS ARM native rebuild를 cross-compile할 수 없어 `cpu-features` rebuild에서 실패한다.
-- MacBook에서 실행하면 `node-pty`/Prisma native artifacts가 target Electron ABI로 rebuild되어야 한다.
+- `cpu-features` native rebuild failure를 피하기 위해 broad electron-builder rebuild는 비활성화했다.
+- MacBook에서 실행하면 `desktop:rebuild:local-native`가 `node-pty`만 Electron ABI로 rebuild해야 한다.
 - 최종 완료 판정은 MacBook에서 generated `.app`를 열고 `This Mac` 연결이 성공하는지 확인한 뒤 내린다.

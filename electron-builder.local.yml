@@ -24,3 +24,4 @@ mac:
       arch:
         - arm64
 asar: false
+npmRebuild: false

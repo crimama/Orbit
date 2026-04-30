@@ -36,6 +36,7 @@ const checks = [
       "desktop:typecheck",
       "desktop:electron-build",
       "desktop:local-server-build",
+      "desktop:rebuild:local-native",
       "desktop:smoke",
       "desktop:package-smoke",
       "desktop:pack:remote",

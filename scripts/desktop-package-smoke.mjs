@@ -59,7 +59,12 @@ const checks = [
       exists("scripts/desktop-electron-build.mjs") &&
       scripts["desktop:local-server-build"] ===
         "node scripts/desktop-local-server-build.mjs" &&
+      scripts["desktop:rebuild:local-native"] ===
+        "node scripts/desktop-rebuild-local-native.mjs" &&
       /desktop:local-server-build/.test(scripts["desktop:pack:local"] ?? "") &&
+      /desktop:rebuild:local-native/.test(
+        scripts["desktop:pack:local"] ?? "",
+      ) &&
       /electron-builder --mac dir --arm64 --config electron-builder\.local\.yml/.test(
         scripts["desktop:pack:local"] ?? "",
       ),
@@ -99,6 +104,9 @@ const checks = [
         /extraMetadata:[\s\S]*main:\s*dist-electron\/main\.js/,
       ) &&
       has(localBuilderConfig, /asar:\s*false/) &&
+      has(localBuilderConfig, /npmRebuild:\s*false/) &&
+      has("scripts/desktop-rebuild-local-native.mjs", /electron-rebuild/) &&
+      has("scripts/desktop-rebuild-local-native.mjs", /node-pty/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/node_modules\/@/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/src\/server/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/src\/lib/),

@@ -8,7 +8,7 @@
 - [x] local electron-builder profile/script 추가
 - [x] bootstrap/packaging smoke 보강
 - [x] 타입/스모크/빌드 검증
-- [ ] 커밋 및 푸시
+- [x] 커밋 및 푸시
 
 ## 계획 (Orbit macOS packaged local mode)
 
@@ -30,8 +30,36 @@
 - [x] `env -u DATABASE_URL npm run build` 통과
 - [x] `npm run desktop:local-server-build` 통과 및 alias shim 파일 확인
 - [x] compiled local server smoke 통과: `/login` 200, token redirect 302 + cookie
-- [x] Linux `npm run desktop:pack:local`은 macOS ARM native rebuild 단계에서 예상대로 실패: `node-gyp does not support cross-compiling native modules from source`
+- [x] 후속 fix 전 Linux `npm run desktop:pack:local`은 macOS ARM native rebuild 단계에서 실패: `node-gyp does not support cross-compiling native modules from source`
 - [ ] MacBook에서 `npm run desktop:pack:local` 실행 후 Finder `.app` `This Mac` 연결 확인 필요
+
+---
+
+## 현재 작업 (2026-04-30 packaged local cpu-features rebuild fix)
+
+- [x] MacBook `cpu-features` native rebuild failure 원인 분리
+- [x] local builder broad native rebuild 비활성화
+- [x] `node-pty` 전용 native rebuild script 추가
+- [x] smoke/build/package 검증
+- [x] 커밋 및 푸시
+
+## 계획 (packaged local cpu-features rebuild fix)
+
+1. `electron-builder.local.yml`에서 전체 dependency rebuild를 끈다.
+2. `This Mac`에 필요한 `node-pty`만 `electron-rebuild -f -w node-pty`로 별도 rebuild한다.
+3. package smoke가 broad rebuild 금지와 narrow rebuild script를 검증하게 한다.
+4. Linux에서는 script가 macOS 외부에서 skip되는지 확인하고, MacBook에서 다시 `desktop:pack:local`을 실행하게 한다.
+
+## 결과
+
+- [x] `electron-builder.local.yml`에 `npmRebuild: false` 적용
+- [x] `desktop:rebuild:local-native` 추가: macOS에서는 `node-pty`만 `electron-rebuild -f -w node-pty`, 비-macOS에서는 skip
+- [x] `npm run desktop:rebuild:local-native` 통과: Linux skip 확인
+- [x] `npm run desktop:package-smoke` 통과: 12/12
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 12/12
+- [x] `env -u DATABASE_URL npm run build` 통과
+- [x] `npm run desktop:local-server-build` 통과
+- [x] Linux `npm run desktop:pack:local` 통과: `npmRebuild is set to false`로 dependency rebuild skip 확인, `dist-packaged-local/mac-arm64/Orbit.app` 생성
 
 ---
 
