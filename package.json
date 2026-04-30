@@ -13,9 +13,11 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
+    "desktop:typecheck": "npx tsc -p tsconfig.electron.json --noEmit",
     "desktop:smoke": "node scripts/desktop-smoke.mjs",
-    "desktop:build": "npm run build && npm run desktop:typecheck && npm run desktop:smoke"
+    "desktop:build": "npm run build && npm run desktop:typecheck && npm run desktop:smoke",
+    "desktop:dev": "electron .",
+    "desktop:db:bootstrap": "node scripts/desktop-db-bootstrap.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -61,5 +63,6 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  }
+  },
+  "main": "electron/main.js"
 }
