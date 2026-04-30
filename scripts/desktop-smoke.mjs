@@ -40,6 +40,26 @@ const checks = [
     gap: 'Set nodeIntegration:false, contextIsolation:true, and sandbox:true for app windows.',
   },
   {
+    id: 'local-server-supervisor',
+    label: 'Local mode starts and supervises an embedded loopback Orbit server',
+    pass:
+      exists('electron/serverSupervisor.ts') &&
+      has('electron/serverSupervisor.ts', /spawn\s*\(/) &&
+      has('electron/serverSupervisor.ts', /ORBIT_DESKTOP_LOCAL/) &&
+      has('electron/serverSupervisor.ts', /127\.0\.0\.1/) &&
+      has('electron/serverSupervisor.ts', /DATABASE_URL/) &&
+      has('electron/serverSupervisor.ts', /readiness|ready|fetch|http/i),
+    gap: 'Add an Electron server supervisor that spawns Orbit on 127.0.0.1 with desktop env/appData and waits for HTTP readiness.',
+  },
+  {
+    id: 'remote-preload-isolation',
+    label: 'Remote URL pages do not receive privileged desktop preload APIs',
+    pass:
+      has('electron/main.ts', /remote[^]*preload\s*:\s*(undefined|false)/i) ||
+      has('electron/main.ts', /withoutPreload|unprivileged/i),
+    gap: 'Create/load remote URL content without the privileged preload bridge; IPC origin checks alone still expose window.orbitDesktop to remote pages.',
+  },
+  {
     id: 'navigation-guardrails',
     label: 'Main process blocks unexpected navigation/window opens',
     pass:
