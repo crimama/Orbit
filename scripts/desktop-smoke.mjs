@@ -1,15 +1,22 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 
 const root = process.cwd();
-const read = (path) => readFileSync(resolve(root, path), 'utf8');
-const exists = (path) => existsSync(resolve(root, path));
-const has = (path, pattern) => exists(path) && pattern.test(read(path));
+const failures = [];
+const warnings = [];
 
-const pkg = JSON.parse(read('package.json'));
-const scripts = pkg.scripts ?? {};
-const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
+function readJson(relativePath) {
+  return JSON.parse(readFileSync(join(root, relativePath), "utf8"));
+}
+
+function requireFile(relativePath) {
+  if (!existsSync(join(root, relativePath))) failures.push(`missing ${relativePath}`);
+}
+
+function requireScript(scripts, name) {
+  if (!scripts?.[name]) failures.push(`package.json missing script ${name}`);
+}
 
 function expectText(relativePath, pattern, description) {
   if (!existsSync(join(root, relativePath))) {
@@ -24,7 +31,7 @@ const pkg = readJson("package.json");
 requireScript(pkg.scripts, "desktop:build");
 requireScript(pkg.scripts, "desktop:typecheck");
 requireScript(pkg.scripts, "desktop:smoke");
-requireFile("tsconfig.electron.json");
+requireFile("tsconfig.desktop.json");
 requireFile("docs/orbit-mac-electron-design.md");
 expectText("docs/orbit-mac-electron-design.md", /desktop:build/i, "desktop build verification documentation");
 expectText("docs/orbit-mac-electron-design.md", /notarization|native rebuild|Prisma/i, "packaging risk documentation");
@@ -46,15 +53,19 @@ if (existsSync(electronMainPath)) {
   warnings.push("electron/main.ts not present; desktop smoke limited to scripts/config/docs in this worktree.");
 }
 
-const failures = checks.filter((check) => !check.pass);
-for (const check of checks) {
-  console.log(`${check.pass ? 'PASS' : 'FAIL'} ${check.id}: ${check.label}`);
-  if (!check.pass) console.log(`  gap: ${check.gap}`);
+if (existsSync(electronPreloadPath)) {
+  const preload = readFileSync(electronPreloadPath, "utf8");
+  if (!/contextBridge\.(exposeInMainWorld|exposeInIsolatedWorld)/.test(preload)) {
+    failures.push("electron/preload.ts missing contextBridge exposure");
+  }
+} else {
+  warnings.push("electron/preload.ts not present; preload smoke deferred until shell lane is integrated.");
 }
-console.log(`\nDesktop smoke summary: ${checks.length - failures.length}/${checks.length} passed`);
 
+for (const warning of warnings) console.warn(`WARN: ${warning}`);
 if (failures.length) {
-  console.log('\nConcrete gaps:');
-  for (const failure of failures) console.log(`- ${failure.id}: ${failure.gap}`);
-  process.exitCode = 1;
+  console.error("desktop smoke FAILED:");
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
 }
+console.log("desktop smoke PASS");
