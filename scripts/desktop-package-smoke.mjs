@@ -26,15 +26,50 @@ const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
 
 const packagingDoc = "docs/orbit-mac-packaging-design.md";
 const electronDesignDoc = "docs/orbit-mac-electron-design.md";
+const remoteBuilderConfig = "electron-builder.remote.yml";
 
 const checks = [
   {
     id: "no-fake-desktop-pack",
-    label: "desktop:pack is absent unless a real packager is configured",
+    label: "generic desktop:pack is absent from the remote-only package phase",
     pass:
-      typeof scripts["desktop:pack"] !== "string" ||
-      Boolean(deps["electron-builder"] || deps["@electron-forge/cli"]),
-    gap: "Do not expose desktop:pack until a real packager dependency and config are present.",
+      typeof scripts["desktop:pack"] !== "string" &&
+      typeof scripts["desktop:pack:remote"] === "string",
+    gap: "Do not expose desktop:pack until the generic packaged profile is actually supported; use desktop:pack:remote first.",
+  },
+  {
+    id: "remote-packager-configured",
+    label: "remote packaging has a real electron-builder config and build step",
+    pass:
+      Boolean(deps["electron-builder"]) &&
+      scripts["desktop:electron-build"] ===
+        "node scripts/desktop-electron-build.mjs" &&
+      /desktop:electron-build/.test(scripts["desktop:pack:remote"] ?? "") &&
+      /electron-builder --mac dir --arm64 --config electron-builder\.remote\.yml/.test(
+        scripts["desktop:pack:remote"] ?? "",
+      ) &&
+      exists(remoteBuilderConfig) &&
+      exists("tsconfig.electron-build.json") &&
+      exists("scripts/desktop-electron-build.mjs"),
+    gap: "Add electron-builder, desktop:electron-build, desktop:pack:remote, tsconfig.electron-build.json, and electron-builder.remote.yml.",
+  },
+  {
+    id: "remote-builder-is-narrow",
+    label: "remote builder config packages only compiled Electron shell assets",
+    pass:
+      has(remoteBuilderConfig, /target:\s*dir/) &&
+      has(remoteBuilderConfig, /identity:\s*null/) &&
+      has(remoteBuilderConfig, /npmRebuild:\s*false/) &&
+      has(remoteBuilderConfig, /app:\s*dist-electron/) &&
+      has(remoteBuilderConfig, /files:[\s\S]*"\*\*\/\*"/) &&
+      has(remoteBuilderConfig, /!node_modules\/\*\*/) &&
+      has("scripts/desktop-electron-build.mjs", /main:\s*"main\.js"/) &&
+      !has(remoteBuilderConfig, /node-pty/) &&
+      !has(
+        remoteBuilderConfig,
+        /query-engine|prisma\/schema\.prisma|server\/server\.js/,
+      ),
+    gap: "Keep the first packaged profile unsigned, dir-targeted, native-rebuild-free, and limited to dist-electron shell files.",
   },
   {
     id: "package-smoke-script",
@@ -42,8 +77,9 @@ const checks = [
     pass:
       scripts["desktop:package-smoke"] ===
         "node scripts/desktop-package-smoke.mjs" &&
-      /desktop:package-smoke/.test(scripts["desktop:build"] ?? ""),
-    gap: "Wire desktop:package-smoke into the deterministic desktop build chain.",
+      /desktop:package-smoke/.test(scripts["desktop:build"] ?? "") &&
+      /desktop:build/.test(scripts["desktop:pack:remote"] ?? ""),
+    gap: "Wire desktop:package-smoke into desktop:build and require desktop:pack:remote to run the desktop build chain.",
   },
   {
     id: "packaging-design-doc",
@@ -77,6 +113,19 @@ const checks = [
       has("electron/serverSupervisor.ts", /ORBIT_DESKTOP_SERVER_RUNTIME/) &&
       has("electron/serverSupervisor.ts", /resources.*server.*server\.js/s),
     gap: "Make the preview-vs-packaged server entry boundary explicit in serverSupervisor.ts.",
+  },
+  {
+    id: "packaged-mode-ux-boundary",
+    label: "packaged remote app blocks unavailable local runtime modes",
+    pass:
+      has("electron/main.ts", /isRemoteOnlyPackagedApp/) &&
+      has("electron/main.ts", /PACKAGED_REMOTE_ONLY/) &&
+      has("electron/main.ts", /orbit-desktop:capabilities/) &&
+      has("electron/preload.cjs", /getCapabilities/) &&
+      has("electron/connection.html", /kindEnabled/) &&
+      has("electron/connection.html", /activateKind/) &&
+      has("electron/connection.html", /Remote URL packaged preview/),
+    gap: "Expose capabilities IPC and disable This Mac/SSH in the packaged remote app instead of letting them fail at runtime.",
   },
   {
     id: "preview-runtime-safety",

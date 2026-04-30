@@ -11,6 +11,7 @@ function canUseDesktopApi() {
 }
 
 const api: OrbitDesktopApi = {
+  getCapabilities: () => ipcRenderer.invoke("orbit-desktop:capabilities"),
   getProfiles: () => ipcRenderer.invoke("orbit-desktop:profiles:list"),
   saveProfile: (profile: OrbitDesktopConnectionProfile) =>
     ipcRenderer.invoke("orbit-desktop:profiles:save", profile),
@@ -20,13 +21,19 @@ const api: OrbitDesktopApi = {
     ipcRenderer.invoke("orbit-desktop:connect", profile),
   showConnectionPicker: () => ipcRenderer.invoke("orbit-desktop:picker:show"),
   getStatus: () => ipcRenderer.invoke("orbit-desktop:status"),
-  onStatusChange: (callback: (status: OrbitDesktopConnectionStatus) => void) => {
-    const listener = (_event: Electron.IpcRendererEvent, status: OrbitDesktopConnectionStatus) => {
+  onStatusChange: (
+    callback: (status: OrbitDesktopConnectionStatus) => void,
+  ) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      status: OrbitDesktopConnectionStatus,
+    ) => {
       callback(status);
     };
 
     ipcRenderer.on("orbit-desktop:status-changed", listener);
-    return () => ipcRenderer.removeListener("orbit-desktop:status-changed", listener);
+    return () =>
+      ipcRenderer.removeListener("orbit-desktop:status-changed", listener);
   },
 };
 

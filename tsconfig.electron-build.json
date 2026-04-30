@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.electron.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "declaration": false,
+    "incremental": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "noEmit": false,
+    "outDir": "dist-electron",
+    "sourceMap": false,
+    "tsBuildInfoFile": "dist-electron/.tsbuildinfo"
+  },
+  "include": ["electron/**/*.ts"],
+  "exclude": ["node_modules", ".next", "dist-electron"]
+}

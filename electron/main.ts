@@ -1,11 +1,29 @@
-import { app, BrowserWindow, ipcMain, shell, type BrowserWindowConstructorOptions } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  shell,
+  type BrowserWindowConstructorOptions,
+} from "electron";
 import path from "node:path";
 
-import { loadProfiles as loadStoredProfiles, saveProfiles as saveStoredProfiles } from "./connection-profiles";
-import { sanitizeProfile, type OrbitDesktopConnectionProfile } from "./profileStore";
-import { startOrbitLocalServer, type OrbitLocalServerHandle } from "./serverSupervisor";
+import {
+  loadProfiles as loadStoredProfiles,
+  saveProfiles as saveStoredProfiles,
+} from "./connection-profiles";
+import {
+  sanitizeProfile,
+  type OrbitDesktopConnectionProfile,
+} from "./profileStore";
+import {
+  startOrbitLocalServer,
+  type OrbitLocalServerHandle,
+} from "./serverSupervisor";
 import { startSshTunnel } from "./ssh-tunnel";
-import type { OrbitDesktopConnectionStatus } from "./types";
+import type {
+  OrbitDesktopCapabilities,
+  OrbitDesktopConnectionStatus,
+} from "./types";
 import { isLoopbackHostname, validateRemoteOrbitUrl } from "./urlValidation";
 
 const PICKER_ORIGIN = "file://";
@@ -25,6 +43,25 @@ let activeStatus: OrbitDesktopConnectionStatus = {
   state: "idle",
   message: "Choose an Orbit connection.",
 };
+
+function isRemoteOnlyPackagedApp() {
+  return (
+    app.isPackaged && process.env.ORBIT_DESKTOP_ENABLE_PACKAGED_LOCAL !== "1"
+  );
+}
+
+function desktopCapabilities(): OrbitDesktopCapabilities {
+  const remoteOnly = isRemoteOnlyPackagedApp();
+  return {
+    packaged: app.isPackaged,
+    localModeEnabled: !remoteOnly,
+    sshTunnelEnabled: !remoteOnly,
+    packagingProfile: remoteOnly ? "remote-url" : "developer-preview",
+    unavailableReason: remoteOnly
+      ? "This unsigned packaged preview connects to a remote Orbit server. Local This Mac and SSH Tunnel packaging are not enabled yet."
+      : undefined,
+  };
+}
 
 function preloadPath() {
   return path.join(__dirname, "preload.cjs");
@@ -85,7 +122,8 @@ function createWindow(mode: WindowMode) {
     }
 
     const currentUrl = mainWindow?.webContents.getURL() ?? "";
-    if (currentUrl.startsWith(PICKER_ORIGIN) && target.protocol === "file:") return;
+    if (currentUrl.startsWith(PICKER_ORIGIN) && target.protocol === "file:")
+      return;
 
     if (!isAllowedOrbitNavigation(target)) {
       event.preventDefault();
@@ -157,11 +195,15 @@ function safeConnectionFailureStatus(
 
   if (profile.kind === "remote") {
     const validation = validateRemoteOrbitUrl(profile.url);
-    const target = validation.ok ? validation.url.origin : "the remote Orbit URL";
+    const target = validation.ok
+      ? validation.url.origin
+      : "the remote Orbit URL";
     return {
       ...base,
       message: `Could not connect to ${target}.`,
-      diagnosticCode: validation.ok ? "REMOTE_LOAD_FAILED" : "REMOTE_URL_INVALID",
+      diagnosticCode: validation.ok
+        ? "REMOTE_LOAD_FAILED"
+        : "REMOTE_URL_INVALID",
       diagnostic: validation.ok
         ? `Verify the Orbit server is reachable, the HTTPS certificate is trusted, and the URL path is correct. Session tokens are never saved and were removed from diagnostics. Detail: ${detail}`
         : `Fix the saved URL: ${validation.error}. Session tokens belong in the session-only token field, not in profile URLs.`,
@@ -186,13 +228,18 @@ function safeConnectionFailureStatus(
 }
 
 function isLoopbackUrl(url: URL) {
-  return (url.protocol === "http:" || url.protocol === "https:") && isLoopbackHostname(url.hostname);
+  return (
+    (url.protocol === "http:" || url.protocol === "https:") &&
+    isLoopbackHostname(url.hostname)
+  );
 }
 
 function assertPickerIpc(event: Electron.IpcMainInvokeEvent) {
   const url = event.senderFrame?.url ?? event.sender.getURL();
   if (!url.startsWith(PICKER_ORIGIN)) {
-    throw new Error("Connection profile IPC is only available to the Orbit connection picker.");
+    throw new Error(
+      "Connection profile IPC is only available to the Orbit connection picker.",
+    );
   }
 }
 
@@ -209,7 +256,9 @@ function normalizeRemoteUrl(rawUrl: string) {
 function isAllowedOrbitNavigation(url: URL) {
   if (url.protocol !== "http:" && url.protocol !== "https:") return false;
   if (isLoopbackHostname(url.hostname)) return true;
-  return activeStatus.url ? url.origin === new URL(activeStatus.url).origin : false;
+  return activeStatus.url
+    ? url.origin === new URL(activeStatus.url).origin
+    : false;
 }
 
 async function stopLocalServer() {
@@ -231,12 +280,18 @@ async function stopActiveConnection() {
 async function showConnectionPicker(status?: OrbitDesktopConnectionStatus) {
   await stopActiveConnection();
   const window = ensureWindow("picker");
-  setStatus(status ?? { state: "idle", message: "Choose an Orbit connection." });
+  setStatus(
+    status ?? { state: "idle", message: "Choose an Orbit connection." },
+  );
   await window.loadFile(connectionHtmlPath());
   if (status) setStatus(status);
 }
 
-async function loadOrbitUrl(url: URL, profile: OrbitDesktopConnectionProfile, message: string) {
+async function loadOrbitUrl(
+  url: URL,
+  profile: OrbitDesktopConnectionProfile,
+  message: string,
+) {
   const window = ensureWindow("orbit");
   const safeStatusUrl = withoutOneShotToken(url);
   setStatus({
@@ -246,14 +301,50 @@ async function loadOrbitUrl(url: URL, profile: OrbitDesktopConnectionProfile, me
     url: safeStatusUrl,
   });
   await window.loadURL(url.toString());
-  setStatus({ state: "connected", message, profileId: profile.id, url: safeStatusUrl });
+  setStatus({
+    state: "connected",
+    message,
+    profileId: profile.id,
+    url: safeStatusUrl,
+  });
   return activeStatus;
 }
 
-async function connect(request: DesktopConnectionRequest): Promise<OrbitDesktopConnectionStatus> {
+async function connect(
+  request: DesktopConnectionRequest,
+): Promise<OrbitDesktopConnectionStatus> {
   await stopActiveConnection();
   const profile = sanitizeProfile(stripSessionSecrets(request));
   const oneShotToken = sessionAccessToken(request);
+  const capabilities = desktopCapabilities();
+
+  if (profile.kind === "local" && !capabilities.localModeEnabled) {
+    const status = {
+      state: "failed" as const,
+      profileId: profile.id,
+      message: "This Mac is not available in this packaged preview.",
+      diagnosticCode: "PACKAGED_REMOTE_ONLY",
+      diagnostic: capabilities.unavailableReason,
+    };
+    await showConnectionPicker(status);
+    throw new Error(
+      [status.message, status.diagnostic].filter(Boolean).join(" "),
+    );
+  }
+
+  if (profile.kind === "ssh-tunnel" && !capabilities.sshTunnelEnabled) {
+    const status = {
+      state: "failed" as const,
+      profileId: profile.id,
+      message: "SSH Tunnel is not available in this packaged preview.",
+      diagnosticCode: "PACKAGED_REMOTE_ONLY",
+      diagnostic: capabilities.unavailableReason,
+    };
+    await showConnectionPicker(status);
+    throw new Error(
+      [status.message, status.diagnostic].filter(Boolean).join(" "),
+    );
+  }
 
   try {
     if (profile.kind === "remote") {
@@ -269,7 +360,11 @@ async function connect(request: DesktopConnectionRequest): Promise<OrbitDesktopC
         throw new Error("Local Orbit supervisor returned a non-loopback URL.");
       }
       validation.url.searchParams.set("token", localServer.accessToken);
-      return await loadOrbitUrl(validation.url, profile, "Connected to local Orbit on this Mac.");
+      return await loadOrbitUrl(
+        validation.url,
+        profile,
+        "Connected to local Orbit on this Mac.",
+      );
     }
 
     sshTunnel = await startSshTunnel(profile);
@@ -278,42 +373,68 @@ async function connect(request: DesktopConnectionRequest): Promise<OrbitDesktopC
       throw new Error("SSH tunnel supervisor returned a non-loopback URL.");
     }
     appendOneShotToken(validation.url, oneShotToken);
-    return await loadOrbitUrl(validation.url, profile, sshTunnel.message ?? "Connected through SSH tunnel.");
+    return await loadOrbitUrl(
+      validation.url,
+      profile,
+      sshTunnel.message ?? "Connected through SSH tunnel.",
+    );
   } catch (error) {
     await stopActiveConnection();
     const failureStatus = safeConnectionFailureStatus(profile, error);
     await showConnectionPicker(failureStatus);
-    throw new Error([failureStatus.message, failureStatus.diagnostic].filter(Boolean).join(" "));
+    throw new Error(
+      [failureStatus.message, failureStatus.diagnostic]
+        .filter(Boolean)
+        .join(" "),
+    );
   }
 }
 
 function registerIpc() {
+  ipcMain.handle("orbit-desktop:capabilities", async (event) => {
+    assertPickerIpc(event);
+    return desktopCapabilities();
+  });
+
   ipcMain.handle("orbit-desktop:profiles:list", async (event) => {
     assertPickerIpc(event);
     return readProfiles();
   });
 
-  ipcMain.handle("orbit-desktop:profiles:save", async (event, profile: unknown) => {
-    assertPickerIpc(event);
-    const sanitized = sanitizeProfile(profile);
-    const profiles = (await readProfiles()).filter((item) => item.id !== sanitized.id);
-    profiles.push(sanitized);
-    await writeProfiles(profiles);
-    return readProfiles();
-  });
+  ipcMain.handle(
+    "orbit-desktop:profiles:save",
+    async (event, profile: unknown) => {
+      assertPickerIpc(event);
+      const sanitized = sanitizeProfile(profile);
+      const profiles = (await readProfiles()).filter(
+        (item) => item.id !== sanitized.id,
+      );
+      profiles.push(sanitized);
+      await writeProfiles(profiles);
+      return readProfiles();
+    },
+  );
 
-  ipcMain.handle("orbit-desktop:profiles:delete", async (event, profileId: unknown) => {
-    assertPickerIpc(event);
-    if (typeof profileId !== "string") throw new Error("Invalid profile id.");
-    const profiles = (await readProfiles()).filter((item) => item.id !== profileId);
-    await writeProfiles(profiles);
-    return profiles;
-  });
+  ipcMain.handle(
+    "orbit-desktop:profiles:delete",
+    async (event, profileId: unknown) => {
+      assertPickerIpc(event);
+      if (typeof profileId !== "string") throw new Error("Invalid profile id.");
+      const profiles = (await readProfiles()).filter(
+        (item) => item.id !== profileId,
+      );
+      await writeProfiles(profiles);
+      return profiles;
+    },
+  );
 
-  ipcMain.handle("orbit-desktop:connect", async (event, profile: DesktopConnectionRequest) => {
-    assertPickerIpc(event);
-    return connect(profile);
-  });
+  ipcMain.handle(
+    "orbit-desktop:connect",
+    async (event, profile: DesktopConnectionRequest) => {
+      assertPickerIpc(event);
+      return connect(profile);
+    },
+  );
 
   ipcMain.handle("orbit-desktop:picker:show", async (event) => {
     assertTrustedDesktopIpc(event);
@@ -332,7 +453,9 @@ app.whenReady().then(async () => {
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      showConnectionPicker().catch((error) => setStatus({ state: "failed", message: String(error) }));
+      showConnectionPicker().catch((error) =>
+        setStatus({ state: "failed", message: String(error) }),
+      );
     }
   });
 });

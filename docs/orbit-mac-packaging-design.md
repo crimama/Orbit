@@ -34,6 +34,8 @@ Future packaged runtime:
 
 ## Future Packager Sketch
 
+The next concrete packaging pass is defined in `docs/orbit-mac-remote-app-packaging-plan.md`. It intentionally packages a Remote URL first unsigned `.app` before attempting full local `This Mac` server packaging.
+
 An eventual `electron-builder` or equivalent config may need:
 
 - `asarUnpack` entries for `node-pty`, Prisma query engines, and other native binaries.

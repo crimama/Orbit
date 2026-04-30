@@ -1,5 +1,59 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 Orbit macOS Remote URL app packaging implementation)
+
+- [x] `electron-builder` 기반 remote-only 패키징 스크립트 추가
+- [x] Electron main/preload/picker packaged capability gate 추가
+- [x] compiled Electron shell packaging output 구성
+- [x] smoke/type/build/package 검증
+- [x] 결과 문서 및 최종 상태 정리
+
+## 계획 (Orbit macOS Remote URL app packaging implementation)
+
+1. `desktop:pack:remote`만 추가하고 generic `desktop:pack`은 계속 보류한다.
+2. Electron TypeScript를 `dist-electron/`으로 컴파일한 뒤, Remote URL에 필요한 shell asset만 패키징한다.
+3. packaged remote profile에서는 `This Mac`/`SSH Tunnel`을 명확히 비활성화하고 `Remote URL`을 기본 연결 흐름으로 만든다.
+4. smoke script가 remote-only packaging boundary, unsigned config, token-not-saved UX, local runtime 보류를 검증하게 한다.
+5. 가능한 범위에서 실제 `.app` 생성까지 실행하고, macOS Finder 검증 필요 여부를 명확히 남긴다.
+
+## 결과
+
+- [x] `electron-builder.remote.yml`, `desktop:electron-build`, `desktop:pack:remote` 추가
+- [x] `desktop:pack:remote`는 Apple Silicon용 unsigned `dir` target으로 `dist-packaged/mac-arm64/Orbit.app` 생성
+- [x] packaged remote profile에서 `This Mac`/`SSH Tunnel` 비활성화 및 `PACKAGED_REMOTE_ONLY` 진단 처리
+- [x] `dist-electron/` minimal app directory 사용으로 root web/server dependency bundle 제외
+- [x] `npm run desktop:electron-build` 통과
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 11/11
+- [x] `env -u DATABASE_URL npm run build` 통과
+- [x] `npm run desktop:pack:remote` 통과, Linux에서 macOS Finder 실행/연결 자체는 미검증
+
+---
+
+## 현재 작업 (2026-04-30 Orbit macOS Remote URL app packaging design)
+
+- [x] 현재 Electron packaging boundary 확인
+- [x] Remote URL first unsigned `.app` 설계 작성
+- [x] 설계 평가 및 피드백 반영
+- [x] 다음 구현 범위/검증 기준 정리
+
+## 계획 (Orbit macOS Remote URL app packaging design)
+
+1. Remote URL로 이미 동작하는 현재 사용 흐름을 첫 packaged app 목표로 제한한다.
+2. This Mac local server packaging, Prisma, `node-pty`, notarization은 후속 범위로 분리한다.
+3. `electron-builder` 기반 unsigned `dir` target을 1차 패키징 방식으로 설계한다.
+4. 평가 단계에서 fake packaging claim, packaged-mode UX, unsigned app 한계를 검토한다.
+5. 피드백을 반영해 최종 설계 문서에 구현 지시와 검증 절차를 남긴다.
+
+## 결과
+
+- [x] `docs/orbit-mac-remote-app-packaging-plan.md` 추가
+- [x] 기존 `docs/orbit-mac-packaging-design.md`에서 Remote URL first 계획으로 연결
+- [x] 최종 설계: `desktop:pack:remote`만 추가하고 generic `desktop:pack`은 보류
+- [x] packaged mode에서는 `This Mac`을 비활성/명확한 안내 처리
+- [x] token 저장 없이 Remote URL profile + per-connection token 입력 유지
+
+---
+
 ## 현재 작업 (2026-04-30 Orbit macOS next-stage team)
 
 - [x] 개발 전 rollback tag 생성

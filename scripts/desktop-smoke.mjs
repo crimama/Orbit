@@ -34,18 +34,23 @@ const checks = [
       "desktop:build",
       "desktop:preview",
       "desktop:typecheck",
+      "desktop:electron-build",
       "desktop:smoke",
       "desktop:package-smoke",
+      "desktop:pack:remote",
     ].every((name) => typeof scripts[name] === "string"),
     gap: "Add the desktop scripts required by the Electron developer-preview workflow.",
   },
   {
     id: "packaging-claim-boundary",
-    label: "Developer preview does not expose a fake packaged-app script",
+    label: "Developer preview exposes only the remote packaged-app profile",
     pass:
-      typeof scripts["desktop:pack"] !== "string" ||
-      Boolean(deps["electron-builder"] || deps["@electron-forge/cli"]),
-    gap: "Rename preview validation away from desktop:pack or add a real packaging tool/config.",
+      typeof scripts["desktop:pack"] !== "string" &&
+      Boolean(deps["electron-builder"]) &&
+      /desktop:electron-build/.test(scripts["desktop:pack:remote"] ?? "") &&
+      /electron-builder/.test(scripts["desktop:pack:remote"] ?? "") &&
+      exists("electron-builder.remote.yml"),
+    gap: "Keep desktop:pack absent and expose only a real desktop:pack:remote script backed by electron-builder.remote.yml.",
   },
   {
     id: "electron-dependency",
@@ -141,6 +146,20 @@ const checks = [
     gap: "Add profileStore/urlValidation/tunnel modules for local, remote, and SSH tunnel profiles.",
   },
   {
+    id: "packaged-remote-only-gate",
+    label:
+      "Packaged app blocks local/SSH modes until packaged runtime support exists",
+    pass:
+      has("electron/main.ts", /isRemoteOnlyPackagedApp/) &&
+      has("electron/main.ts", /desktopCapabilities/) &&
+      has("electron/main.ts", /PACKAGED_REMOTE_ONLY/) &&
+      has("electron/types.ts", /OrbitDesktopCapabilities/) &&
+      has("electron/preload.ts", /getCapabilities/) &&
+      has("electron/connection.html", /Remote URL packaged preview/) &&
+      has("electron/connection.html", /\.card\.disabled/),
+    gap: "Add an app.isPackaged gate, capabilities IPC, disabled picker state, and PACKAGED_REMOTE_ONLY diagnostic.",
+  },
+  {
     id: "ssh-argv-safety",
     label:
       "SSH tunnel implementation uses argv spawning with safe forwarding options",
@@ -218,7 +237,6 @@ const checks = [
     gap: "Add safe remote/tunnel failure diagnostics and redact token-bearing values before surfacing errors.",
   },
 
-
   {
     id: "remote-url-token-query-rejected",
     label: "Remote URL validation rejects token-like query parameters",
@@ -226,7 +244,10 @@ const checks = [
       has("electron/urlValidation.ts", /TOKEN_QUERY_KEYS/) &&
       has("electron/urlValidation.ts", /access_token/) &&
       has("electron/urlValidation.ts", /sessionaccesstoken/) &&
-      has("electron/urlValidation.ts", /Access tokens must be entered in the session-only token field/),
+      has(
+        "electron/urlValidation.ts",
+        /Access tokens must be entered in the session-only token field/,
+      ),
     gap: "Reject token-like query parameters before remote URLs can be persisted in profiles.",
   },
 
@@ -265,7 +286,11 @@ const checks = [
       has("docs/orbit-mac-electron-design.md", /node-pty/i) &&
       has("docs/orbit-mac-electron-design.md", /Prisma/i) &&
       has("docs/orbit-mac-packaging-design.md", /Linux CI/i) &&
-      has("docs/orbit-mac-packaging-design.md", /Electron ABI/i),
+      has("docs/orbit-mac-packaging-design.md", /Electron ABI/i) &&
+      has(
+        "docs/orbit-mac-remote-app-packaging-plan.md",
+        /Remote URL first unsigned macOS app package/i,
+      ),
     gap: "Document remaining packaging/notarization/native-module/Prisma risks.",
   },
 ];
