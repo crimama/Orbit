@@ -12,7 +12,12 @@
     "start": "NODE_ENV=production tsx --tsconfig tsconfig.server.json server.ts",
     "lint": "next lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "desktop:typecheck": "npx tsc -p tsconfig.electron.json --noEmit",
+    "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "desktop:build": "npm run build && npm run desktop:typecheck && npm run desktop:smoke",
+    "desktop:dev": "electron .",
+    "desktop:db:bootstrap": "node scripts/desktop-db-bootstrap.mjs"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -48,6 +53,8 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/ssh2": "^1.15.5",
+    "concurrently": "^9.2.1",
+    "electron": "^41.3.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "eslint-config-prettier": "^10.1.8",
@@ -57,5 +64,6 @@
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5"
-  }
+  },
+  "main": "electron/main.js"
 }

@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "allowJs": false,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "types": ["node", "electron"]
+  },
+  "include": ["electron/**/*.ts", "scripts/desktop-*.mjs"],
+  "exclude": ["node_modules", ".next"]
+}
