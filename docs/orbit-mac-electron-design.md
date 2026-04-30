@@ -73,7 +73,7 @@ type OrbitDesktopConnectionProfile =
     };
 ```
 
-Profile metadata is stored in an Electron userData JSON file. The developer-preview implementation does not store token pointers or plaintext tokens in profile JSON. Tokens and generated local secrets are session-only until a later Keychain-backed production pass exists.
+Profile metadata is stored in an Electron userData JSON file. The developer-preview implementation stores endpoint and tunnel metadata only: it does not store token pointers, plaintext tokens, token-like URL query parameters, passwords, passphrases, or secrets in profile JSON. Tokens and generated local secrets are session-only until a later Keychain-backed production pass exists.
 
 ### Local Mode
 
@@ -109,12 +109,12 @@ Alternative HTTPS-local support can be added later, but is not required for this
 
 Main process responsibilities:
 
-- Validate that the URL is `http` or `https`.
+- Validate that the URL is `http` or `https`, reject embedded credentials, and reject token-like query parameters such as `token`, `access_token`, or `sessionAccessToken` before a URL can be used or persisted.
 - Optionally append a session-provided login token only for first connection, then rely on Orbit's cookie/session handling.
 - Do not start a local server.
-- Show a reconnect/settings screen if the remote server is unavailable.
+- Show a reconnect/settings screen if the remote server is unavailable, with safe diagnostics that mention reachability, certificate trust, and URL path checks without showing query strings or token values.
 - Use the same BrowserWindow hardening as local mode, but remote pages must not get privileged preload APIs.
-- Tokens are provided from session memory in the developer preview and injected only through existing Orbit auth mechanisms, not stored in the remote URL profile JSON. Keychain-backed token lookup is a later production pass.
+- Tokens are provided from session memory in the developer preview and injected only through existing Orbit auth mechanisms, not stored in the remote URL profile JSON or surfaced in status diagnostics. Keychain-backed token lookup is a later production pass.
 
 ### SSH Tunnel Mode
 
@@ -147,14 +147,16 @@ If reliable tunnel readiness or cleanup cannot be completed within the first tea
 
 ## Packaging Plan
 
+Detailed packaging boundaries live in `docs/orbit-mac-packaging-design.md`.
+
 Use Electron first with a developer-preview runtime path:
 
 - Add Electron runtime and packaging dependencies.
 - Add `electron/main.ts`, `electron/preload.ts`, and a small connection picker page.
 - Add scripts:
-  - `desktop:dev`
-  - `desktop:build`
-  - `desktop:preview`
+  - `desktop:dev`: builds Next into `.next`, bootstraps a temporary preview database when needed, then launches Electron from the repo checkout.
+  - `desktop:build`: runs Electron typecheck plus the desktop smoke contract; it is validation-only and does not create a distributable app.
+  - `desktop:preview`: runs the web `build` and then `desktop:build`, preserving the developer-preview verification path without implying packaging or notarization.
 - Configure a runtime bundle with this initial strategy:
   - Use Electron main to spawn a Node child process with the server entry.
   - For dev preview, the child may run `node --import tsx ... server.ts` from the repo checkout.
@@ -287,14 +289,14 @@ Security contract:
 node scripts/desktop-smoke.mjs
 ```
 
-The smoke checks for the Electron preview surface, shell files, BrowserWindow hardening, remote preload isolation, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, session-only desktop secrets, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop preview gaps remain.
+The smoke checks for the Electron preview surface, shell files, BrowserWindow hardening, remote preload isolation, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, session-only desktop secrets, safe connection diagnostics, token-query rejection, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop preview gaps remain.
 
 Current implementation status:
 
 - `electron/main.ts`, `electron/preload.ts`, and `electron/connection.html` implement the shell, file-based connection picker, and picker-only preload bridge.
 - Local mode starts a supervised loopback Orbit server with app-data SQLite, explicit DB bootstrap, a generated session-only access token, and desktop-local cookie relaxation.
-- Remote URL mode validates `http`/`https`, can pass an optional session-only one-shot token, and loads remote content in a BrowserWindow without privileged preload APIs.
-- SSH tunnel mode uses system `ssh` with argv spawning, safe forwarding options, readiness probing, error classification, and cleanup.
+- Remote URL mode validates `http`/`https`, rejects embedded credentials and token-like query parameters, can pass an optional session-only one-shot token, and loads remote content in a BrowserWindow without privileged preload APIs.
+- SSH tunnel mode uses system `ssh` with argv spawning, safe forwarding options, readiness probing, safe error classification/diagnostics, and cleanup. Raw SSH stderr stays internal and picker diagnostics avoid access tokens, private key contents, and token-bearing URLs.
 - `desktop:preview` is the build/typecheck/smoke validation command. Real `desktop:pack` packaging is intentionally not exposed until native rebuild, Prisma engine placement, and standalone server startup are verified.
 
 Recommended verification sequence:

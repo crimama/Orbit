@@ -27,10 +27,16 @@ const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
 const checks = [
   {
     id: "desktop-package-scripts",
-    label: "package.json exposes desktop dev/build/preview/typecheck/smoke scripts",
-    pass: ["desktop:dev", "desktop:build", "desktop:preview", "desktop:typecheck", "desktop:smoke"].every(
-      (name) => typeof scripts[name] === "string",
-    ),
+    label:
+      "package.json exposes desktop dev/build/preview/typecheck/smoke scripts",
+    pass: [
+      "desktop:dev",
+      "desktop:build",
+      "desktop:preview",
+      "desktop:typecheck",
+      "desktop:smoke",
+      "desktop:package-smoke",
+    ].every((name) => typeof scripts[name] === "string"),
     gap: "Add the desktop scripts required by the Electron developer-preview workflow.",
   },
   {
@@ -58,9 +64,27 @@ const checks = [
     gap: "Run next build before Electron so This Mac production child server can find .next/BUILD_ID.",
   },
   {
+    id: "desktop-script-chain",
+    label:
+      "desktop build/preview scripts keep the developer-preview validation chain",
+    pass:
+      /desktop:typecheck/.test(scripts["desktop:build"] ?? "") &&
+      /desktop:smoke/.test(scripts["desktop:build"] ?? "") &&
+      /desktop:package-smoke/.test(scripts["desktop:build"] ?? "") &&
+      /npm run build/.test(scripts["desktop:preview"] ?? "") &&
+      /desktop:build/.test(scripts["desktop:preview"] ?? "") &&
+      !/desktop:preview/.test(scripts["desktop:dev"] ?? ""),
+    gap: "Keep desktop:build as typecheck+smoke+package-smoke, desktop:preview as Next build plus desktop:build, and desktop:dev as the launcher path.",
+  },
+  {
     id: "electron-shell-files",
     label: "Electron main, preload, and connection picker files exist",
-    pass: ["electron/main.ts", "electron/preload.ts", "electron/preload.cjs", "electron/connection.html"].every(exists),
+    pass: [
+      "electron/main.ts",
+      "electron/preload.ts",
+      "electron/preload.cjs",
+      "electron/connection.html",
+    ].every(exists),
     gap: "Create the Electron main/preload bridge and file-based connection picker.",
   },
   {
@@ -74,10 +98,12 @@ const checks = [
   },
   {
     id: "remote-preload-isolation",
-    label: "Remote Orbit content is loaded without the privileged preload bridge",
+    label:
+      "Remote Orbit content is loaded without the privileged preload bridge",
     pass:
       has("electron/main.ts", /preload:\s*mode\s*===\s*"picker"/) ||
-      has("electron/main.ts", /createWindow\([^)]*picker/) && has("electron/main.ts", /preload:\s*undefined/),
+      (has("electron/main.ts", /createWindow\([^)]*picker/) &&
+        has("electron/main.ts", /preload:\s*undefined/)),
     gap: "Use a picker-only preload window or another equivalent path so remote pages do not receive window.orbitDesktop.",
   },
   {
@@ -97,20 +123,27 @@ const checks = [
       exists("electron/serverSupervisor.ts") &&
       has("electron/serverSupervisor.ts", /spawn\s*\(/) &&
       has("electron/serverSupervisor.ts", /resolveNodeBinary/) &&
+      has("electron/serverSupervisor.ts", /repo-preview/) &&
+      has("electron/serverSupervisor.ts", /packaged-resources/) &&
       has("electron/serverSupervisor.ts", /ORBIT_DESKTOP_LOCAL/) &&
       has("electron/serverSupervisor.ts", /DATABASE_URL/) &&
       has("electron/serverSupervisor.ts", /desktop-db-bootstrap/),
-    gap: "Add a local server supervisor with appData DATABASE_URL, ORBIT_DESKTOP_LOCAL, DB bootstrap, and readiness handling.",
+    gap: "Add a local server supervisor with appData DATABASE_URL, ORBIT_DESKTOP_LOCAL, DB bootstrap, readiness handling, and an explicit preview-vs-packaged runtime boundary.",
   },
   {
     id: "connection-profile-modules",
     label: "Connection profile, URL validation, and tunnel modules exist",
-    pass: ["electron/profileStore.ts", "electron/urlValidation.ts", "electron/tunnel.ts"].every(exists),
+    pass: [
+      "electron/profileStore.ts",
+      "electron/urlValidation.ts",
+      "electron/tunnel.ts",
+    ].every(exists),
     gap: "Add profileStore/urlValidation/tunnel modules for local, remote, and SSH tunnel profiles.",
   },
   {
     id: "ssh-argv-safety",
-    label: "SSH tunnel implementation uses argv spawning with safe forwarding options",
+    label:
+      "SSH tunnel implementation uses argv spawning with safe forwarding options",
     pass:
       has("electron/tunnel.ts", /spawn\s*\(/) &&
       has("electron/tunnel.ts", /shell:\s*false/) &&
@@ -122,48 +155,117 @@ const checks = [
   {
     id: "desktop-local-auth",
     label: "Server has ORBIT_DESKTOP_LOCAL loopback cookie handling",
-    pass: has("server.ts", /ORBIT_DESKTOP_LOCAL/) && has("server.ts", /isDesktopLocalHttpRequest|desktopLocal/i),
+    pass:
+      has("server.ts", /ORBIT_DESKTOP_LOCAL/) &&
+      has("server.ts", /isDesktopLocalHttpRequest|desktopLocal/i),
     gap: "Add loopback-only ORBIT_DESKTOP_LOCAL cookie relaxation/token support.",
   },
   {
     id: "dynamic-project-registry-api",
-    label: "Project registry API is excluded from build-time prerender DB access",
-    pass: has("src/app/api/resources/projects/registry/route.ts", /dynamic\s*=\s*["']force-dynamic["']/),
+    label:
+      "Project registry API is excluded from build-time prerender DB access",
+    pass: has(
+      "src/app/api/resources/projects/registry/route.ts",
+      /dynamic\s*=\s*["']force-dynamic["']/,
+    ),
     gap: "Mark the registry API route force-dynamic so next build does not query Prisma without a runtime database.",
   },
   {
     id: "session-only-desktop-secrets",
-    label: "Desktop local access token is session-only unless Keychain support exists",
+    label:
+      "Desktop local access token is session-only unless Keychain support exists",
     pass:
       has("electron/serverSupervisor.ts", /createSessionAccessToken/) &&
       has("electron/serverSupervisor.ts", /ORBIT_DESKTOP_SESSION_ONLY_AUTH/) &&
-      has("src/server/auth/accessTokenStore.ts", /ORBIT_DESKTOP_SESSION_ONLY_AUTH/) &&
+      has(
+        "src/server/auth/accessTokenStore.ts",
+        /ORBIT_DESKTOP_SESSION_ONLY_AUTH/,
+      ) &&
       !has("electron/serverSupervisor.ts", /writeFileSync|accessTokenFile/),
     gap: "Do not persist generated desktop access tokens as plaintext app-data files.",
   },
   {
     id: "remote-session-token",
-    label: "Remote/tunnel access tokens are session-only and not saved in profiles",
+    label:
+      "Remote/tunnel access tokens are session-only and not saved in profiles",
     pass:
       has("electron/main.ts", /sessionAccessToken/) &&
       has("electron/main.ts", /appendOneShotToken/) &&
+      has("electron/main.ts", /delete profile\.sessionAccessToken/) &&
+      has("electron/main.ts", /withoutOneShotToken/) &&
+      has("electron/main.ts", /redactConnectionError/) &&
+      has("electron/main.ts", /safeConnectionFailureStatus/) &&
+      has("electron/urlValidation.ts", /TOKEN_QUERY_KEYS/) &&
       has("electron/connection.html", /not saved/) &&
-      !has("electron/profileStore.ts", /tokenKey/),
+      !has("electron/profileStore.ts", /tokenKey/) &&
+      !has("electron/main.ts", /_sessionAccessToken/),
     gap: "Keep remote/tunnel tokens out of profile JSON and pass optional tokens only for the active connection.",
   },
+
+  {
+    id: "safe-connection-diagnostics",
+    label:
+      "Remote/tunnel failures produce useful diagnostics without token values",
+    pass:
+      has("electron/main.ts", /safeConnectionFailureStatus/) &&
+      has("electron/main.ts", /diagnosticCode/) &&
+      has("electron/main.ts", /Session tokens are never saved/) &&
+      has("electron/main.ts", /\[redacted\]/) &&
+      has("electron/types.ts", /diagnostic\?: string/) &&
+      has("electron/connection.html", /safe network\/TLS hints/) &&
+      has("electron/connection.html", /safe SSH\/port-forward hints/) &&
+      has("electron/connection.html", /setStatusFromResult/),
+    gap: "Add safe remote/tunnel failure diagnostics and redact token-bearing values before surfacing errors.",
+  },
+
+
+  {
+    id: "remote-url-token-query-rejected",
+    label: "Remote URL validation rejects token-like query parameters",
+    pass:
+      has("electron/urlValidation.ts", /TOKEN_QUERY_KEYS/) &&
+      has("electron/urlValidation.ts", /access_token/) &&
+      has("electron/urlValidation.ts", /sessionaccesstoken/) &&
+      has("electron/urlValidation.ts", /Access tokens must be entered in the session-only token field/),
+    gap: "Reject token-like query parameters before remote URLs can be persisted in profiles.",
+  },
+
   {
     id: "db-bootstrap",
     label: "Desktop first-run database bootstrap is explicit",
-    pass: exists("scripts/desktop-db-bootstrap.mjs") && has("scripts/desktop-db-bootstrap.mjs", /prisma[\s\S]*db[\s\S]*push/),
+    pass:
+      exists("scripts/desktop-db-bootstrap.mjs") &&
+      has("scripts/desktop-db-bootstrap.mjs", /prisma[\s\S]*db[\s\S]*push/),
     gap: "Add an appData DATABASE_URL bootstrap step instead of relying on prisma/dev.db.",
   },
   {
+    id: "notarization-claim-boundary",
+    label:
+      "Repository does not claim notarized desktop support without packaging proof",
+    pass:
+      has(
+        "docs/orbit-mac-electron-design.md",
+        /do not pretend it is packaged or notarized/i,
+      ) &&
+      has(
+        "docs/orbit-mac-electron-design.md",
+        /Developer ID notarization later/i,
+      ) &&
+      !Object.entries(scripts).some(
+        ([name, value]) => /notar/i.test(name) || /notar/i.test(String(value)),
+      ),
+    gap: "Keep notarization described as unverified follow-up unless a real packaging/notarization script and proof are added.",
+  },
+  {
     id: "packaging-risk-docs",
-    label: "Documentation records packaging, notarization, native rebuild, and Prisma risks",
+    label:
+      "Documentation records packaging, notarization, native rebuild, and Prisma risks",
     pass:
       has("docs/orbit-mac-electron-design.md", /notarization/i) &&
       has("docs/orbit-mac-electron-design.md", /node-pty/i) &&
-      has("docs/orbit-mac-electron-design.md", /Prisma/i),
+      has("docs/orbit-mac-electron-design.md", /Prisma/i) &&
+      has("docs/orbit-mac-packaging-design.md", /Linux CI/i) &&
+      has("docs/orbit-mac-packaging-design.md", /Electron ABI/i),
     gap: "Document remaining packaging/notarization/native-module/Prisma risks.",
   },
 ];
@@ -174,10 +276,13 @@ for (const check of checks) {
   if (!check.pass) console.log(`  gap: ${check.gap}`);
 }
 
-console.log(`\nDesktop smoke summary: ${checks.length - failures.length}/${checks.length} passed`);
+console.log(
+  `\nDesktop smoke summary: ${checks.length - failures.length}/${checks.length} passed`,
+);
 
 if (failures.length) {
   console.log("\nConcrete gaps:");
-  for (const failure of failures) console.log(`- ${failure.id}: ${failure.gap}`);
+  for (const failure of failures)
+    console.log(`- ${failure.id}: ${failure.gap}`);
   process.exit(1);
 }

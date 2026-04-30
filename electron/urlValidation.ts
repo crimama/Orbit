@@ -3,6 +3,7 @@ export type UrlValidationResult =
   | { ok: false; error: string };
 
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+const TOKEN_QUERY_KEYS = new Set(["token", "access_token", "sessionaccesstoken"]);
 
 export function isLoopbackHostname(hostname: string): boolean {
   const normalized = hostname.trim().toLowerCase();
@@ -27,6 +28,12 @@ export function validateRemoteOrbitUrl(input: string): UrlValidationResult {
   if (!url.hostname) return { ok: false, error: "URL host is required" };
   if (url.username || url.password) {
     return { ok: false, error: "Credentials must not be embedded in Orbit URLs" };
+  }
+
+  for (const key of Array.from(url.searchParams.keys())) {
+    if (TOKEN_QUERY_KEYS.has(key.toLowerCase())) {
+      return { ok: false, error: "Access tokens must be entered in the session-only token field, not saved in Orbit URLs" };
+    }
   }
 
   url.hash = "";

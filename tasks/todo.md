@@ -1,5 +1,38 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 Orbit macOS next-stage team)
+
+- [x] 개발 전 rollback tag 생성
+- [x] `$team` launch context snapshot 작성
+- [x] planner/developer/evaluator triad team launch
+- [x] Team A packaging/runtime lane planning, implementation, evaluation
+- [x] Team B Keychain/profile UX/diagnostics lane planning, implementation, evaluation
+- [x] leader integration and final review
+- [x] 타입/린트/빌드/desktop smoke 검증
+
+## 계획 (Orbit macOS next-stage team)
+
+1. 두 개 triad로 팀을 구성한다: Packaging Runtime triad, Secrets/Profile UX/Diagnostics triad.
+2. 각 triad의 planner가 먼저 세부 구현 계획과 acceptance criteria를 `.omx/team-artifacts/`에 남긴다.
+3. 각 triad의 developer가 planner 산출물을 근거로 구현하고 커밋한다.
+4. 각 triad의 evaluator가 설계/계획 대비 구현을 검토하고 필요한 피드백을 남긴다.
+5. leader가 evaluator 피드백을 통합해 누락 수정 후 최종 검증한다.
+
+## 결과
+
+- [ ] 진행 중
+- [x] Team A `team-a-packaging-runtime-triad` 실행/종료
+- [x] Team A planner artifact 작성 및 evaluator 1차 FAIL 피드백 확인
+- [x] leader 보정으로 packaging design doc, `desktop:package-smoke`, explicit `repo-preview`/`packaged-resources` runtime boundary 반영
+- [x] Team A 보정 검증: `desktop:typecheck`, `desktop:smoke` 19/19, `desktop:package-smoke` 8/8, `desktop:build`, `env -u DATABASE_URL npm run build` 통과
+- [x] Team B `team-b-read-omx-context-team-b` 실행/정상 종료
+- [x] Team B planner/developer/evaluator 산출물 작성 및 evaluator PASS 확인
+- [x] session-only token UX, safe diagnostics, token-like query rejection, smoke 21/21 반영
+- [x] 최종 검증: `desktop:typecheck`, `desktop:smoke`, `desktop:package-smoke`, `desktop:build`, `env -u DATABASE_URL npm run build` 통과
+- [x] 완료
+
+---
+
 ## 현재 작업 (2026-04-30 Orbit macOS Electron app)
 
 - [x] 원본 Orbit을 `~/Orbit-mac`으로 복사

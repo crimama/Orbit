@@ -4,7 +4,10 @@ import { createServer, request as httpRequest } from "node:http";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 
-import { ensureOrbitDesktopPaths, type OrbitDesktopPaths } from "./desktopPaths.js";
+import {
+  ensureOrbitDesktopPaths,
+  type OrbitDesktopPaths,
+} from "./desktopPaths.js";
 
 export interface OrbitLocalServerOptions {
   appName?: string;
@@ -20,6 +23,16 @@ export interface OrbitLocalServerHandle {
   paths: OrbitDesktopPaths;
   child: ChildProcess;
   stop: () => Promise<void>;
+}
+
+type OrbitServerRuntimeMode = "repo-preview" | "packaged-resources";
+
+interface OrbitServerRuntimePlan {
+  mode: OrbitServerRuntimeMode;
+  cwd: string;
+  command: string;
+  args: string[];
+  description: string;
 }
 
 function repoRootFromElectronDir(): string {
@@ -50,13 +63,58 @@ function resolveNodeBinary(cwd: string): string {
   const explicit = process.env.ORBIT_DESKTOP_NODE_BINARY?.trim();
   if (explicit) return explicit;
 
-  const bundledNode = join(cwd, "node_modules", ".bin", process.platform === "win32" ? "node.cmd" : "node");
+  const bundledNode = join(
+    cwd,
+    "node_modules",
+    ".bin",
+    process.platform === "win32" ? "node.cmd" : "node",
+  );
   if (existsSync(bundledNode)) return bundledNode;
 
   const execName = process.platform === "win32" ? "node.exe" : "node";
-  if (!process.execPath.toLowerCase().includes("electron")) return process.execPath;
+  if (!process.execPath.toLowerCase().includes("electron"))
+    return process.execPath;
 
   return execName;
+}
+
+function resolveServerRuntimePlan(cwd: string): OrbitServerRuntimePlan {
+  const requestedMode = process.env.ORBIT_DESKTOP_SERVER_RUNTIME?.trim();
+  const nodeBinary = resolveNodeBinary(cwd);
+
+  if (!requestedMode || requestedMode === "repo-preview") {
+    return {
+      mode: "repo-preview",
+      cwd,
+      command: nodeBinary,
+      args: ["--import", "tsx", join(cwd, "server.ts")],
+      description:
+        "Runs Orbit from the repository checkout for the Electron developer preview.",
+    };
+  }
+
+  if (requestedMode !== "packaged-resources") {
+    throw new Error(
+      `Unsupported Orbit desktop server runtime: ${requestedMode}`,
+    );
+  }
+
+  const packagedServer = join(cwd, "resources", "server", "server.js");
+  if (!existsSync(packagedServer)) {
+    throw new Error(
+      "Packaged Orbit server runtime was requested, but resources/server/server.js was not found. " +
+        "Use repo-preview for desktop:dev, or provide packaged server assets before enabling packaged-resources.",
+    );
+  }
+
+  return {
+    mode: "packaged-resources",
+    cwd,
+    command: nodeBinary,
+    args: [packagedServer],
+    description:
+      "Runs Orbit from packaged Electron resources after standalone server assets are verified.",
+  };
 }
 
 async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
@@ -66,10 +124,14 @@ async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
   while (Date.now() < deadline) {
     try {
       await new Promise<void>((resolve, reject) => {
-        const req = httpRequest(url, { method: "GET", timeout: 1_000 }, (res) => {
-          res.resume();
-          resolve();
-        });
+        const req = httpRequest(
+          url,
+          { method: "GET", timeout: 1_000 },
+          (res) => {
+            res.resume();
+            resolve();
+          },
+        );
         req.once("timeout", () => {
           req.destroy(new Error("HTTP readiness probe timed out"));
         });
@@ -88,7 +150,12 @@ async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
   );
 }
 
-function spawnChecked(command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): ChildProcess {
+function spawnChecked(
+  command: string,
+  args: string[],
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+): ChildProcess {
   return spawn(command, args, {
     cwd,
     env,
@@ -97,9 +164,17 @@ function spawnChecked(command: string, args: string[], cwd: string, env: NodeJS.
   });
 }
 
-async function runDbBootstrap(cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
+async function runDbBootstrap(
+  cwd: string,
+  env: NodeJS.ProcessEnv,
+): Promise<void> {
   await new Promise<void>((resolve, reject) => {
-    const child = spawnChecked(resolveNodeBinary(cwd), ["scripts/desktop-db-bootstrap.mjs"], cwd, env);
+    const child = spawnChecked(
+      resolveNodeBinary(cwd),
+      ["scripts/desktop-db-bootstrap.mjs"],
+      cwd,
+      env,
+    );
     const stderr: Buffer[] = [];
     child.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk));
     child.stdout?.pipe(process.stdout);
@@ -107,7 +182,12 @@ async function runDbBootstrap(cwd: string, env: NodeJS.ProcessEnv): Promise<void
     child.once("error", reject);
     child.once("exit", (code, signal) => {
       if (code === 0) resolve();
-      else reject(new Error(`Desktop DB bootstrap failed (${signal ?? code}): ${Buffer.concat(stderr).toString("utf8").trim()}`));
+      else
+        reject(
+          new Error(
+            `Desktop DB bootstrap failed (${signal ?? code}): ${Buffer.concat(stderr).toString("utf8").trim()}`,
+          ),
+        );
     });
   });
 }
@@ -152,12 +232,24 @@ export async function startOrbitLocalServer(
 
   await runDbBootstrap(cwd, env);
 
-  const child = spawnChecked(resolveNodeBinary(cwd), ["--import", "tsx", join(cwd, "server.ts")], cwd, env);
+  const runtimePlan = resolveServerRuntimePlan(cwd);
+  env.ORBIT_DESKTOP_SERVER_RUNTIME = runtimePlan.mode;
+  env.ORBIT_DESKTOP_SERVER_RUNTIME_DESCRIPTION = runtimePlan.description;
+
+  const child = spawnChecked(
+    runtimePlan.command,
+    runtimePlan.args,
+    runtimePlan.cwd,
+    env,
+  );
   child.stdout?.pipe(process.stdout);
   child.stderr?.pipe(process.stderr);
 
   try {
-    await waitForHttpReady(`${url}/login`, options.readinessTimeoutMs ?? 30_000);
+    await waitForHttpReady(
+      `${url}/login`,
+      options.readinessTimeoutMs ?? 30_000,
+    );
   } catch (error) {
     await stopChild(child);
     throw error;

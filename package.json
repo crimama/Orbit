@@ -16,7 +16,8 @@
     "desktop:dev": "node scripts/desktop-dev.mjs",
     "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
     "desktop:smoke": "node scripts/desktop-smoke.mjs",
-    "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke",
+    "desktop:package-smoke": "node scripts/desktop-package-smoke.mjs",
+    "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke && npm run desktop:package-smoke",
     "desktop:preview": "npm run build && npm run desktop:build"
   },
   "dependencies": {

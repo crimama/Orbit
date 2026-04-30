@@ -23,6 +23,8 @@
       button { border: 0; border-radius: 12px; background: #0ea5e9; color: white; padding: 12px 16px; font-weight: 700; cursor: pointer; }
       button.secondary { background: #334155; }
       #status { min-height: 24px; color: #bae6fd; }
+      .diagnostic { margin-top: 8px; color: #cbd5e1; font-size: 13px; }
+      .hint { margin-top: 6px; color: #94a3b8; font-size: 12px; }
       .profiles { margin-top: 16px; display: grid; gap: 8px; }
       .profile { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; }
       @media (max-width: 760px) { .grid, .row { grid-template-columns: 1fr; } }
@@ -31,12 +33,12 @@
   <body>
     <main>
       <h1>Connect to Orbit</h1>
-      <p>Choose a local developer server, a remote Orbit URL, or a loopback SSH tunnel. Remote pages are loaded without privileged desktop APIs.</p>
+      <p>Choose a local developer server, a remote Orbit URL, or a loopback SSH tunnel. Remote pages are loaded without privileged desktop APIs. Remote and SSH tokens are used only for the active connection and are not saved in profiles.</p>
 
       <section class="grid" aria-label="Connection types">
         <article class="card active" data-kind="local"><h2>This Mac</h2><p>Load an Orbit server on loopback. Auto-start support is added by the local supervisor lane.</p></article>
-        <article class="card" data-kind="remote"><h2>Remote URL</h2><p>Connect to an already-running Orbit instance over HTTP or HTTPS.</p></article>
-        <article class="card" data-kind="ssh-tunnel"><h2>SSH Tunnel</h2><p>Forward a remote loopback Orbit server through OpenSSH.</p></article>
+        <article class="card" data-kind="remote"><h2>Remote URL</h2><p>Connect to an already-running Orbit instance over HTTP or HTTPS. Failures include safe network/TLS hints without token values.</p></article>
+        <article class="card" data-kind="ssh-tunnel"><h2>SSH Tunnel</h2><p>Forward a remote loopback Orbit server through OpenSSH. Failures include safe SSH/port-forward hints without token values.</p></article>
       </section>
 
       <form id="profile-form">
@@ -61,7 +63,19 @@
       const profilesEl = document.querySelector("#profiles");
       const api = window.orbitDesktop;
 
-      function setStatus(message) { statusEl.textContent = message || ""; }
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
+      }
+      function setStatus(message, diagnostic, diagnosticCode) {
+        const parts = [];
+        if (message) parts.push(`<div>${escapeHtml(message)}</div>`);
+        if (diagnostic) {
+          const code = diagnosticCode ? ` <strong>${escapeHtml(diagnosticCode)}</strong>` : "";
+          parts.push(`<div class="diagnostic">${code} ${escapeHtml(diagnostic)}</div>`);
+        }
+        statusEl.innerHTML = parts.join("");
+      }
+      function setStatusFromResult(status) { setStatus(status?.message, status?.diagnostic, status?.diagnosticCode); }
       function numberOrAuto(value) { return value === "auto" || value === "" ? "auto" : Number(value); }
       function idFor(profile) { return profile.id || `${profile.kind}-${Date.now()}`; }
 
@@ -72,14 +86,16 @@
         } else if (kind === "remote") {
           fields.innerHTML = `
             <label>Orbit URL <input id="url" required placeholder="https://orbit.example.com" /></label>
-            <label>Access token (not saved) <input id="sessionAccessToken" type="password" autocomplete="off" /></label>`;
+            <label>Access token (used once, not saved) <input id="sessionAccessToken" type="password" autocomplete="off" /></label>
+            <p class="hint">Profiles save only the endpoint. Enter an access token for this connection attempt if the server requires one.</p>`;
           nameInput.value = nameInput.value === "This Mac" ? "Remote Orbit" : nameInput.value;
         } else {
           fields.innerHTML = `
             <div class="row"><label>SSH host <input id="sshHost" required /></label><label>SSH port <input id="sshPort" value="22" type="number" min="1" max="65535" /></label></div>
             <div class="row"><label>Username <input id="sshUsername" required /></label><label>Private key path <input id="privateKeyPath" placeholder="Optional" /></label></div>
             <div class="row"><label>Remote Orbit port <input id="remoteOrbitPort" value="3000" type="number" min="1" max="65535" /></label><label>Local port <input id="localPort" value="auto" /></label></div>
-            <label>Orbit access token (not saved) <input id="sessionAccessToken" type="password" autocomplete="off" /></label>`;
+            <label>Orbit access token (used once, not saved) <input id="sessionAccessToken" type="password" autocomplete="off" /></label>
+            <p class="hint">Profiles save SSH and port settings only. Enter an Orbit access token for this connection attempt if required.</p>`;
           nameInput.value = nameInput.value === "This Mac" ? "SSH Tunnel" : nameInput.value;
         }
       }
@@ -120,7 +136,7 @@
         setStatus("Connecting…");
         try {
           const result = await api.connect(profile);
-          setStatus(result.message);
+          setStatusFromResult(result);
         } catch (error) {
           setStatus(error instanceof Error ? error.message : String(error));
         }
@@ -150,11 +166,11 @@
 
       document.querySelector("#save").addEventListener("click", async () => {
         await api.saveProfile(formProfile({ includeSessionToken: false }));
-        setStatus("Profile saved.");
+        setStatus("Profile saved without access token. Enter a token when connecting if required.");
         await renderProfiles();
       });
 
-      api.onStatusChange((status) => setStatus(status.message));
+      api.onStatusChange(setStatusFromResult);
       renderFields("local");
       renderProfiles().catch((error) => setStatus(String(error)));
     </script>

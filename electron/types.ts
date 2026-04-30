@@ -15,6 +15,8 @@ export type OrbitDesktopConnectionStatus = {
   message: string;
   url?: string;
   profileId?: string;
+  diagnostic?: string;
+  diagnosticCode?: string;
 };
 
 export type OrbitDesktopApi = {

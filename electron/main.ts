@@ -118,7 +118,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function stripSessionSecrets(request: unknown): unknown {
   if (!isRecord(request)) return request;
-  const { sessionAccessToken: _sessionAccessToken, ...profile } = request;
+  const profile = { ...request };
+  delete profile.sessionAccessToken;
   return profile;
 }
 
@@ -132,6 +133,56 @@ function sessionAccessToken(request: unknown): string | undefined {
 
 function appendOneShotToken(url: URL, token: string | undefined) {
   if (token) url.searchParams.set("token", token);
+}
+
+function withoutOneShotToken(url: URL): string {
+  const safeUrl = new URL(url.toString());
+  safeUrl.searchParams.delete("token");
+  return safeUrl.toString();
+}
+
+function redactConnectionError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message
+    .replace(/([?&]token=)[^&\s]+/gi, "$1[redacted]")
+    .replace(/(orbit_token=)[^;\s]+/gi, "$1[redacted]");
+}
+
+function safeConnectionFailureStatus(
+  profile: OrbitDesktopConnectionProfile,
+  error: unknown,
+): OrbitDesktopConnectionStatus {
+  const detail = redactConnectionError(error);
+  const base = { state: "failed" as const, profileId: profile.id };
+
+  if (profile.kind === "remote") {
+    const validation = validateRemoteOrbitUrl(profile.url);
+    const target = validation.ok ? validation.url.origin : "the remote Orbit URL";
+    return {
+      ...base,
+      message: `Could not connect to ${target}.`,
+      diagnosticCode: validation.ok ? "REMOTE_LOAD_FAILED" : "REMOTE_URL_INVALID",
+      diagnostic: validation.ok
+        ? `Verify the Orbit server is reachable, the HTTPS certificate is trusted, and the URL path is correct. Session tokens are never saved and were removed from diagnostics. Detail: ${detail}`
+        : `Fix the saved URL: ${validation.error}. Session tokens belong in the session-only token field, not in profile URLs.`,
+    };
+  }
+
+  if (profile.kind === "ssh-tunnel") {
+    return {
+      ...base,
+      message: `Could not open SSH tunnel to ${profile.sshUsername}@${profile.sshHost}:${profile.sshPort}.`,
+      diagnosticCode: "SSH_TUNNEL_FAILED",
+      diagnostic: `Verify SSH reachability, host key trust, credentials or key agent, local port availability, remote port ${profile.remoteOrbitPort}, and that Orbit is running on remote loopback. Session tokens are never saved and were removed from diagnostics. Detail: ${detail}`,
+    };
+  }
+
+  return {
+    ...base,
+    message: "Could not start local Orbit on this Mac.",
+    diagnosticCode: "LOCAL_START_FAILED",
+    diagnostic: `Verify the local build, database bootstrap, and selected port. Detail: ${detail}`,
+  };
 }
 
 function isLoopbackUrl(url: URL) {
@@ -187,14 +238,15 @@ async function showConnectionPicker(status?: OrbitDesktopConnectionStatus) {
 
 async function loadOrbitUrl(url: URL, profile: OrbitDesktopConnectionProfile, message: string) {
   const window = ensureWindow("orbit");
+  const safeStatusUrl = withoutOneShotToken(url);
   setStatus({
     state: "connecting",
     message: `Loading ${url.origin}...`,
     profileId: profile.id,
-    url: url.toString(),
+    url: safeStatusUrl,
   });
   await window.loadURL(url.toString());
-  setStatus({ state: "connected", message, profileId: profile.id, url: url.toString() });
+  setStatus({ state: "connected", message, profileId: profile.id, url: safeStatusUrl });
   return activeStatus;
 }
 
@@ -229,9 +281,9 @@ async function connect(request: DesktopConnectionRequest): Promise<OrbitDesktopC
     return await loadOrbitUrl(validation.url, profile, sshTunnel.message ?? "Connected through SSH tunnel.");
   } catch (error) {
     await stopActiveConnection();
-    const message = error instanceof Error ? error.message : String(error);
-    await showConnectionPicker({ state: "failed", message, profileId: profile.id });
-    throw error;
+    const failureStatus = safeConnectionFailureStatus(profile, error);
+    await showConnectionPicker(failureStatus);
+    throw new Error([failureStatus.message, failureStatus.diagnostic].filter(Boolean).join(" "));
   }
 }
 
