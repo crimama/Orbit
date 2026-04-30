@@ -59,6 +59,8 @@ const checks = [
     pass:
       has(remoteBuilderConfig, /target:\s*dir/) &&
       has(remoteBuilderConfig, /identity:\s*null/) &&
+      has(remoteBuilderConfig, /icon:\s*assets\/desktop\/orbit-icon\.png/) &&
+      exists("assets/desktop/orbit-icon.png") &&
       has(remoteBuilderConfig, /npmRebuild:\s*false/) &&
       has(remoteBuilderConfig, /app:\s*dist-electron/) &&
       has(remoteBuilderConfig, /files:[\s\S]*"\*\*\/\*"/) &&

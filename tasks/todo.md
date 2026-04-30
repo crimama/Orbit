@@ -29,6 +29,29 @@
 
 ---
 
+## 현재 작업 (2026-04-30 Orbit macOS app icon)
+
+- [x] Orbit remote app용 아이콘 이미지 생성
+- [x] 패키징 config에 앱 아이콘 연결
+- [x] `desktop:package-smoke` 및 `desktop:pack:remote` 검증
+
+## 계획 (Orbit macOS app icon)
+
+1. 생성 이미지를 repo asset으로 복사한다.
+2. `electron-builder.remote.yml`의 mac icon 경로에 연결한다.
+3. package smoke가 아이콘 asset/config 누락을 잡도록 보강한다.
+4. remote `.app`를 다시 패키징해 기본 Electron 아이콘 경고가 사라지는지 확인한다.
+
+## 결과
+
+- [x] `assets/desktop/orbit-icon.png` 추가
+- [x] `electron-builder.remote.yml`의 `mac.icon`에 연결
+- [x] `desktop:package-smoke` 11/11 통과
+- [x] `npm run desktop:pack:remote` 통과
+- [x] 생성된 `.app` 내부 `Contents/Resources/icon.icns` 확인
+
+---
+
 ## 현재 작업 (2026-04-30 Orbit macOS Remote URL app packaging design)
 
 - [x] 현재 Electron packaging boundary 확인

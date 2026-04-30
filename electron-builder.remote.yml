@@ -11,6 +11,7 @@ mac:
   category: public.app-category.developer-tools
   hardenedRuntime: false
   gatekeeperAssess: false
+  icon: assets/desktop/orbit-icon.png
   identity: null
   target:
     - target: dir
