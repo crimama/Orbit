@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { createServer } from "node:net";
 import path from "node:path";
 
@@ -7,6 +8,7 @@ import type { OrbitDesktopConnectionProfile, OrbitDesktopConnectionStatus } from
 
 const PICKER_ORIGIN = "file://";
 const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+const requireOptional = createRequire(__filename);
 
 let mainWindow: BrowserWindow | undefined;
 let activeStatus: OrbitDesktopConnectionStatus = {
@@ -26,7 +28,45 @@ function connectionHtmlPath() {
   return path.join(__dirname, "connection.html");
 }
 
+type OptionalProfileStore = {
+  loadProfiles?: () => Promise<OrbitDesktopConnectionProfile[]>;
+  saveProfiles?: (profiles: OrbitDesktopConnectionProfile[]) => Promise<void>;
+};
+
+type OptionalServerSupervisor = {
+  startLocalOrbitServer?: (profile: Extract<OrbitDesktopConnectionProfile, { kind: "local" }>) => Promise<{ url: string; message?: string }>;
+};
+
+type OptionalTunnelSupervisor = {
+  startSshTunnel?: (profile: Extract<OrbitDesktopConnectionProfile, { kind: "ssh-tunnel" }>) => Promise<{ url: string; message?: string }>;
+};
+
+function loadOptionalModule<T>(modulePath: string): T | undefined {
+  try {
+    return requireOptional(modulePath) as T;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "MODULE_NOT_FOUND" || code === "ERR_MODULE_NOT_FOUND") return undefined;
+    throw error;
+  }
+}
+
+function optionalProfileStore() {
+  return loadOptionalModule<OptionalProfileStore>("./connection-profiles");
+}
+
+function optionalServerSupervisor() {
+  return loadOptionalModule<OptionalServerSupervisor>("./server-supervisor");
+}
+
+function optionalTunnelSupervisor() {
+  return loadOptionalModule<OptionalTunnelSupervisor>("./ssh-tunnel");
+}
+
 async function readProfiles(): Promise<OrbitDesktopConnectionProfile[]> {
+  const store = optionalProfileStore();
+  if (store?.loadProfiles) return (await store.loadProfiles()).filter(isProfile);
+
   try {
     const raw = await readFile(profilesPath(), "utf8");
     const parsed = JSON.parse(raw) as unknown;
@@ -39,6 +79,12 @@ async function readProfiles(): Promise<OrbitDesktopConnectionProfile[]> {
 }
 
 async function writeProfiles(profiles: OrbitDesktopConnectionProfile[]) {
+  const store = optionalProfileStore();
+  if (store?.saveProfiles) {
+    await store.saveProfiles(profiles);
+    return;
+  }
+
   await mkdir(path.dirname(profilesPath()), { recursive: true });
   await writeFile(profilesPath(), `${JSON.stringify(profiles, null, 2)}\n`, "utf8");
 }
@@ -91,10 +137,26 @@ function isProfile(value: unknown): value is OrbitDesktopConnectionProfile {
   return false;
 }
 
-function assertTrustedIpc(event: Electron.IpcMainInvokeEvent) {
+function isLoopbackUrl(rawUrl: string) {
+  try {
+    const url = new URL(rawUrl);
+    return (url.protocol === "http:" || url.protocol === "https:") && LOOPBACK_HOSTS.has(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function assertPickerIpc(event: Electron.IpcMainInvokeEvent) {
   const url = event.senderFrame.url;
   if (!url.startsWith(PICKER_ORIGIN)) {
-    throw new Error("Desktop IPC is only available to the Orbit connection picker.");
+    throw new Error("Connection profile IPC is only available to the Orbit connection picker.");
+  }
+}
+
+function assertTrustedDesktopIpc(event: Electron.IpcMainInvokeEvent) {
+  const url = event.senderFrame.url;
+  if (!url.startsWith(PICKER_ORIGIN) && !isLoopbackUrl(url)) {
+    throw new Error("Desktop IPC is only available to the connection picker or trusted loopback Orbit pages.");
   }
 }
 
@@ -137,7 +199,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: false,
+      sandbox: true,
       preload: preloadPath(),
     },
   });
@@ -150,10 +212,9 @@ function createWindow() {
   });
 
   mainWindow.webContents.on("will-navigate", (event, targetUrl) => {
-    const currentUrl = mainWindow?.webContents.getURL() ?? "";
-    if (currentUrl.startsWith(PICKER_ORIGIN)) return;
-
     const target = new URL(targetUrl);
+    const currentUrl = mainWindow?.webContents.getURL() ?? "";
+    if (currentUrl.startsWith(PICKER_ORIGIN) && target.protocol === "file:") return;
     if (!isAllowedOrbitNavigation(target)) {
       event.preventDefault();
       shell.openExternal(targetUrl).catch(() => undefined);
@@ -192,30 +253,46 @@ async function connect(profile: OrbitDesktopConnectionProfile): Promise<OrbitDes
   }
 
   if (profile.kind === "local") {
+    const supervisor = optionalServerSupervisor();
+    if (supervisor?.startLocalOrbitServer) {
+      const result = await supervisor.startLocalOrbitServer(profile);
+      const url = validateRemoteUrl(result.url);
+      if (!isLoopbackUrl(url.toString())) throw new Error("Local Orbit supervisor returned a non-loopback URL.");
+      return loadOrbitUrl(url, profile, result.message ?? "Connected to local Orbit on this Mac.");
+    }
+
     const url = await resolveLoopbackUrl(profile.port);
     return loadOrbitUrl(
       url,
       profile,
-      "Loaded loopback Orbit URL. Local auto-start is handled by the server supervisor lane.",
+      "Loaded loopback Orbit URL. Local auto-start API was not available yet.",
     );
+  }
+
+  const tunnel = optionalTunnelSupervisor();
+  if (tunnel?.startSshTunnel) {
+    const result = await tunnel.startSshTunnel(profile);
+    const url = validateRemoteUrl(result.url);
+    if (!isLoopbackUrl(url.toString())) throw new Error("SSH tunnel supervisor returned a non-loopback URL.");
+    return loadOrbitUrl(url, profile, result.message ?? "Connected through SSH tunnel.");
   }
 
   const localUrl = await resolveLoopbackUrl(profile.localPort);
   return loadOrbitUrl(
     localUrl,
     profile,
-    "Loaded SSH tunnel loopback URL. Tunnel process supervision is handled by the tunnel lane.",
+    "Loaded SSH tunnel loopback URL. Tunnel supervisor API was not available yet.",
   );
 }
 
 function registerIpc() {
   ipcMain.handle("orbit-desktop:profiles:list", async (event) => {
-    assertTrustedIpc(event);
+    assertPickerIpc(event);
     return readProfiles();
   });
 
   ipcMain.handle("orbit-desktop:profiles:save", async (event, profile: unknown) => {
-    assertTrustedIpc(event);
+    assertPickerIpc(event);
     if (!isProfile(profile)) throw new Error("Invalid Orbit connection profile.");
     const profiles = (await readProfiles()).filter((item) => item.id !== profile.id);
     profiles.push(profile);
@@ -224,7 +301,7 @@ function registerIpc() {
   });
 
   ipcMain.handle("orbit-desktop:profiles:delete", async (event, profileId: unknown) => {
-    assertTrustedIpc(event);
+    assertPickerIpc(event);
     if (typeof profileId !== "string") throw new Error("Invalid profile id.");
     const profiles = (await readProfiles()).filter((item) => item.id !== profileId);
     await writeProfiles(profiles);
@@ -232,18 +309,18 @@ function registerIpc() {
   });
 
   ipcMain.handle("orbit-desktop:connect", async (event, profile: unknown) => {
-    assertTrustedIpc(event);
+    assertPickerIpc(event);
     if (!isProfile(profile)) throw new Error("Invalid Orbit connection profile.");
     return connect(profile);
   });
 
   ipcMain.handle("orbit-desktop:picker:show", async (event) => {
-    assertTrustedIpc(event);
+    assertTrustedDesktopIpc(event);
     await showConnectionPicker();
   });
 
   ipcMain.handle("orbit-desktop:status", async (event) => {
-    assertTrustedIpc(event);
+    assertTrustedDesktopIpc(event);
     return activeStatus;
   });
 }

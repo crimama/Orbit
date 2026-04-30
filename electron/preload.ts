@@ -6,6 +6,16 @@ import type {
   OrbitDesktopConnectionStatus,
 } from "./types";
 
+function canUseDesktopApi() {
+  const protocol = globalThis.location.protocol;
+  const hostname = globalThis.location.hostname;
+  return (
+    protocol === "file:" ||
+    ((protocol === "http:" || protocol === "https:") &&
+      ["127.0.0.1", "localhost", "::1", "[::1]"].includes(hostname))
+  );
+}
+
 const api: OrbitDesktopApi = {
   getProfiles: () => ipcRenderer.invoke("orbit-desktop:profiles:list"),
   saveProfile: (profile: OrbitDesktopConnectionProfile) =>
@@ -26,4 +36,6 @@ const api: OrbitDesktopApi = {
   },
 };
 
-contextBridge.exposeInMainWorld("orbitDesktop", api);
+if (canUseDesktopApi()) {
+  contextBridge.exposeInMainWorld("orbitDesktop", api);
+}
