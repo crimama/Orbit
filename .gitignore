@@ -44,6 +44,7 @@ prisma/*.db-journal
 /dist
 /dist-electron/
 /dist-packaged/
+/dist-packaged-local/
 
 # agent lock files
 .locks/

@@ -23,7 +23,7 @@ export type OrbitDesktopCapabilities = {
   packaged: boolean;
   localModeEnabled: boolean;
   sshTunnelEnabled: boolean;
-  packagingProfile: "remote-url" | "developer-preview";
+  packagingProfile: "remote-url" | "local-runtime" | "developer-preview";
   unavailableReason?: string;
 };
 

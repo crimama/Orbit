@@ -28,7 +28,13 @@ Electron main process가 파일 기반 connection picker에는 preload bridge를
 
 ```typescript
 type OrbitDesktopConnectionProfile =
-  | { id: string; kind: "local"; name: string; port: "auto" | number; dataDir?: string }
+  | {
+      id: string;
+      kind: "local";
+      name: string;
+      port: "auto" | number;
+      dataDir?: string;
+    }
   | { id: string; kind: "remote"; name: string; url: string }
   | {
       id: string;
@@ -53,16 +59,16 @@ type OrbitDesktopConnectionProfile =
 
 ### 주요 변경 파일
 
-| 파일 | 변경 내용 |
-|------|----------|
-| `electron/main.ts` | picker-only preload window, Orbit content window, local/remote/tunnel connection orchestration |
-| `electron/serverSupervisor.ts` | app-data DB bootstrap, session-only token, loopback server child lifecycle |
-| `electron/profileStore.ts` | persisted profile sanitization and secret-field rejection |
-| `electron/tunnel.ts` | argv-based OpenSSH forwarding, readiness/error handling, cleanup |
-| `server.ts` | loopback-gated `ORBIT_DESKTOP_LOCAL` cookie behavior |
-| `src/server/auth/accessTokenStore.ts` | desktop session-only auth mode bypasses token-file persistence |
-| `scripts/desktop-smoke.mjs` | desktop preview acceptance smoke with security/packaging boundary checks |
-| `docs/orbit-mac-electron-design.md` | final preview design and packaging boundary |
+| 파일                                  | 변경 내용                                                                                      |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `electron/main.ts`                    | picker-only preload window, Orbit content window, local/remote/tunnel connection orchestration |
+| `electron/serverSupervisor.ts`        | app-data DB bootstrap, session-only token, loopback server child lifecycle                     |
+| `electron/profileStore.ts`            | persisted profile sanitization and secret-field rejection                                      |
+| `electron/tunnel.ts`                  | argv-based OpenSSH forwarding, readiness/error handling, cleanup                               |
+| `server.ts`                           | loopback-gated `ORBIT_DESKTOP_LOCAL` cookie behavior                                           |
+| `src/server/auth/accessTokenStore.ts` | desktop session-only auth mode bypasses token-file persistence                                 |
+| `scripts/desktop-smoke.mjs`           | desktop preview acceptance smoke with security/packaging boundary checks                       |
+| `docs/orbit-mac-electron-design.md`   | final preview design and packaging boundary                                                    |
 
 ## 테스트
 
@@ -94,3 +100,36 @@ type OrbitDesktopConnectionProfile =
 
 - 선행: `docs/orbit-mac-electron-design.md`
 - 후속: production packaging, Keychain-backed token store, auth endpoint token injection
+
+---
+
+## Update: packaged local mode — 2026-04-30
+
+> **keywords**: `electron` `macOS` `packaged-local` `this-mac` `prisma` `node-pty` `electron-abi`
+
+### 요구사항
+
+Remote URL 전용 `.app` 다음 단계로, packaged Electron app 안에서 `This Mac`이 로컬 Orbit 서버를 직접 시작할 수 있어야 한다.
+
+### 구현 결정
+
+- Remote 전용 패키징은 유지하고, local-capable packaging을 `desktop:pack:local`로 분리한다.
+- packaged local runtime은 `.next/BUILD_ID`, `dist/server.js`, `scripts/desktop-db-bootstrap.mjs`, `prisma/schema.prisma`가 앱 root에 있을 때만 활성화한다.
+- `server.ts`는 `tsconfig.server.json`으로 `dist/server.js`에 컴파일하고, `@/...` require를 풀기 위해 `dist/node_modules/@/{server,lib}` alias shim을 생성한다.
+- local package는 `asar: false`를 사용한다. Electron-as-Node child process가 `.next`, compiled server, Prisma, native modules를 실제 파일 경로에서 읽게 하기 위해서다.
+- app-data SQLite DB와 session-only access token 모델은 기존 desktop local supervisor 흐름을 그대로 유지한다.
+
+### 검증
+
+- `npm run desktop:build`
+- `env -u DATABASE_URL npm run build`
+- `npm run desktop:local-server-build`
+- 임시 SQLite DB + `NODE_PATH=dist/node_modules node dist/server.js` runtime smoke
+  - `/login` 200
+  - `/?token=smoke-token` 302 + `orbit_token` cookie
+
+### 남은 macOS 검증
+
+- `npm run desktop:pack:local`은 Linux에서 macOS ARM native rebuild를 cross-compile할 수 없어 `cpu-features` rebuild에서 실패한다.
+- MacBook에서 실행하면 `node-pty`/Prisma native artifacts가 target Electron ABI로 rebuild되어야 한다.
+- 최종 완료 판정은 MacBook에서 generated `.app`를 열고 `This Mac` 연결이 성공하는지 확인한 뒤 내린다.

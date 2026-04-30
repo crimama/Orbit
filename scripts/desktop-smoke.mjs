@@ -35,10 +35,12 @@ const checks = [
       "desktop:preview",
       "desktop:typecheck",
       "desktop:electron-build",
+      "desktop:local-server-build",
       "desktop:smoke",
       "desktop:package-smoke",
       "desktop:pack:remote",
       "desktop:pack:remote:zip",
+      "desktop:pack:local",
     ].every((name) => typeof scripts[name] === "string"),
     gap: "Add the desktop scripts required by the Electron developer-preview workflow.",
   },
@@ -149,9 +151,11 @@ const checks = [
   {
     id: "packaged-remote-only-gate",
     label:
-      "Packaged app blocks local/SSH modes until packaged runtime support exists",
+      "Packaged app gates local/SSH modes based on packaged runtime support",
     pass:
       has("electron/main.ts", /isRemoteOnlyPackagedApp/) &&
+      has("electron/main.ts", /hasPackagedLocalRuntime/) &&
+      has("electron/main.ts", /local-runtime/) &&
       has("electron/main.ts", /desktopCapabilities/) &&
       has("electron/main.ts", /PACKAGED_REMOTE_ONLY/) &&
       has("electron/types.ts", /OrbitDesktopCapabilities/) &&

@@ -9,6 +9,8 @@ This document defines the packaging boundary for the Electron developer preview.
 - `npm run desktop:dev`: builds Next, then starts Electron from the repository checkout.
 - `npm run desktop:preview`: runs web build plus desktop typecheck and smoke validation.
 - `npm run desktop:package-smoke`: audits whether packaging claims remain honest.
+- `npm run desktop:pack:remote`: builds an unsigned Remote URL first `.app` without local server assets.
+- `npm run desktop:pack:local`: builds an unsigned local-capable `.app` with `.next`, compiled server assets, Prisma schema, and production dependencies. This must be run on the target macOS architecture so native modules can be rebuilt for the Electron ABI.
 - `desktop:pack`: not active yet. Do not add it until the packaged runtime and macOS artifact checks below pass.
 
 Linux CI can validate static packaging readiness, TypeScript, Next build output, and smoke scripts. It cannot verify that a `.app` launches on macOS, that native modules are rebuilt for the Electron ABI, or that Developer ID signing and notarization actually succeeded.
@@ -26,10 +28,10 @@ Current preview runtime:
 Future packaged runtime:
 
 - Electron main/preload assets live in app resources.
-- Server assets should live under packaged resources, for example `resources/server/server.js`.
-- A packaged server should be enabled only after standalone server startup is verified from packaged files, not from the repo checkout.
+- Server assets live under packaged app resources as `dist/server.js` plus `dist/node_modules/@` alias shims for `@/server` and `@/lib`.
+- A packaged server is enabled only when `.next/BUILD_ID`, `dist/server.js`, `scripts/desktop-db-bootstrap.mjs`, and `prisma/schema.prisma` are present in the packaged app root.
 - Prisma schema, generated client, and query engine artifacts must be included in the packaged resources.
-- `node-pty` must be rebuilt for the Electron ABI and unpacked from ASAR when needed.
+- `node-pty` must be rebuilt for the Electron ABI on macOS. The local package keeps app resources unpacked (`asar: false`) so the child Electron-as-Node server can execute real files and native modules.
 - Logs, database files, and generated runtime state should remain under the user's app data directory.
 
 ## Future Packager Sketch
@@ -43,7 +45,7 @@ An eventual `electron-builder` or equivalent config may need:
 - after-install or build hooks that rebuild native modules for Electron.
 - explicit app data paths for SQLite, logs, and first-run bootstrap.
 
-This config is not active yet. Do not treat this sketch as proof that packaged macOS distribution works.
+The local-capable profile is now active as `desktop:pack:local`, but Linux can only validate the server build, smoke checks, and compiled runtime startup. The final proof is still a macOS run of the generated app because native rebuild and Finder launch behavior are platform-specific.
 
 ## macOS Verification Required Before `desktop:pack`
 

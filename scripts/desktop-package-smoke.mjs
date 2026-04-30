@@ -27,6 +27,7 @@ const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
 const packagingDoc = "docs/orbit-mac-packaging-design.md";
 const electronDesignDoc = "docs/orbit-mac-electron-design.md";
 const remoteBuilderConfig = "electron-builder.remote.yml";
+const localBuilderConfig = "electron-builder.local.yml";
 
 const checks = [
   {
@@ -53,9 +54,16 @@ const checks = [
         scripts["desktop:pack:remote:zip"] ?? "",
       ) &&
       exists(remoteBuilderConfig) &&
+      exists(localBuilderConfig) &&
       exists("tsconfig.electron-build.json") &&
-      exists("scripts/desktop-electron-build.mjs"),
-    gap: "Add electron-builder, desktop:electron-build, desktop:pack:remote, tsconfig.electron-build.json, and electron-builder.remote.yml.",
+      exists("scripts/desktop-electron-build.mjs") &&
+      scripts["desktop:local-server-build"] ===
+        "node scripts/desktop-local-server-build.mjs" &&
+      /desktop:local-server-build/.test(scripts["desktop:pack:local"] ?? "") &&
+      /electron-builder --mac dir --arm64 --config electron-builder\.local\.yml/.test(
+        scripts["desktop:pack:local"] ?? "",
+      ),
+    gap: "Add electron-builder, desktop Electron/server build scripts, remote/local package scripts, and builder configs.",
   },
   {
     id: "remote-builder-is-narrow",
@@ -78,6 +86,25 @@ const checks = [
     gap: "Keep the first packaged profile unsigned, dir-targeted, native-rebuild-free, and limited to dist-electron shell files.",
   },
   {
+    id: "local-builder-includes-runtime",
+    label: "local builder config includes packaged server runtime assets",
+    pass:
+      has(localBuilderConfig, /dist-electron\/\*\*\/\*/) &&
+      has(localBuilderConfig, /dist\/\*\*\/\*/) &&
+      has(localBuilderConfig, /\.next\/\*\*\/\*/) &&
+      has(localBuilderConfig, /scripts\/desktop-db-bootstrap\.mjs/) &&
+      has(localBuilderConfig, /prisma\/schema\.prisma/) &&
+      has(
+        localBuilderConfig,
+        /extraMetadata:[\s\S]*main:\s*dist-electron\/main\.js/,
+      ) &&
+      has(localBuilderConfig, /asar:\s*false/) &&
+      has("scripts/desktop-local-server-build.mjs", /dist\/node_modules\/@/) &&
+      has("scripts/desktop-local-server-build.mjs", /dist\/src\/server/) &&
+      has("scripts/desktop-local-server-build.mjs", /dist\/src\/lib/),
+    gap: "Package compiled server, Next output, DB bootstrap, Prisma schema, explicit main, unpacked app resources, and @ alias shims for local mode.",
+  },
+  {
     id: "package-smoke-script",
     label: "desktop:package-smoke is wired to this audit script",
     pass:
@@ -85,8 +112,9 @@ const checks = [
         "node scripts/desktop-package-smoke.mjs" &&
       /desktop:package-smoke/.test(scripts["desktop:build"] ?? "") &&
       /desktop:build/.test(scripts["desktop:pack:remote"] ?? "") &&
-      /desktop:build/.test(scripts["desktop:pack:remote:zip"] ?? ""),
-    gap: "Wire desktop:package-smoke into desktop:build and require remote package scripts to run the desktop build chain.",
+      /desktop:build/.test(scripts["desktop:pack:remote:zip"] ?? "") &&
+      /desktop:build/.test(scripts["desktop:pack:local"] ?? ""),
+    gap: "Wire desktop:package-smoke into desktop:build and require package scripts to run the desktop build chain.",
   },
   {
     id: "packaging-design-doc",
@@ -118,14 +146,21 @@ const checks = [
       has("electron/serverSupervisor.ts", /repo-preview/) &&
       has("electron/serverSupervisor.ts", /packaged-resources/) &&
       has("electron/serverSupervisor.ts", /ORBIT_DESKTOP_SERVER_RUNTIME/) &&
-      has("electron/serverSupervisor.ts", /resources.*server.*server\.js/s),
+      has("electron/serverSupervisor.ts", /dist.*server\.js/s) &&
+      has("electron/serverSupervisor.ts", /NODE_PATH/) &&
+      has(
+        "scripts/desktop-db-bootstrap.mjs",
+        /node_modules.*prisma.*build.*index\.js/s,
+      ),
     gap: "Make the preview-vs-packaged server entry boundary explicit in serverSupervisor.ts.",
   },
   {
     id: "packaged-mode-ux-boundary",
-    label: "packaged remote app blocks unavailable local runtime modes",
+    label: "packaged app blocks unavailable modes based on runtime assets",
     pass:
       has("electron/main.ts", /isRemoteOnlyPackagedApp/) &&
+      has("electron/main.ts", /hasPackagedLocalRuntime/) &&
+      has("electron/main.ts", /local-runtime/) &&
       has("electron/main.ts", /PACKAGED_REMOTE_ONLY/) &&
       has("electron/main.ts", /orbit-desktop:capabilities/) &&
       has("electron/preload.cjs", /getCapabilities/) &&

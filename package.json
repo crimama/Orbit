@@ -16,11 +16,13 @@
     "desktop:dev": "node scripts/desktop-dev.mjs",
     "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
     "desktop:electron-build": "node scripts/desktop-electron-build.mjs",
+    "desktop:local-server-build": "node scripts/desktop-local-server-build.mjs",
     "desktop:smoke": "node scripts/desktop-smoke.mjs",
     "desktop:package-smoke": "node scripts/desktop-package-smoke.mjs",
     "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke && npm run desktop:package-smoke",
     "desktop:pack:remote": "npm run desktop:build && npm run desktop:electron-build && electron-builder --mac dir --arm64 --config electron-builder.remote.yml",
     "desktop:pack:remote:zip": "npm run desktop:build && npm run desktop:electron-build && electron-builder --mac zip --arm64 --config electron-builder.remote.yml",
+    "desktop:pack:local": "npm run build && npm run desktop:build && npm run desktop:local-server-build && npm run desktop:electron-build && electron-builder --mac dir --arm64 --config electron-builder.local.yml",
     "desktop:preview": "npm run build && npm run desktop:build"
   },
   "dependencies": {

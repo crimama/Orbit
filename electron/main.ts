@@ -5,6 +5,7 @@ import {
   shell,
   type BrowserWindowConstructorOptions,
 } from "electron";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 import {
@@ -44,22 +45,47 @@ let activeStatus: OrbitDesktopConnectionStatus = {
   message: "Choose an Orbit connection.",
 };
 
-function isRemoteOnlyPackagedApp() {
+function packagedAppRoot() {
+  return path.join(__dirname, "..");
+}
+
+function hasPackagedLocalRuntime() {
+  const root = packagedAppRoot();
   return (
-    app.isPackaged && process.env.ORBIT_DESKTOP_ENABLE_PACKAGED_LOCAL !== "1"
+    existsSync(path.join(root, ".next", "BUILD_ID")) &&
+    existsSync(path.join(root, "dist", "server.js")) &&
+    existsSync(path.join(root, "prisma", "schema.prisma")) &&
+    existsSync(path.join(root, "scripts", "desktop-db-bootstrap.mjs"))
   );
+}
+
+function isLocalModeEnabledInPackagedApp() {
+  if (!app.isPackaged) return true;
+  if (process.env.ORBIT_DESKTOP_ENABLE_PACKAGED_LOCAL === "1") return true;
+  return hasPackagedLocalRuntime();
+}
+
+function isRemoteOnlyPackagedApp() {
+  return app.isPackaged && !isLocalModeEnabledInPackagedApp();
 }
 
 function desktopCapabilities(): OrbitDesktopCapabilities {
   const remoteOnly = isRemoteOnlyPackagedApp();
+  const localModeEnabled = isLocalModeEnabledInPackagedApp();
   return {
     packaged: app.isPackaged,
-    localModeEnabled: !remoteOnly,
-    sshTunnelEnabled: !remoteOnly,
-    packagingProfile: remoteOnly ? "remote-url" : "developer-preview",
+    localModeEnabled,
+    sshTunnelEnabled: !app.isPackaged,
+    packagingProfile: remoteOnly
+      ? "remote-url"
+      : app.isPackaged
+        ? "local-runtime"
+        : "developer-preview",
     unavailableReason: remoteOnly
       ? "This unsigned packaged preview connects to a remote Orbit server. Local This Mac and SSH Tunnel packaging are not enabled yet."
-      : undefined,
+      : app.isPackaged
+        ? "This packaged app can start Orbit on this Mac. SSH Tunnel packaging is not enabled yet."
+        : undefined,
   };
 }
 

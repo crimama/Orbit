@@ -1,5 +1,40 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 Orbit macOS packaged local mode)
+
+- [x] packaged local runtime 경계 재확인
+- [x] compiled server/runtime alias 준비
+- [x] local-capable Electron packaged mode gate 적용
+- [x] local electron-builder profile/script 추가
+- [x] bootstrap/packaging smoke 보강
+- [x] 타입/스모크/빌드 검증
+- [ ] 커밋 및 푸시
+
+## 계획 (Orbit macOS packaged local mode)
+
+1. Remote-only 패키징은 유지하고, 별도 `desktop:pack:local` 프로필을 추가한다.
+2. `server.ts`와 server/lib 코드를 `dist/`로 컴파일하고 `@/...` require alias가 packaged Node runtime에서 풀리도록 alias shim을 생성한다.
+3. packaged app 안의 app root에 `.next`, `dist/`, `scripts/desktop-db-bootstrap.mjs`, `prisma/schema.prisma`, production dependencies를 포함한다.
+4. packaged app에서 local runtime asset이 존재하면 `This Mac`을 활성화하고, 없으면 기존 remote-only gate를 유지한다.
+5. MacBook에서 native rebuild가 가능하도록 local profile은 `node-pty`/Prisma를 unpack 대상으로 두고, Linux에서는 smoke/build 수준으로 검증한다.
+
+## 결과
+
+- [x] `desktop:pack:local` 추가
+- [x] `electron-builder.local.yml` 추가: `.next`, `dist`, Prisma schema, DB bootstrap, production deps 포함
+- [x] packaged app root에 local runtime assets가 있으면 `This Mac` 활성화
+- [x] packaged app에서는 SSH Tunnel은 계속 비활성화
+- [x] `desktop:local-server-build`가 `dist/server.js`와 `dist/node_modules/@/{server,lib}` alias shim 생성
+- [x] `desktop-db-bootstrap`이 packaged local `node_modules/prisma/build/index.js`를 우선 사용
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 12/12
+- [x] `env -u DATABASE_URL npm run build` 통과
+- [x] `npm run desktop:local-server-build` 통과 및 alias shim 파일 확인
+- [x] compiled local server smoke 통과: `/login` 200, token redirect 302 + cookie
+- [x] Linux `npm run desktop:pack:local`은 macOS ARM native rebuild 단계에서 예상대로 실패: `node-gyp does not support cross-compiling native modules from source`
+- [ ] MacBook에서 `npm run desktop:pack:local` 실행 후 Finder `.app` `This Mac` 연결 확인 필요
+
+---
+
 ## 현재 작업 (2026-04-30 Orbit macOS remote app polish and zip)
 
 - [x] Remote URL packaged UX polish 적용

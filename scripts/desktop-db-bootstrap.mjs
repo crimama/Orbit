@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
-import { mkdirSync } from "node:fs";
-import { dirname } from "node:path";
+import { existsSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 function databasePathFromUrl(databaseUrl) {
@@ -20,15 +20,41 @@ if (!databaseUrl) {
 const databasePath = databasePathFromUrl(databaseUrl);
 if (databasePath) mkdirSync(dirname(databasePath), { recursive: true });
 
-const npxBin = process.platform === "win32" ? "npx.cmd" : "npx";
-const result = spawnSync(
-  npxBin,
-  ["prisma", "db", "push", "--skip-generate", "--schema", "prisma/schema.prisma"],
-  {
-    cwd: fileURLToPath(new URL("..", import.meta.url)),
-    env: process.env,
-    stdio: "inherit",
-  },
+const root = fileURLToPath(new URL("..", import.meta.url));
+const localPrismaCli = join(
+  root,
+  "node_modules",
+  "prisma",
+  "build",
+  "index.js",
 );
+const command = existsSync(localPrismaCli)
+  ? process.execPath
+  : process.platform === "win32"
+    ? "npx.cmd"
+    : "npx";
+const args = existsSync(localPrismaCli)
+  ? [
+      localPrismaCli,
+      "db",
+      "push",
+      "--skip-generate",
+      "--schema",
+      "prisma/schema.prisma",
+    ]
+  : [
+      "prisma",
+      "db",
+      "push",
+      "--skip-generate",
+      "--schema",
+      "prisma/schema.prisma",
+    ];
+
+const result = spawnSync(command, args, {
+  cwd: root,
+  env: process.env,
+  stdio: "inherit",
+});
 
 process.exit(result.status ?? 1);

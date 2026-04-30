@@ -71,16 +71,37 @@ function resolveNodeBinary(cwd: string): string {
   );
   if (existsSync(bundledNode)) return bundledNode;
 
-  const execName = process.platform === "win32" ? "node.exe" : "node";
-  if (!process.execPath.toLowerCase().includes("electron"))
-    return process.execPath;
+  return process.execPath;
+}
 
-  return execName;
+function hasPackagedServerRuntime(cwd: string): boolean {
+  return (
+    existsSync(join(cwd, ".next", "BUILD_ID")) &&
+    existsSync(join(cwd, "dist", "server.js")) &&
+    existsSync(join(cwd, "scripts", "desktop-db-bootstrap.mjs")) &&
+    existsSync(join(cwd, "prisma", "schema.prisma"))
+  );
 }
 
 function resolveServerRuntimePlan(cwd: string): OrbitServerRuntimePlan {
   const requestedMode = process.env.ORBIT_DESKTOP_SERVER_RUNTIME?.trim();
   const nodeBinary = resolveNodeBinary(cwd);
+  const packagedRuntimeAvailable = hasPackagedServerRuntime(cwd);
+
+  if (
+    requestedMode === "packaged-resources" ||
+    (!requestedMode && packagedRuntimeAvailable)
+  ) {
+    const packagedServer = join(cwd, "dist", "server.js");
+    return {
+      mode: "packaged-resources",
+      cwd,
+      command: nodeBinary,
+      args: [packagedServer],
+      description:
+        "Runs Orbit from packaged Electron app resources with compiled server assets.",
+    };
+  }
 
   if (!requestedMode || requestedMode === "repo-preview") {
     return {
@@ -99,22 +120,14 @@ function resolveServerRuntimePlan(cwd: string): OrbitServerRuntimePlan {
     );
   }
 
-  const packagedServer = join(cwd, "resources", "server", "server.js");
-  if (!existsSync(packagedServer)) {
+  if (!packagedRuntimeAvailable) {
     throw new Error(
-      "Packaged Orbit server runtime was requested, but resources/server/server.js was not found. " +
+      "Packaged Orbit server runtime was requested, but .next, dist/server.js, scripts/desktop-db-bootstrap.mjs, or prisma/schema.prisma was not found. " +
         "Use repo-preview for desktop:dev, or provide packaged server assets before enabling packaged-resources.",
     );
   }
 
-  return {
-    mode: "packaged-resources",
-    cwd,
-    command: nodeBinary,
-    args: [packagedServer],
-    description:
-      "Runs Orbit from packaged Electron resources after standalone server assets are verified.",
-  };
+  throw new Error("Packaged Orbit server runtime could not be resolved.");
 }
 
 async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
@@ -229,6 +242,10 @@ export async function startOrbitLocalServer(
     PORT: String(port),
     ORBIT_DESKTOP_DISABLE_PASSWORD_SSH: "1",
   };
+  const aliasNodePath = join(cwd, "dist", "node_modules");
+  env.NODE_PATH = env.NODE_PATH
+    ? `${aliasNodePath}${process.platform === "win32" ? ";" : ":"}${env.NODE_PATH}`
+    : aliasNodePath;
 
   await runDbBootstrap(cwd, env);
 
