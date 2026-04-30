@@ -14,8 +14,10 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "desktop:dev": "electron electron/bootstrap.cjs",
-    "desktop:build": "tsc --noEmit",
-    "desktop:pack": "npm run desktop:build && electron electron/bootstrap.cjs"
+    "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
+    "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke",
+    "desktop:preview": "npm run build && npm run desktop:build"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",

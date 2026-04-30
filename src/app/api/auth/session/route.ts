@@ -46,11 +46,17 @@ function isLoopbackRequest(request: Request): boolean {
   return normalized === "127.0.0.1" || normalized === "::1" || normalized === "";
 }
 
-function setSessionCookie(response: NextResponse, value: string) {
+function isDesktopLocalRequest(request: Request): boolean {
+  if (process.env.ORBIT_DESKTOP_LOCAL !== "1") return false;
+  const hostname = new URL(request.url).hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return isLoopbackRequest(request) && ["localhost", "127.0.0.1", "::1"].includes(hostname);
+}
+
+function setSessionCookie(response: NextResponse, value: string, request: Request) {
   response.cookies.set(tokenCookieName, value, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" && !isDesktopLocalRequest(request),
     path: "/",
   });
 }
@@ -135,7 +141,7 @@ export async function POST(request: Request) {
       configured: true,
       initialized: true,
     });
-    setSessionCookie(response, token);
+    setSessionCookie(response, token, request);
     return response;
   }
 
@@ -149,6 +155,6 @@ export async function POST(request: Request) {
   process.env.ORBIT_ACCESS_TOKEN = accessToken;
 
   const response = NextResponse.json({ ok: true, configured: true });
-  setSessionCookie(response, accessToken);
+  setSessionCookie(response, accessToken, request);
   return response;
 }

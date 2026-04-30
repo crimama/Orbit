@@ -59,7 +59,6 @@ type OrbitDesktopConnectionProfile =
       kind: "remote";
       name: string;
       url: string;
-      tokenKey?: string;
     }
   | {
       id: string;
@@ -71,11 +70,10 @@ type OrbitDesktopConnectionProfile =
       remoteOrbitPort: number;
       localPort: "auto" | number;
       privateKeyPath?: string;
-      tokenKey?: string;
     };
 ```
 
-Profile metadata is stored in an Electron userData JSON file. Tokens and generated local secrets are stored via macOS Keychain in the first production pass; if the initial implementation cannot add Keychain support without expanding dependency risk, it must keep secrets session-only and document that limitation instead of persisting plaintext.
+Profile metadata is stored in an Electron userData JSON file. The developer-preview implementation does not store token pointers or plaintext tokens in profile JSON. Tokens and generated local secrets are session-only until a later Keychain-backed production pass exists.
 
 ### Local Mode
 
@@ -89,8 +87,9 @@ Main process responsibilities:
   - `HOST=127.0.0.1`
   - `PORT=<selected>`
   - `DATABASE_URL=file:<appData>/orbit.db`
-  - `ORBIT_ACCESS_TOKEN_FILE=<appData>/access-token`
-  - `SSH_PASSWORD_SECRET=<generated or stored secret>`
+  - `ORBIT_ACCESS_TOKEN=<generated session token>`
+  - `ORBIT_DESKTOP_SESSION_ONLY_AUTH=1`
+  - `ORBIT_DESKTOP_DISABLE_PASSWORD_SSH=1`
 - Start the Orbit server as a child process.
 - Wait for HTTP readiness before loading the window.
 - Stop the child process on app quit.
@@ -111,11 +110,11 @@ Alternative HTTPS-local support can be added later, but is not required for this
 Main process responsibilities:
 
 - Validate that the URL is `http` or `https`.
-- Optionally append a login token only for first connection, then rely on Orbit's cookie/session handling.
+- Optionally append a session-provided login token only for first connection, then rely on Orbit's cookie/session handling.
 - Do not start a local server.
 - Show a reconnect/settings screen if the remote server is unavailable.
 - Use the same BrowserWindow hardening as local mode, but remote pages must not get privileged preload APIs.
-- Tokens are loaded from Keychain/session memory and injected only through existing Orbit auth mechanisms, not stored in the remote URL profile JSON.
+- Tokens are provided from session memory in the developer preview and injected only through existing Orbit auth mechanisms, not stored in the remote URL profile JSON. Keychain-backed token lookup is a later production pass.
 
 ### SSH Tunnel Mode
 
@@ -155,11 +154,12 @@ Use Electron first with a developer-preview runtime path:
 - Add scripts:
   - `desktop:dev`
   - `desktop:build`
-  - `desktop:pack`
+  - `desktop:preview`
 - Configure a runtime bundle with this initial strategy:
   - Use Electron main to spawn a Node child process with the server entry.
   - For dev preview, the child may run `node --import tsx ... server.ts` from the repo checkout.
-  - Add a separate packaging design path for compiled/standalone server, but do not pretend it is notarized until native rebuild and Prisma engine placement are verified.
+  - Do not expose `desktop:pack` until there is a real packaged runtime path. `desktop:preview` is only a build/typecheck/smoke validation command.
+  - Add a separate packaging design path for compiled/standalone server, but do not pretend it is packaged or notarized until native rebuild and Prisma engine placement are verified.
   - Set `next.config.mjs` `output: "standalone"` only if the team also validates server startup from that layout.
   - Configure `asarUnpack` for native modules and Prisma engine artifacts when packaging is attempted.
   - Document the required native rebuild command for `node-pty` before packaged app claims.
@@ -238,7 +238,7 @@ Security contract:
    - Owns `electron/main.ts`, `electron/preload.ts`, connection picker surface.
    - Does not edit server auth or Prisma bootstrap files.
 2. **Server/package lane**
-   - Owns package scripts, Electron builder config, Next packaged runtime, app data env wiring, first-run DB bootstrap.
+   - Owns desktop preview scripts, packaged-runtime boundary, app data env wiring, first-run DB bootstrap.
    - Does not edit connection picker UI beyond wiring exposed commands.
 3. **Connection profile/tunnel lane**
    - Owns profile types/store, URL validation, SSH tunnel process lifecycle.
@@ -249,7 +249,7 @@ Security contract:
 
 ## Acceptance Criteria
 
-- `~/Orbit-mac` contains Electron mac app source and package scripts.
+- `~/Orbit-mac` contains Electron mac app source and developer-preview package scripts.
 - Local mode starts Orbit on loopback and opens it in an Electron window.
 - Remote URL mode can open a configured remote Orbit URL without starting the local server.
 - SSH tunnel mode has a concrete implementation or clearly gated preview path.
@@ -266,7 +266,7 @@ Security contract:
 - Electron native rebuild for `node-pty` may require platform-specific tooling.
 - Prisma engine/client paths may need explicit packaging configuration.
 - The current server entry uses `tsx` in `npm start`; production Electron should not depend on dev-time TS execution forever.
-- First-run migration/bootstrap behavior is currently not explicit enough for end users.
+- Production packaging must replace the developer-preview repo-checkout runtime with a compiled or standalone server layout.
 - SSH tunnel mode via system `ssh` depends on local OpenSSH availability and keychain/askpass behavior.
 
 ## Evaluator Feedback Incorporated
@@ -275,55 +275,34 @@ Security contract:
 - Chose a developer-preview runtime path and separated it from later notarized packaging.
 - Added first-run DB bootstrap requirement.
 - Added Electron BrowserWindow/preload/navigation security contract.
-- Replaced plaintext token profile fields with `tokenKey` and Keychain/session-only storage policy.
+- Removed token fields from persisted profile metadata and kept generated/local/remote tokens session-only until Keychain support exists.
 - Expanded SSH tunnel argv/readiness/error handling.
 - Split team lanes by ownership and made acceptance criteria testable.
 
 ## Verification Status — 2026-04-30 Team Pass
 
-Verification lane added `scripts/desktop-smoke.mjs` as a dependency-free acceptance smoke for the Electron macOS preview. Run it from the repository root with:
+`scripts/desktop-smoke.mjs` is a dependency-free acceptance smoke for the Electron macOS developer preview. Run it from the repository root with:
 
 ```bash
 node scripts/desktop-smoke.mjs
 ```
 
-The smoke checks for the Electron package surface, shell files, BrowserWindow hardening, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop implementation gaps remain so CI or a release checklist cannot accidentally treat the desktop preview as complete.
+The smoke checks for the Electron preview surface, shell files, BrowserWindow hardening, remote preload isolation, navigation guardrails, connection profile/tunnel modules, SSH argv safety, desktop-local auth support, session-only desktop secrets, first-run DB bootstrap, and packaging-risk documentation. It exits non-zero while required desktop preview gaps remain.
 
-<<<<<<< HEAD
-Current worktree status at the time this verification lane ran:
+Current implementation status:
 
-- Electron source directory was not present yet, so shell, preload, picker, profile, URL validation, and tunnel checks fail until implementation lanes land their work.
-- `package.json` did not yet expose `desktop:dev`, `desktop:build`, or `desktop:pack`, and no Electron dependency was declared in this worktree.
-- `server.ts` did not yet expose a detectable `ORBIT_DESKTOP_LOCAL` loopback-only auth/cookie path.
-- No explicit desktop DB bootstrap helper was present; fresh-userData local readiness remains unverified until the server/package lane lands bootstrap support.
-- Packaging/notarization/native rebuild/Prisma risks are documented above, but packaged runtime verification still needs to run after implementation lands.
+- `electron/main.ts`, `electron/preload.ts`, and `electron/connection.html` implement the shell, file-based connection picker, and picker-only preload bridge.
+- Local mode starts a supervised loopback Orbit server with app-data SQLite, explicit DB bootstrap, a generated session-only access token, and desktop-local cookie relaxation.
+- Remote URL mode validates `http`/`https`, can pass an optional session-only one-shot token, and loads remote content in a BrowserWindow without privileged preload APIs.
+- SSH tunnel mode uses system `ssh` with argv spawning, safe forwarding options, readiness probing, error classification, and cleanup.
+- `desktop:preview` is the build/typecheck/smoke validation command. Real `desktop:pack` packaging is intentionally not exposed until native rebuild, Prisma engine placement, and standalone server startup are verified.
 
-=======
-Current worktree status at the time this verification lane reran after the first
-team checkpoints were merged:
+Recommended verification sequence:
 
-- `electron/main.ts`, `electron/preload.ts`, and `electron/connection.html` are present, so the basic shell-file smoke now passes.
-- `electron/main.ts` currently sets `sandbox: false`; this does **not** meet the design security contract of `sandbox: true` when compatible with the preload bridge.
-- Remote URL mode currently loads through the same privileged window/preload path. IPC handlers are origin-guarded, but remote pages can still see the `window.orbitDesktop` bridge; this does **not** yet satisfy the "remote pages must not receive desktop IPC capabilities" criterion.
-- `package.json` exposes `desktop:typecheck`, `desktop:smoke`, and `desktop:build`, but still lacks `desktop:dev` and `desktop:pack`, and no Electron dependency is declared in the current merged checkpoint.
-- `npm run desktop:typecheck` fails before implementation type validation because the Electron package/types are missing.
-- No `electron/profileStore.ts`, `electron/urlValidation.ts`, `electron/tunnel.ts`, or `electron/serverSupervisor.ts` module is present in the merged checkpoint yet, so profile/tunnel/local-supervisor acceptance checks fail.
-- `server.ts` does not yet expose a detectable `ORBIT_DESKTOP_LOCAL` loopback-only auth/cookie path.
-- No explicit desktop DB bootstrap helper is present; fresh-userData local readiness remains unverified until the server/package lane lands bootstrap support.
-- Packaging/notarization/native rebuild/Prisma risks are documented above, but packaged runtime verification still needs to run after implementation lands.
-
-Latest verification evidence from this lane:
-
-- `npm run desktop:smoke` → FAIL, `3/12` checks passed. Passing checks: shell files, navigation guardrails, packaging-risk docs. Failing checks: package scripts, Electron dependency, BrowserWindow sandbox hardening, local server supervisor, remote preload isolation, profile/tunnel modules, SSH argv safety, desktop-local auth, DB bootstrap.
-- `npm run desktop:typecheck` → FAIL because `electron` module/type declarations are not installed; follow-on implicit-any errors are downstream of the missing Electron types.
-
->>>>>>> main
-Recommended verification sequence after the implementation lanes merge:
-
-1. `node scripts/desktop-smoke.mjs`
-2. `npx tsc --noEmit`
-3. Electron compile/build command, preferably `npm run desktop:build` once package scripts exist.
-4. Existing web app build: `npm run build`.
-5. Focused runtime smoke for local mode with a fresh temporary userData directory, confirming DB bootstrap reaches HTTP readiness or reports a clear bootstrap error.
-6. Remote URL smoke confirming no local server child is started and privileged preload APIs are unavailable to remote content.
-7. SSH tunnel smoke confirming safe argv construction and either a working local forward or an explicit disabled/preview gate.
+1. `npm run desktop:typecheck`
+2. `npm run desktop:smoke`
+3. `npx tsc --noEmit`
+4. `npm run lint`
+5. `DATABASE_URL=file:/tmp/orbit-mac-desktop-smoke.db node scripts/desktop-db-bootstrap.mjs`
+6. `npm run build`
+7. `npm run desktop:preview`

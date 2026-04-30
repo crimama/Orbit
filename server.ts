@@ -20,6 +20,7 @@ const allowRemote = process.env.ORBIT_ALLOW_REMOTE === "true";
 const host = process.env.HOST ?? (allowRemote ? "0.0.0.0" : "127.0.0.1");
 const remoteScope =
   process.env.ORBIT_REMOTE_SCOPE?.trim().toLowerCase() ?? "any";
+const desktopLocal = process.env.ORBIT_DESKTOP_LOCAL === "1";
 
 if (!(process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "")) {
   const persistedToken = getConfiguredAccessTokenSync();
@@ -80,6 +81,18 @@ function isLoopbackHostname(value: string | null): boolean {
     normalized === "localhost" ||
     normalized === "127.0.0.1" ||
     normalized === "::1"
+  );
+}
+
+function isDesktopLocalHttpRequest(
+  request: IncomingMessage,
+  requestUrl: URL,
+): boolean {
+  return (
+    desktopLocal &&
+    !allowRemote &&
+    isLoopbackAddress(request.socket.remoteAddress) &&
+    isLoopbackHostname(requestUrl.hostname)
   );
 }
 
@@ -234,9 +247,10 @@ async function main() {
     if (accessToken && tokenFromQuery && safeTokenCompare(tokenFromQuery, accessToken)) {
       requestUrl.searchParams.delete("token");
       const nextPath = `${requestUrl.pathname}${requestUrl.search}` || "/";
+      const secureCookie = !dev && !isDesktopLocalHttpRequest(req, requestUrl);
       const cookie =
         `orbit_token=${encodeURIComponent(accessToken)}; Path=/; HttpOnly; SameSite=Lax` +
-        `${dev ? "" : "; Secure"}`;
+        `${secureCookie ? "; Secure" : ""}`;
       res.setHeader("set-cookie", cookie);
       writeRedirect(res, nextPath);
       return;

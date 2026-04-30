@@ -1,32 +1,14 @@
-export type OrbitDesktopConnectionKind = "local" | "remote" | "ssh-tunnel";
+import type { OrbitDesktopConnectionProfile } from "./profileStore";
 
-export type OrbitDesktopConnectionProfile =
-  | {
-      id: string;
-      kind: "local";
-      name: string;
-      port: "auto" | number;
-      dataDir?: string;
-    }
-  | {
-      id: string;
-      kind: "remote";
-      name: string;
-      url: string;
-      tokenKey?: string;
-    }
-  | {
-      id: string;
-      kind: "ssh-tunnel";
-      name: string;
-      sshHost: string;
-      sshPort: number;
-      sshUsername: string;
-      remoteOrbitPort: number;
-      localPort: "auto" | number;
-      privateKeyPath?: string;
-      tokenKey?: string;
-    };
+export type {
+  LocalConnectionProfile,
+  OrbitDesktopConnectionProfile,
+  OrbitDesktopConnectionProfile as OrbitDesktopProfile,
+  RemoteConnectionProfile,
+  SshTunnelConnectionProfile,
+} from "./profileStore";
+
+export type OrbitDesktopConnectionKind = OrbitDesktopConnectionProfile["kind"];
 
 export type OrbitDesktopConnectionStatus = {
   state: "idle" | "connecting" | "connected" | "failed";

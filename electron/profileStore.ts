@@ -16,7 +16,6 @@ export type RemoteConnectionProfile = {
   kind: "remote";
   name: string;
   url: string;
-  tokenKey?: string;
 };
 
 export type SshTunnelConnectionProfile = {
@@ -29,7 +28,6 @@ export type SshTunnelConnectionProfile = {
   remoteOrbitPort: number;
   localPort: "auto" | number;
   privateKeyPath?: string;
-  tokenKey?: string;
 };
 
 export type OrbitDesktopConnectionProfile =
@@ -44,7 +42,7 @@ export type ProfileStoreData = {
 };
 
 const DEFAULT_STORE: ProfileStoreData = { version: 1, profiles: [] };
-const FORBIDDEN_SECRET_KEYS = /(^|_)(password|passphrase|secret|token|accessToken|refreshToken)$/i;
+const FORBIDDEN_SECRET_KEYS = /(password|passphrase|secret|token)/i;
 
 export function defaultProfileStorePath(userDataPath: string): string {
   return join(userDataPath, "connection-profiles.json");
@@ -84,7 +82,6 @@ export function sanitizeProfile(profile: unknown): OrbitDesktopConnectionProfile
         ...base,
         kind: "remote",
         url: validated.normalizedUrl,
-        tokenKey: optionalNonEmptyString(profile.tokenKey, "profile.tokenKey"),
       });
     }
     case "ssh-tunnel":
@@ -97,7 +94,6 @@ export function sanitizeProfile(profile: unknown): OrbitDesktopConnectionProfile
         remoteOrbitPort: assertValidPort(profile.remoteOrbitPort, "profile.remoteOrbitPort"),
         localPort: assertValidAutoPort(profile.localPort, "profile.localPort"),
         privateKeyPath: optionalNonEmptyString(profile.privateKeyPath, "profile.privateKeyPath"),
-        tokenKey: optionalNonEmptyString(profile.tokenKey, "profile.tokenKey"),
       });
     default:
       throw new Error("Unsupported profile kind");
@@ -160,7 +156,7 @@ function assertNoPlaintextSecrets(value: unknown, path = "profile"): void {
   }
   if (!isRecord(value)) return;
   for (const [key, nested] of Object.entries(value)) {
-    if (key !== "tokenKey" && FORBIDDEN_SECRET_KEYS.test(key)) {
+    if (FORBIDDEN_SECRET_KEYS.test(key)) {
       throw new Error(`Plaintext secret field is not allowed in profile storage: ${path}.${key}`);
     }
     assertNoPlaintextSecrets(nested, `${path}.${key}`);

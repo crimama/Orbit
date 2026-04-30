@@ -1,12 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron");
 
 function canUseDesktopApi() {
-  const { protocol, hostname } = globalThis.location;
-  return (
-    protocol === "file:" ||
-    ((protocol === "http:" || protocol === "https:") &&
-      ["127.0.0.1", "localhost", "::1", "[::1]"].includes(hostname))
-  );
+  return globalThis.location.protocol === "file:";
 }
 
 const api = {

@@ -6,7 +6,6 @@ export interface OrbitDesktopPaths {
   appDataDir: string;
   databaseUrl: string;
   databasePath: string;
-  accessTokenFile: string;
 }
 
 const appDataEnv = "ORBIT_DESKTOP_APP_DATA_DIR";
@@ -40,6 +39,5 @@ export function ensureOrbitDesktopPaths(appName = defaultAppName): OrbitDesktopP
     appDataDir,
     databasePath,
     databaseUrl: `file:${databasePath}`,
-    accessTokenFile: join(appDataDir, "access-token"),
   };
 }

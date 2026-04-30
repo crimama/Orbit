@@ -6,9 +6,10 @@
 - [x] 복사본 baseline commit 및 rollback tag 생성
 - [x] Electron mac app 설계안 작성
 - [x] 평가 에이전트 설계 리뷰 및 피드백 반영
-- [ ] `$team`으로 Electron mac app 구현
-- [ ] 구현 결과 평가 에이전트 검토
-- [ ] 필요한 수정 반영 및 검증
+- [x] `$team`으로 Electron mac app 구현
+- [x] 구현 결과 평가 에이전트 1차 검토
+- [x] 필요한 수정 반영 및 1차 검증
+- [x] 평가 피드백 반영 후 최종 재검토
 
 ## 계획 (Orbit macOS Electron app)
 
@@ -21,11 +22,27 @@
 
 ## 결과
 
-- [ ] 진행 중
+- [x] 완료
 - [x] verification/docs lane 초기 smoke 추가 및 1차 체크포인트 검증
 - [x] `npm run desktop:smoke` 현재 `3/12` 통과, 미충족 설계 항목을 구체적 gap으로 출력
 - [x] `npm run desktop:typecheck` 현재 Electron dependency/types 누락으로 실패 확인
-- [ ] Electron dependency/scripts, sandbox hardening, remote preload isolation, local server supervisor, profile/tunnel modules, desktop-local auth, DB bootstrap 반영 후 재검증 필요
+- [x] Electron dependency/scripts, sandbox hardening, remote preload isolation, local server supervisor, profile/tunnel modules, desktop-local auth, DB bootstrap 반영
+- [x] 원격/로컬 Orbit 화면은 preload 없이 열고, 파일 기반 connection picker에만 `window.orbitDesktop` bridge 노출
+- [x] local server supervisor가 appData SQLite DB, per-app access token, loopback host/port, DB bootstrap으로 Orbit 서버 시작
+- [x] `ORBIT_DESKTOP_LOCAL=1` loopback HTTP 쿠키 예외와 `ORBIT_DESKTOP_DISABLE_PASSWORD_SSH=1` password SSH 저장 차단 반영
+- [x] `npm run desktop:typecheck` 통과
+- [x] `npm run desktop:smoke` 12/12 통과
+- [x] `npm run desktop:build` 통과
+- [x] `npm run lint` 통과
+- [x] `DATABASE_URL=file:/tmp/orbit-mac-desktop-smoke.db node scripts/desktop-db-bootstrap.mjs` 통과
+- [x] `npm run build` 통과
+- [x] 평가 에이전트 1차 FAIL 피드백 반영: access token session-only, remote/tunnel one-shot session token, fake `desktop:pack` 제거
+- [x] `npm run desktop:smoke` 15/15 통과
+- [x] `npm run desktop:preview` 통과
+- [x] `npx tsc --noEmit` 통과
+- [x] `DATABASE_URL=file:/tmp/orbit-mac-desktop-smoke-2.db node scripts/desktop-db-bootstrap.mjs` 통과
+- [x] local supervisor runtime smoke 통과: 임시 app data DB bootstrap, HTTP readiness, child stop 확인
+- [x] 최종 평가 에이전트 PASS: preview scope blocking gap 없음
 
 ---
 

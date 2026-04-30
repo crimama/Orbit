@@ -7,13 +7,7 @@ import type {
 } from "./types";
 
 function canUseDesktopApi() {
-  const protocol = globalThis.location.protocol;
-  const hostname = globalThis.location.hostname;
-  return (
-    protocol === "file:" ||
-    ((protocol === "http:" || protocol === "https:") &&
-      ["127.0.0.1", "localhost", "::1", "[::1]"].includes(hostname))
-  );
+  return globalThis.location.protocol === "file:";
 }
 
 const api: OrbitDesktopApi = {

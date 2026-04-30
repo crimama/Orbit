@@ -4,7 +4,7 @@ import type { SshTunnelConnectionProfile } from "./profileStore";
 
 export async function startSshTunnel(
   profile: SshTunnelConnectionProfile,
-): Promise<{ url: string; message?: string }> {
+): Promise<{ url: string; message?: string; stop: () => Promise<void> }> {
   const localPort = profile.localPort === "auto" ? await getAvailablePort() : profile.localPort;
   const tunnel = await startSshTunnelProcess({
     sshHost: profile.sshHost,
@@ -18,6 +18,7 @@ export async function startSshTunnel(
   return {
     url: `http://127.0.0.1:${localPort}/`,
     message: `Connected through SSH tunnel to ${profile.sshHost}.`,
+    stop: tunnel.stop,
   };
 }
 

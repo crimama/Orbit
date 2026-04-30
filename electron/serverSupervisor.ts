@@ -1,9 +1,7 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 
 import { ensureOrbitDesktopPaths, type OrbitDesktopPaths } from "./desktopPaths.js";
 
@@ -19,12 +17,12 @@ export interface OrbitLocalServerHandle {
   port: number;
   accessToken: string;
   paths: OrbitDesktopPaths;
-  child: ChildProcessWithoutNullStreams;
+  child: ChildProcess;
   stop: () => Promise<void>;
 }
 
 function repoRootFromElectronDir(): string {
-  return fileURLToPath(new URL("..", import.meta.url));
+  return join(__dirname, "..");
 }
 
 async function pickPort(preferred: number | "auto" = "auto"): Promise<number> {
@@ -43,15 +41,8 @@ async function pickPort(preferred: number | "auto" = "auto"): Promise<number> {
   });
 }
 
-function readOrCreateAccessToken(tokenFile: string): string {
-  if (existsSync(tokenFile)) {
-    const token = readFileSync(tokenFile, "utf8").trim();
-    if (token) return token;
-  }
-
-  const token = randomBytes(32).toString("base64url");
-  writeFileSync(tokenFile, `${token}\n`, { mode: 0o600 });
-  return token;
+function createSessionAccessToken(): string {
+  return randomBytes(32).toString("base64url");
 }
 
 async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
@@ -83,7 +74,7 @@ async function waitForHttpReady(url: string, timeoutMs: number): Promise<void> {
   );
 }
 
-function spawnChecked(command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): ChildProcessWithoutNullStreams {
+function spawnChecked(command: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): ChildProcess {
   return spawn(command, args, {
     cwd,
     env,
@@ -96,9 +87,9 @@ async function runDbBootstrap(cwd: string, env: NodeJS.ProcessEnv): Promise<void
   await new Promise<void>((resolve, reject) => {
     const child = spawnChecked(process.execPath, ["scripts/desktop-db-bootstrap.mjs"], cwd, env);
     const stderr: Buffer[] = [];
-    child.stderr.on("data", (chunk: Buffer) => stderr.push(chunk));
-    child.stdout.pipe(process.stdout);
-    child.stderr.pipe(process.stderr);
+    child.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk));
+    child.stdout?.pipe(process.stdout);
+    child.stderr?.pipe(process.stderr);
     child.once("error", reject);
     child.once("exit", (code, signal) => {
       if (code === 0) resolve();
@@ -107,7 +98,7 @@ async function runDbBootstrap(cwd: string, env: NodeJS.ProcessEnv): Promise<void
   });
 }
 
-async function stopChild(child: ChildProcessWithoutNullStreams): Promise<void> {
+async function stopChild(child: ChildProcess): Promise<void> {
   if (child.exitCode !== null || child.killed) return;
 
   await new Promise<void>((resolve) => {
@@ -129,20 +120,20 @@ export async function startOrbitLocalServer(
   const cwd = options.cwd ?? repoRootFromElectronDir();
   const paths = ensureOrbitDesktopPaths(options.appName);
   const port = await pickPort(options.port ?? "auto");
-  const accessToken = readOrCreateAccessToken(paths.accessTokenFile);
+  const accessToken = createSessionAccessToken();
   const url = `http://127.0.0.1:${port}`;
 
   const env: NodeJS.ProcessEnv = {
     ...process.env,
+    ELECTRON_RUN_AS_NODE: "1",
     NODE_ENV: "production",
     ORBIT_DESKTOP_LOCAL: "1",
+    ORBIT_DESKTOP_SESSION_ONLY_AUTH: "1",
     ORBIT_ACCESS_TOKEN: accessToken,
-    ORBIT_ACCESS_TOKEN_FILE: paths.accessTokenFile,
     DATABASE_URL: paths.databaseUrl,
     HOST: "127.0.0.1",
     PORT: String(port),
-    SSH_PASSWORD_SECRET:
-      process.env.SSH_PASSWORD_SECRET?.trim() || randomBytes(32).toString("hex"),
+    ORBIT_DESKTOP_DISABLE_PASSWORD_SSH: "1",
   };
 
   await runDbBootstrap(cwd, env);
@@ -153,8 +144,8 @@ export async function startOrbitLocalServer(
     cwd,
     env,
   );
-  child.stdout.pipe(process.stdout);
-  child.stderr.pipe(process.stderr);
+  child.stdout?.pipe(process.stdout);
+  child.stderr?.pipe(process.stderr);
 
   try {
     await waitForHttpReady(`${url}/login`, options.readinessTimeoutMs ?? 30_000);

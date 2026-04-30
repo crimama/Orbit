@@ -57,6 +57,19 @@ export async function POST(request: Request) {
     );
   }
 
+  if (
+    process.env.ORBIT_DESKTOP_DISABLE_PASSWORD_SSH === "1" &&
+    body.authMethod === "password"
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Password SSH auth is disabled in desktop local mode. Use key-based or agent-based SSH auth.",
+      },
+      { status: 400 },
+    );
+  }
+
   let passwordForStore: string | null = null;
   if (body.authMethod === "password") {
     try {

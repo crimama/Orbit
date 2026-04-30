@@ -14,7 +14,7 @@ if (!existsSync(electronMain) && !existsSync(electronPreload)) {
 
 const result = spawnSync(
   process.platform === "win32" ? "npx.cmd" : "npx",
-  ["tsc", "-p", "tsconfig.desktop.json", "--noEmit"],
+  ["tsc", "-p", "tsconfig.electron.json", "--noEmit", "--pretty", "false", "--incremental", "false"],
   { stdio: "inherit", cwd: root },
 );
 

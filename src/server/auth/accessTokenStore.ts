@@ -12,7 +12,16 @@ function sanitize(value: string): string {
   return value.replace(/[\r\n]/g, "").trim();
 }
 
+function usesSessionOnlyAccessToken(): boolean {
+  return (
+    process.env.ORBIT_DESKTOP_SESSION_ONLY_AUTH === "1" ||
+    process.env.ORBIT_DESKTOP_LOCAL === "1"
+  );
+}
+
 export function readPersistedAccessTokenSync(): string {
+  if (usesSessionOnlyAccessToken()) return "";
+
   const filePath = tokenFilePath();
   try {
     return sanitize(readFileSync(filePath, "utf8"));
@@ -25,6 +34,8 @@ export function readPersistedAccessTokenSync(): string {
 }
 
 export async function readPersistedAccessToken(): Promise<string> {
+  if (usesSessionOnlyAccessToken()) return "";
+
   const filePath = tokenFilePath();
   try {
     const raw = await fs.readFile(filePath, "utf8");
@@ -41,6 +52,11 @@ export async function writePersistedAccessToken(token: string): Promise<void> {
   const value = sanitize(token);
   if (!value) {
     throw new Error("Access token cannot be empty");
+  }
+
+  if (usesSessionOnlyAccessToken()) {
+    process.env.ORBIT_ACCESS_TOKEN = value;
+    return;
   }
 
   const filePath = tokenFilePath();

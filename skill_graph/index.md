@@ -92,6 +92,13 @@
 | **ssh-vault**       | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
 | **vault**           | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
 | **sshConfigId**     | [Project Add SSH Vault Reuse](features/2026-04-30_project-add-ssh-vault-reuse.md)                                   | feature           |
+| **electron**        | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                  | feature           |
+| **macOS**           | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                  | feature           |
+| **desktop-preview** | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                  | feature           |
+| **loopback**        | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                  | feature           |
+| **ssh-tunnel**      | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                  | feature           |
+| **session-only-token** | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                               | feature           |
+| **preload-isolation** | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                | feature           |
 | **PWA**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
 | **모바일**          | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
 | **스킬그래프**      | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                          | feature           |
@@ -190,6 +197,7 @@
 | [프로젝트 하네스 + UX](features/2026-02-28_project-harness-oh-my-opencode-chat-ux.md) | 4     | 🟢   | `harness` `project-harness` `oh-my-opencode` `chat-ui` `session-ux`         |
 | [프론트엔드 상세명세서](features/2026-03-12_frontend-component-specification.md)       | 1-4   | 🟢   | `frontend` `components` `specification` `dashboard` `terminal` `graph` `mobile` `workspace` `pane` `socket` |
 | [Markdown Editor Split, Recent Files, Autosave](features/2026-04-28_markdown-editor-split-recent-autosave.md) | dashboard | 🟢 | `markdown` `autosave` `recent-files` `workspace-split` `multi-split` `nested-split` `workspace-tab` `tab-color` `file-view` `dashboard` |
+| [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md) | desktop preview | 🟢 | `electron` `macOS` `desktop-preview` `loopback` `ssh-tunnel` `session-only-token` `preload-isolation` |
 
 ### decisions/
 

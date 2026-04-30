@@ -1,4 +1,4 @@
-import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { access } from "node:fs/promises";
 import { Socket } from "node:net";
 import { assertValidPort } from "./urlValidation";
@@ -13,7 +13,7 @@ export type SshTunnelOptions = {
 };
 
 export type StartedSshTunnel = {
-  process: ChildProcessWithoutNullStreams;
+  process: ChildProcess;
   argv: string[];
   ready: Promise<void>;
   stop: () => Promise<void>;
@@ -80,7 +80,7 @@ export async function waitForTunnelReady({
   getStderr = () => "",
 }: {
   port: number;
-  process?: ChildProcessWithoutNullStreams;
+  process?: ChildProcess;
   timeoutMs?: number;
   intervalMs?: number;
   getStderr?: () => string;
@@ -89,7 +89,7 @@ export async function waitForTunnelReady({
   const startedAt = Date.now();
 
   while (Date.now() - startedAt < timeoutMs) {
-    if (process?.exitCode !== null) {
+    if (process && process.exitCode !== null) {
       throw new Error(classifySshTunnelError(getStderr(), process.exitCode ?? undefined));
     }
     if (await canConnect(port)) return;
@@ -120,7 +120,7 @@ export function classifySshTunnelError(stderr: string, exitCode?: number): strin
   return "";
 }
 
-async function stopTunnel(child: ChildProcessWithoutNullStreams): Promise<void> {
+async function stopTunnel(child: ChildProcess): Promise<void> {
   if (child.exitCode !== null || child.killed) return;
   child.kill("SIGTERM");
   await Promise.race([
