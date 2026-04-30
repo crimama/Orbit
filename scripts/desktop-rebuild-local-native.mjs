@@ -8,7 +8,7 @@ if (process.platform !== "darwin") {
 
 const result = spawnSync(
   process.platform === "win32" ? "npx.cmd" : "npx",
-  ["electron-rebuild", "-f", "-w", "node-pty"],
+  ["electron-rebuild", "-f", "-o", "node-pty"],
   {
     stdio: "inherit",
     shell: process.platform === "win32",

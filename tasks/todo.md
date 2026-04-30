@@ -53,7 +53,8 @@
 ## 결과
 
 - [x] `electron-builder.local.yml`에 `npmRebuild: false` 적용
-- [x] `desktop:rebuild:local-native` 추가: macOS에서는 `node-pty`만 `electron-rebuild -f -w node-pty`, 비-macOS에서는 skip
+- [x] `desktop:rebuild:local-native` 추가: macOS에서는 `node-pty`만 `electron-rebuild -f -o node-pty`, 비-macOS에서는 skip
+- [x] MacBook 재실패 원인 반영: `-w/--which-module`은 전체 후보를 막지 못해 `-o/--only`로 수정
 - [x] `npm run desktop:rebuild:local-native` 통과: Linux skip 확인
 - [x] `npm run desktop:package-smoke` 통과: 12/12
 - [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 12/12

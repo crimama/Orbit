@@ -31,7 +31,7 @@ Future packaged runtime:
 - Server assets live under packaged app resources as `dist/server.js` plus `dist/node_modules/@` alias shims for `@/server` and `@/lib`.
 - A packaged server is enabled only when `.next/BUILD_ID`, `dist/server.js`, `scripts/desktop-db-bootstrap.mjs`, and `prisma/schema.prisma` are present in the packaged app root.
 - Prisma schema, generated client, and query engine artifacts must be included in the packaged resources.
-- `node-pty` must be rebuilt for the Electron ABI on macOS. The local package disables broad electron-builder dependency rebuilds (`npmRebuild: false`) because optional SSH dependencies such as `cpu-features` can fail native rebuilds even though they are not needed for the local `This Mac` path. Instead, `desktop:rebuild:local-native` rebuilds only `node-pty`.
+- `node-pty` must be rebuilt for the Electron ABI on macOS. The local package disables broad electron-builder dependency rebuilds (`npmRebuild: false`) because optional SSH dependencies such as `cpu-features` can fail native rebuilds even though they are not needed for the local `This Mac` path. Instead, `desktop:rebuild:local-native` uses electron-rebuild's `--only node-pty` path.
 - The local package keeps app resources unpacked (`asar: false`) so the child Electron-as-Node server can execute real files and native modules.
 - Logs, database files, and generated runtime state should remain under the user's app data directory.
 

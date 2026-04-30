@@ -106,6 +106,7 @@ const checks = [
       has(localBuilderConfig, /asar:\s*false/) &&
       has(localBuilderConfig, /npmRebuild:\s*false/) &&
       has("scripts/desktop-rebuild-local-native.mjs", /electron-rebuild/) &&
+      has("scripts/desktop-rebuild-local-native.mjs", /"-o"/) &&
       has("scripts/desktop-rebuild-local-native.mjs", /node-pty/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/node_modules\/@/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/src\/server/) &&

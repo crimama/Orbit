@@ -118,7 +118,7 @@ Remote URL 전용 `.app` 다음 단계로, packaged Electron app 안에서 `This
 - `server.ts`는 `tsconfig.server.json`으로 `dist/server.js`에 컴파일하고, `@/...` require를 풀기 위해 `dist/node_modules/@/{server,lib}` alias shim을 생성한다.
 - local package는 `asar: false`를 사용한다. Electron-as-Node child process가 `.next`, compiled server, Prisma, native modules를 실제 파일 경로에서 읽게 하기 위해서다.
 - local package는 `npmRebuild: false`로 electron-builder의 전체 native rebuild를 끈다. `ssh2`의 optional `cpu-features` rebuild가 `This Mac`과 무관하게 실패할 수 있기 때문이다.
-- 필요한 native module은 `desktop:rebuild:local-native`에서 `electron-rebuild -f -w node-pty`로 좁혀서 처리한다.
+- 필요한 native module은 `desktop:rebuild:local-native`에서 `electron-rebuild -f -o node-pty`로 좁혀서 처리한다. `-w/--which-module`은 전체 rebuild 후보를 제외하지 않으므로 쓰지 않는다.
 - app-data SQLite DB와 session-only access token 모델은 기존 desktop local supervisor 흐름을 그대로 유지한다.
 
 ### 검증
