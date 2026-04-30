@@ -20,6 +20,7 @@
     "desktop:package-smoke": "node scripts/desktop-package-smoke.mjs",
     "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke && npm run desktop:package-smoke",
     "desktop:pack:remote": "npm run desktop:build && npm run desktop:electron-build && electron-builder --mac dir --arm64 --config electron-builder.remote.yml",
+    "desktop:pack:remote:zip": "npm run desktop:build && npm run desktop:electron-build && electron-builder --mac zip --arm64 --config electron-builder.remote.yml",
     "desktop:preview": "npm run build && npm run desktop:build"
   },
   "dependencies": {

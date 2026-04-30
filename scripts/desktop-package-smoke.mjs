@@ -45,8 +45,12 @@ const checks = [
       scripts["desktop:electron-build"] ===
         "node scripts/desktop-electron-build.mjs" &&
       /desktop:electron-build/.test(scripts["desktop:pack:remote"] ?? "") &&
+      /desktop:electron-build/.test(scripts["desktop:pack:remote:zip"] ?? "") &&
       /electron-builder --mac dir --arm64 --config electron-builder\.remote\.yml/.test(
         scripts["desktop:pack:remote"] ?? "",
+      ) &&
+      /electron-builder --mac zip --arm64 --config electron-builder\.remote\.yml/.test(
+        scripts["desktop:pack:remote:zip"] ?? "",
       ) &&
       exists(remoteBuilderConfig) &&
       exists("tsconfig.electron-build.json") &&
@@ -80,8 +84,9 @@ const checks = [
       scripts["desktop:package-smoke"] ===
         "node scripts/desktop-package-smoke.mjs" &&
       /desktop:package-smoke/.test(scripts["desktop:build"] ?? "") &&
-      /desktop:build/.test(scripts["desktop:pack:remote"] ?? ""),
-    gap: "Wire desktop:package-smoke into desktop:build and require desktop:pack:remote to run the desktop build chain.",
+      /desktop:build/.test(scripts["desktop:pack:remote"] ?? "") &&
+      /desktop:build/.test(scripts["desktop:pack:remote:zip"] ?? ""),
+    gap: "Wire desktop:package-smoke into desktop:build and require remote package scripts to run the desktop build chain.",
   },
   {
     id: "packaging-design-doc",
@@ -126,6 +131,7 @@ const checks = [
       has("electron/preload.cjs", /getCapabilities/) &&
       has("electron/connection.html", /kindEnabled/) &&
       has("electron/connection.html", /activateKind/) &&
+      has("electron/connection.html", /profileAvailable/) &&
       has("electron/connection.html", /Remote URL packaged preview/),
     gap: "Expose capabilities IPC and disable This Mac/SSH in the packaged remote app instead of letting them fail at runtime.",
   },

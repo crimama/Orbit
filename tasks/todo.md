@@ -1,5 +1,33 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-04-30 Orbit macOS remote app polish and zip)
+
+- [x] Remote URL packaged UX polish 적용
+- [x] saved local/ssh profile packaged-mode 차단
+- [x] zip 배포 스크립트 추가
+- [x] type/smoke/package/zip 검증
+- [x] 커밋 및 푸시
+
+## 계획 (Orbit macOS remote app polish and zip)
+
+1. packaged remote app에서 Remote URL 경로가 더 명확히 보이도록 picker UI를 다듬는다.
+2. packaged remote app에서 저장된 local/ssh profile connect 버튼을 비활성화한다.
+3. `desktop:pack:remote:zip`을 추가해 Mac 간 이동 가능한 zip 산출물을 만든다.
+4. smoke script가 zip script와 packaged UX boundary를 함께 검증하게 한다.
+5. `desktop:build`, `desktop:pack:remote`, `desktop:pack:remote:zip`을 실행해 검증한다.
+
+## 결과
+
+- [x] `desktop:pack:remote:zip` 추가
+- [x] packaged remote picker에서 Remote URL 경로 badge/focus 처리 추가
+- [x] packaged remote mode에서 저장된 local/ssh profile connect 버튼 비활성화
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 11/11
+- [x] `npm run desktop:pack:remote` 통과
+- [x] `npm run desktop:pack:remote:zip` 통과
+- [x] zip 산출물 확인: `dist-packaged/Orbit-0.1.0-mac-arm64.zip` 107MB
+
+---
+
 ## 현재 작업 (2026-04-30 Orbit macOS Remote URL app packaging implementation)
 
 - [x] `electron-builder` 기반 remote-only 패키징 스크립트 추가

@@ -65,6 +65,16 @@
         transform: none;
         border-color: rgba(148, 163, 184, 0.25);
       }
+      .card .badge {
+        display: inline-flex;
+        margin-bottom: 10px;
+        border-radius: 999px;
+        background: rgba(14, 165, 233, 0.16);
+        color: #bae6fd;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 700;
+      }
       .card h2 {
         margin: 0 0 8px;
         font-size: 18px;
@@ -106,6 +116,10 @@
       button.secondary {
         background: #334155;
       }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
       #status {
         min-height: 24px;
         color: #bae6fd;
@@ -134,6 +148,9 @@
         border: 1px solid rgba(148, 163, 184, 0.2);
         border-radius: 12px;
       }
+      .profile.unavailable {
+        opacity: 0.58;
+      }
       @media (max-width: 760px) {
         .grid,
         .row {
@@ -161,6 +178,7 @@
           </p>
         </article>
         <article class="card" data-kind="remote">
+          <span class="badge">Packaged app path</span>
           <h2>Remote URL</h2>
           <p>
             Connect to an already-running Orbit instance over HTTP or HTTPS.
@@ -287,6 +305,9 @@
           ?.classList.add("active");
         kindInput.value = kind;
         renderFields(kind);
+        requestAnimationFrame(() => {
+          if (kind === "remote") document.querySelector("#url")?.focus();
+        });
       }
 
       function applyCapabilities(nextCapabilities) {
@@ -359,6 +380,14 @@
       }
 
       async function connect(profile) {
+        if (!profileAvailable(profile)) {
+          setStatus(
+            "This saved profile is not available in the packaged Remote URL preview.",
+            capabilities.unavailableReason,
+            "PACKAGED_REMOTE_ONLY",
+          );
+          return;
+        }
         setStatus("Connecting…");
         try {
           const result = await api.connect(profile);
@@ -371,10 +400,10 @@
       async function renderProfiles() {
         const profiles = await api.getProfiles();
         profilesEl.innerHTML = profiles
-          .map(
-            (profile) =>
-              `<div class="profile"><span>${profile.name} · ${profile.kind}</span><button type="button" data-id="${profile.id}">Connect</button></div>`,
-          )
+          .map((profile) => {
+            const available = profileAvailable(profile);
+            return `<div class="profile ${available ? "" : "unavailable"}"><span>${profile.name} · ${profile.kind}</span><button type="button" data-id="${profile.id}" ${available ? "" : "disabled"}>Connect</button></div>`;
+          })
           .join("");
         profilesEl.querySelectorAll("button").forEach((button) => {
           button.addEventListener("click", () =>
@@ -383,6 +412,10 @@
             ),
           );
         });
+      }
+
+      function profileAvailable(profile) {
+        return profile ? kindEnabled(profile.kind) : false;
       }
 
       document.querySelectorAll(".card").forEach((card) => {

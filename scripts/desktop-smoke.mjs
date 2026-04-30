@@ -38,6 +38,7 @@ const checks = [
       "desktop:smoke",
       "desktop:package-smoke",
       "desktop:pack:remote",
+      "desktop:pack:remote:zip",
     ].every((name) => typeof scripts[name] === "string"),
     gap: "Add the desktop scripts required by the Electron developer-preview workflow.",
   },
