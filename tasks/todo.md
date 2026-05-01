@@ -1,5 +1,33 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-05-01 packaged local readiness failure diagnostics)
+
+- [x] MacBook `LOCAL_START_FAILED` timeout 증상 확인
+- [x] server child 조기 종료와 readiness timeout을 구분하도록 supervisor 개선
+- [x] packaged local server stdout/stderr 로그 파일 기록 추가
+- [x] 첫 packaged local cold start 여유를 위해 readiness timeout 90초로 확대
+- [x] type/smoke/package 검증
+- [x] skill_graph bugfix 기록
+- [x] 커밋 및 푸시
+
+## 계획 (packaged local readiness failure diagnostics)
+
+1. `/login` readiness timeout만 표시하던 흐름을 child process exit와 race한다.
+2. 서버 stdout/stderr 최근 내용을 UI diagnostic에 포함하고 전체 로그를 app data 아래에 남긴다.
+3. Mac에서 다음 실패 시 실제 원인 메시지와 로그 경로를 바로 확인할 수 있게 한다.
+4. Linux에서 typecheck, smoke, packaged local path를 재검증한다.
+
+## 결과
+
+- [x] 서버 프로세스가 readiness 전에 종료되면 timeout 대신 exit code/signal, runtime command, 최근 출력, 로그 경로를 진단에 포함
+- [x] 전체 서버 stdout/stderr를 `~/Library/Application Support/Orbit/logs/desktop-server.log`에 기록
+- [x] default readiness timeout을 30초에서 90초로 확대
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 12/12
+- [x] `npm run lint` 통과
+- [x] `npm run desktop:pack:local` 통과
+
+---
+
 ## 현재 작업 (2026-04-30 Orbit macOS packaged local mode)
 
 - [x] packaged local runtime 경계 재확인

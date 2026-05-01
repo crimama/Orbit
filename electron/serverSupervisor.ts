@@ -1,7 +1,12 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { randomBytes } from "node:crypto";
+import {
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  type WriteStream,
+} from "node:fs";
 import { createServer, request as httpRequest } from "node:http";
-import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import {
@@ -33,6 +38,25 @@ interface OrbitServerRuntimePlan {
   command: string;
   args: string[];
   description: string;
+}
+
+class RecentOutputBuffer {
+  private chunks: string[] = [];
+
+  constructor(private readonly maxLength = 8_000) {}
+
+  push(chunk: Buffer | string): void {
+    this.chunks.push(chunk.toString());
+    let text = this.chunks.join("");
+    if (text.length > this.maxLength) {
+      text = text.slice(text.length - this.maxLength);
+      this.chunks = [text];
+    }
+  }
+
+  text(): string {
+    return this.chunks.join("").trim();
+  }
 }
 
 function repoRootFromElectronDir(): string {
@@ -177,9 +201,46 @@ function spawnChecked(
   });
 }
 
+function createSupervisorLog(paths: OrbitDesktopPaths): {
+  path: string;
+  stream: WriteStream;
+} {
+  const logDir = join(paths.appDataDir, "logs");
+  mkdirSync(logDir, { recursive: true });
+
+  const logPath = join(logDir, "desktop-server.log");
+  const stream = createWriteStream(logPath, { flags: "a" });
+  stream.write(
+    `\n[${new Date().toISOString()}] Orbit desktop local server startup\n`,
+  );
+  return { path: logPath, stream };
+}
+
+function writeLog(stream: WriteStream, message: string): void {
+  stream.write(`[${new Date().toISOString()}] ${message}\n`);
+}
+
+function captureChildOutput(
+  child: ChildProcess,
+  logStream: WriteStream,
+  recentOutput: RecentOutputBuffer,
+): void {
+  child.stdout?.on("data", (chunk: Buffer) => {
+    recentOutput.push(chunk);
+    logStream.write(chunk);
+    process.stdout.write(chunk);
+  });
+  child.stderr?.on("data", (chunk: Buffer) => {
+    recentOutput.push(chunk);
+    logStream.write(chunk);
+    process.stderr.write(chunk);
+  });
+}
+
 async function runDbBootstrap(
   cwd: string,
   env: NodeJS.ProcessEnv,
+  logStream?: WriteStream,
 ): Promise<void> {
   await new Promise<void>((resolve, reject) => {
     const child = spawnChecked(
@@ -189,9 +250,15 @@ async function runDbBootstrap(
       env,
     );
     const stderr: Buffer[] = [];
-    child.stderr?.on("data", (chunk: Buffer) => stderr.push(chunk));
-    child.stdout?.pipe(process.stdout);
-    child.stderr?.pipe(process.stderr);
+    child.stdout?.on("data", (chunk: Buffer) => {
+      logStream?.write(chunk);
+      process.stdout.write(chunk);
+    });
+    child.stderr?.on("data", (chunk: Buffer) => {
+      stderr.push(chunk);
+      logStream?.write(chunk);
+      process.stderr.write(chunk);
+    });
     child.once("error", reject);
     child.once("exit", (code, signal) => {
       if (code === 0) resolve();
@@ -221,11 +288,74 @@ async function stopChild(child: ChildProcess): Promise<void> {
   });
 }
 
+async function waitForServerReadyOrExit(
+  child: ChildProcess,
+  url: string,
+  timeoutMs: number,
+  runtimePlan: OrbitServerRuntimePlan,
+  logPath: string,
+  recentOutput: RecentOutputBuffer,
+): Promise<void> {
+  let exited = false;
+  let exitCode: number | null = null;
+  let exitSignal: NodeJS.Signals | null = null;
+  let ready = false;
+
+  const earlyExit = new Promise<never>((_, reject) => {
+    child.once("exit", (code, signal) => {
+      exited = true;
+      exitCode = code;
+      exitSignal = signal;
+      if (ready) return;
+      reject(
+        new Error(
+          [
+            `Orbit desktop server exited before readiness (${signal ?? code ?? "unknown"}).`,
+            `Runtime: ${runtimePlan.mode}`,
+            `Command: ${runtimePlan.command} ${runtimePlan.args.join(" ")}`,
+            `Log: ${logPath}`,
+            recentOutput.text()
+              ? `Recent server output:\n${recentOutput.text()}`
+              : "Recent server output: <empty>",
+          ].join("\n"),
+        ),
+      );
+    });
+  });
+
+  try {
+    await Promise.race([waitForHttpReady(url, timeoutMs), earlyExit]);
+    ready = true;
+  } catch (error) {
+    if (!exited) {
+      throw new Error(
+        [
+          error instanceof Error ? error.message : String(error),
+          `Runtime: ${runtimePlan.mode}`,
+          `Command: ${runtimePlan.command} ${runtimePlan.args.join(" ")}`,
+          `Log: ${logPath}`,
+          recentOutput.text()
+            ? `Recent server output:\n${recentOutput.text()}`
+            : "Recent server output: <empty>",
+        ].join("\n"),
+      );
+    }
+    throw error;
+  }
+  if (exitCode !== null || exitSignal !== null) {
+    throw new Error(
+      `Orbit desktop server exited during readiness (${exitSignal ?? exitCode}). Log: ${logPath}`,
+    );
+  }
+}
+
 export async function startOrbitLocalServer(
   options: OrbitLocalServerOptions = {},
 ): Promise<OrbitLocalServerHandle> {
   const cwd = options.cwd ?? repoRootFromElectronDir();
   const paths = ensureOrbitDesktopPaths(options.appName);
+  const supervisorLog = createSupervisorLog(paths);
+  const recentOutput = new RecentOutputBuffer();
   const port = await pickPort(options.port ?? "auto");
   const accessToken = createSessionAccessToken();
   const url = `http://127.0.0.1:${port}`;
@@ -247,11 +377,19 @@ export async function startOrbitLocalServer(
     ? `${aliasNodePath}${process.platform === "win32" ? ";" : ":"}${env.NODE_PATH}`
     : aliasNodePath;
 
-  await runDbBootstrap(cwd, env);
+  writeLog(supervisorLog.stream, `cwd=${cwd}`);
+  writeLog(supervisorLog.stream, `database=${paths.databasePath}`);
+  writeLog(supervisorLog.stream, `port=${port}`);
+
+  await runDbBootstrap(cwd, env, supervisorLog.stream);
 
   const runtimePlan = resolveServerRuntimePlan(cwd);
   env.ORBIT_DESKTOP_SERVER_RUNTIME = runtimePlan.mode;
   env.ORBIT_DESKTOP_SERVER_RUNTIME_DESCRIPTION = runtimePlan.description;
+  writeLog(
+    supervisorLog.stream,
+    `runtime=${runtimePlan.mode} command=${runtimePlan.command} ${runtimePlan.args.join(" ")}`,
+  );
 
   const child = spawnChecked(
     runtimePlan.command,
@@ -259,18 +397,23 @@ export async function startOrbitLocalServer(
     runtimePlan.cwd,
     env,
   );
-  child.stdout?.pipe(process.stdout);
-  child.stderr?.pipe(process.stderr);
+  captureChildOutput(child, supervisorLog.stream, recentOutput);
 
   try {
-    await waitForHttpReady(
+    await waitForServerReadyOrExit(
+      child,
       `${url}/login`,
-      options.readinessTimeoutMs ?? 30_000,
+      options.readinessTimeoutMs ?? 90_000,
+      runtimePlan,
+      supervisorLog.path,
+      recentOutput,
     );
   } catch (error) {
     await stopChild(child);
+    supervisorLog.stream.end();
     throw error;
   }
+  writeLog(supervisorLog.stream, `ready=${url}/login`);
 
   return {
     url,
@@ -278,6 +421,9 @@ export async function startOrbitLocalServer(
     accessToken,
     paths,
     child,
-    stop: () => stopChild(child),
+    stop: async () => {
+      await stopChild(child);
+      supervisorLog.stream.end();
+    },
   };
 }

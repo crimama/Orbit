@@ -102,6 +102,8 @@
 | **ssh-tunnel**         | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                        | feature           |
 | **session-only-token** | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                        | feature           |
 | **preload-isolation**  | [Orbit macOS Electron Preview](features/2026-04-30_orbit-macos-electron-preview.md)                                        | feature           |
+| **readiness**          | [Packaged Local Readiness Diagnostics](bugfix/2026-05-01_packaged-local-readiness-diagnostics.md)                          | bugfix            |
+| **desktop-server-log** | [Packaged Local Readiness Diagnostics](bugfix/2026-05-01_packaged-local-readiness-diagnostics.md)                          | bugfix            |
 | **PWA**                | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                                 | feature           |
 | **모바일**             | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                                 | feature           |
 | **스킬그래프**         | [Phase 2-4 병렬](features/2026-02-28_phase2-4-parallel.md)                                                                 | feature           |
@@ -220,6 +222,7 @@
 | [모바일 command send 미실행](bugfix/2026-03-12_mobile-command-send-execution.md)                                           | 🟢   | 모바일 명령 실행 안정화   | `mobile` `terminal` `session` `command` `pty`                                                                           |
 | [마크다운 뷰어 stale 상태 + 파일 재오픈 실패 + 사이드바 업로드 부재](bugfix/2026-04-02_markdown-sidebar-refresh-upload.md) | 🟢   | 파일 뷰/사이드바 안정화   | `markdown` `preview` `sidebar` `upload` `file-view`                                                                     |
 | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md)                                         | 🟢   | durable run replay 안정화 | `AgentRun` `ledger` `terminal-output` `terminal-input` `Prisma` `SQLite` `dashboard` `runtime-validation` `concurrency` |
+| [Packaged Local Readiness Diagnostics](bugfix/2026-05-01_packaged-local-readiness-diagnostics.md)                          | 🟢   | macOS local app 진단 개선 | `electron` `macOS` `packaged-local` `this-mac` `readiness` `desktop-server-log`                                         |
 
 ### refactor/
 
