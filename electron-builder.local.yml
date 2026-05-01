@@ -11,6 +11,10 @@ files:
   - scripts/desktop-db-bootstrap.mjs
   - prisma/schema.prisma
   - package.json
+  - from: node_modules/.prisma
+    to: node_modules/.prisma
+    filter:
+      - "**/*"
 extraMetadata:
   main: dist-electron/main.js
 mac:

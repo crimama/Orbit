@@ -99,6 +99,8 @@ const checks = [
       has(localBuilderConfig, /\.next\/\*\*\/\*/) &&
       has(localBuilderConfig, /scripts\/desktop-db-bootstrap\.mjs/) &&
       has(localBuilderConfig, /prisma\/schema\.prisma/) &&
+      has(localBuilderConfig, /from:\s*node_modules\/\.prisma/) &&
+      has(localBuilderConfig, /to:\s*node_modules\/\.prisma/) &&
       has(
         localBuilderConfig,
         /extraMetadata:[\s\S]*main:\s*dist-electron\/main\.js/,
@@ -108,6 +110,7 @@ const checks = [
       has("scripts/desktop-rebuild-local-native.mjs", /electron-rebuild/) &&
       has("scripts/desktop-rebuild-local-native.mjs", /"-o"/) &&
       has("scripts/desktop-rebuild-local-native.mjs", /node-pty/) &&
+      has("scripts/desktop-local-server-build.mjs", /prisma.*generate/s) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/node_modules\/@/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/src\/server/) &&
       has("scripts/desktop-local-server-build.mjs", /dist\/src\/lib/),

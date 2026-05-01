@@ -1,5 +1,33 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-05-01 packaged local Prisma client inclusion)
+
+- [x] MacBook 로그로 `.prisma/client/default` 누락 원인 확인
+- [x] local server build 전에 `prisma generate` 보장
+- [x] local package에 `node_modules/.prisma` FileSet 명시 포함
+- [x] package smoke에 Prisma generated client 포함 조건 추가
+- [x] build/package 검증
+- [x] 커밋 및 푸시
+
+## 계획 (packaged local Prisma client inclusion)
+
+1. `@prisma/client`가 require하는 hidden generated client 폴더를 packaged app root의 `node_modules/.prisma`에 포함한다.
+2. fresh checkout에서도 generated client가 존재하도록 local server build 단계에서 `prisma generate`를 실행한다.
+3. smoke와 실제 package 산출물 확인으로 `.prisma/client/default.js` 포함을 검증한다.
+
+## 결과
+
+- [x] `electron-builder.local.yml`에 `node_modules/.prisma` FileSet 추가
+- [x] `desktop:local-server-build`에서 `npx prisma generate` 실행
+- [x] `npm run desktop:local-server-build` 통과
+- [x] `npm run desktop:package-smoke` 통과: 12/12
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 12/12
+- [x] `npm run lint` 통과
+- [x] `npm run desktop:pack:local` 통과
+- [x] packaged app 산출물에 `node_modules/.prisma/client/default.js` 포함 확인
+
+---
+
 ## 현재 작업 (2026-05-01 packaged local readiness failure diagnostics)
 
 - [x] MacBook `LOCAL_START_FAILED` timeout 증상 확인

@@ -41,3 +41,13 @@ Mac packaged app에서 `This Mac` 연결 시 내부 Orbit 서버가 준비되기
 ## 관련 노트
 
 - [Orbit macOS Electron Preview](../features/2026-04-30_orbit-macos-electron-preview.md)
+
+## 후속 원인: Prisma Generated Client 누락
+
+진단 보강 후 MacBook에서 확인된 실제 원인은 packaged app 안에 `node_modules/@prisma/client`는 포함됐지만 hidden generated client 폴더인 `node_modules/.prisma/client`가 빠진 것이었다.
+
+수정:
+
+- `desktop:local-server-build`가 `npx prisma generate`를 먼저 실행한다.
+- `electron-builder.local.yml`이 `node_modules/.prisma/**/*`를 명시적으로 포함한다.
+- package smoke가 generated client 포함 설정을 검증한다.

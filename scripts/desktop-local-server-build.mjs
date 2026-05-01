@@ -11,6 +11,7 @@ function run(command, args) {
 }
 
 await rm("dist", { recursive: true, force: true });
+run("npx", ["prisma", "generate"]);
 run("npx", ["tsc", "-p", "tsconfig.server.json"]);
 
 await mkdir("dist/node_modules/@", { recursive: true });
