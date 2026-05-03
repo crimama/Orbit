@@ -1,5 +1,32 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-05-03 macOS packaged local terminal start failure)
+
+- [x] local PTY/session attach 실패 경로 확인
+- [x] Finder 실행 macOS PATH/shell 보강
+- [x] PTY spawn 실패 원인을 세션 lastContext와 attach callback에 노출
+- [x] build/package 검증
+- [x] 커밋 및 푸시
+
+## 계획 (macOS packaged local terminal start failure)
+
+1. `node-pty` spawn 실패가 UI에서 일반 "not running"으로 묻히지 않게 실제 에러 메시지를 전달한다.
+2. macOS packaged app이 Finder 환경에서 실행될 때 `/opt/homebrew/bin`, `/usr/local/bin`, `/bin/zsh`를 기본 경로로 사용할 수 있게 한다.
+3. smoke/build/package를 검증하고 MacBook에서 다음 실패 시 구체 메시지를 확인한다.
+
+## 결과
+
+- [x] macOS Finder 환경에서 `PATH`에 Homebrew/default system bin 경로 보강
+- [x] `SHELL`이 없는 packaged app 실행에서는 `/bin/zsh` 우선 사용
+- [x] `pty.spawn()` 실패 시 command/cwd/detail 포함한 에러 생성
+- [x] `ensureSessionRunning()` 실패 원인을 `lastContext`에 저장
+- [x] `session-attach` 실패 callback이 저장된 실제 실패 원인을 반환
+- [x] `npm run desktop:build` 통과: desktop smoke 22/22, package smoke 12/12
+- [x] `npm run lint` 통과
+- [x] `npm run desktop:pack:local` 통과
+
+---
+
 ## 현재 작업 (2026-05-01 packaged local Prisma client inclusion)
 
 - [x] MacBook 로그로 `.prisma/client/default` 누락 원인 확인

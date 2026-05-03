@@ -720,13 +720,17 @@ class SessionManager {
 
       return true;
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error(
         `[SessionManager] ensureSessionRunning failed for ${sessionId}:`,
         err,
       );
       await prisma.agentSession.update({
         where: { id: sessionId },
-        data: { status: "terminated" },
+        data: {
+          status: "terminated",
+          lastContext: `Local terminal start failed: ${message}`,
+        },
       });
       return false;
     }

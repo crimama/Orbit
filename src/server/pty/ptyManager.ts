@@ -1,5 +1,6 @@
 import * as pty from "node-pty";
 import type { IPty } from "node-pty";
+import { existsSync } from "node:fs";
 import type { PtyBackend } from "@/server/pty/ptyBackend";
 import {
   getScreenPreviewFromScrollback,
@@ -23,6 +24,36 @@ interface PtySession {
 
 type DataCallback = (data: string) => void;
 type ExitCallback = (exitCode: number) => void;
+
+const MACOS_DESKTOP_PATH =
+  "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
+
+function defaultShell(): string {
+  const configured = process.env.SHELL?.trim();
+  if (configured) return configured;
+  if (process.platform === "darwin" && existsSync("/bin/zsh"))
+    return "/bin/zsh";
+  return DEFAULT_SHELL;
+}
+
+function desktopPath(): string {
+  const current = process.env.PATH?.trim();
+  if (process.platform !== "darwin") return current ?? "";
+  if (!current) return MACOS_DESKTOP_PATH;
+
+  const parts = new Set(current.split(":").filter(Boolean));
+  for (const part of MACOS_DESKTOP_PATH.split(":")) {
+    parts.add(part);
+  }
+  return Array.from(parts).join(":");
+}
+
+function formatSpawnError(error: unknown, command: string, cwd: string): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  return new Error(
+    `Failed to start PTY command "${command}" in "${cwd}": ${detail}`,
+  );
+}
 
 export interface CreateOptions {
   cols?: number;
@@ -48,20 +79,27 @@ class PtyManager implements PtyBackend {
     const rows = opts.rows ?? DEFAULT_ROWS;
     const cwd = opts.cwd ?? process.env.HOME ?? "/";
 
-    const command = opts.command ?? DEFAULT_SHELL;
+    const command = opts.command ?? defaultShell();
     const args = opts.args ?? [];
     const env = {
       ...(process.env as Record<string, string>),
       ...(opts.env ?? {}),
+      PATH: opts.env?.PATH ?? desktopPath(),
+      SHELL: process.env.SHELL ?? defaultShell(),
     };
 
-    const proc = pty.spawn(command, args, {
-      name: "xterm-color",
-      cols,
-      rows,
-      cwd,
-      env,
-    });
+    let proc: IPty;
+    try {
+      proc = pty.spawn(command, args, {
+        name: "xterm-color",
+        cols,
+        rows,
+        cwd,
+        env,
+      });
+    } catch (error) {
+      throw formatSpawnError(error, command, cwd);
+    }
 
     const session: PtySession = {
       id: sessionId,
