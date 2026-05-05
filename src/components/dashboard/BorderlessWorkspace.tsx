@@ -19,6 +19,7 @@ type WorkspaceTab =
       projectName: string;
       projectColor: string;
       sessionId: string;
+      status: SessionInfo["status"];
     }
   | {
       id: string;
@@ -97,6 +98,7 @@ function buildSessionTab(
     projectName: session.projectName,
     projectColor: session.projectColor,
     sessionId: session.id,
+    status: session.status,
   };
 }
 
@@ -258,6 +260,14 @@ function tabKindLabel(tab: WorkspaceTab) {
   return "Browser";
 }
 
+function tabKindMark(tab: WorkspaceTab) {
+  if (tab.kind === "session") return "$";
+  if (tab.kind === "file-view") return "F";
+  if (tab.kind === "files") return "DIR";
+  if (tab.kind === "harness") return "H";
+  return "WEB";
+}
+
 function hexToRgba(hex: string, alpha: number) {
   const normalized = hex.trim().replace("#", "");
   const value =
@@ -379,6 +389,7 @@ export default function BorderlessWorkspace({
           projectName: selectedProject?.name ?? "",
           projectColor: selectedProject?.color ?? "#64748b",
           sessionId: inlineSessionId,
+          status: "active",
         };
 
     upsertTab(tab, activePanel.id);
@@ -394,7 +405,8 @@ export default function BorderlessWorkspace({
         const updated = buildSessionTab(fresh);
         if (
           updated.title === tab.title &&
-          updated.projectName === tab.projectName
+          updated.projectName === tab.projectName &&
+          updated.status === tab.status
         ) {
           return tab;
         }
@@ -860,10 +872,26 @@ export default function BorderlessWorkspace({
                   onClick={() => setPanelActiveTab(panel.id, tab.id)}
                   className="flex cursor-grab items-center gap-1.5 py-1.5 pl-2 pr-1 active:cursor-grabbing"
                 >
+                  <span
+                    className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-neutral-700 bg-neutral-950/50 px-1 font-mono text-[10px] font-semibold text-neutral-300"
+                    aria-hidden="true"
+                  >
+                    {tabKindMark(tab)}
+                  </span>
                   {"projectName" in tab && (
                     <span className="font-semibold text-neutral-200">
                       {tab.projectName}
                     </span>
+                  )}
+                  {tab.kind === "session" && (
+                    <span
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                        tab.status === "active"
+                          ? "bg-emerald-400"
+                          : "bg-neutral-500"
+                      }`}
+                      aria-hidden="true"
+                    />
                   )}
                   <span
                     className={`${"projectName" in tab ? "ml-0.5 " : ""}max-w-[13rem] truncate text-neutral-300`}

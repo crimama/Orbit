@@ -253,7 +253,11 @@ export function registerTerminalHandlers(
     if (!backend) {
       const running = await sessionManager.ensureSessionRunning(sessionId);
       if (!running) {
-        callback({ ok: false, error: "Session not found or not running" });
+        const session = await sessionManager.getSession(sessionId);
+        callback({
+          ok: false,
+          error: session?.lastContext ?? "Session not found or not running",
+        });
         return;
       }
       backend = getPtyBackend(sessionId);

@@ -154,7 +154,7 @@ export default function MobileChatTerminal({
   const [approvals, setApprovals] = useState<ApprovalCard[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const inputValueRef = useRef("");
   const viewportRef = useRef<HTMLDivElement>(null);
   const pendingAssistantIdRef = useRef<string | null>(null);
@@ -529,9 +529,8 @@ export default function MobileChatTerminal({
 
       {/* Input bar */}
       <div className="flex items-center gap-1.5 border-t border-neutral-800 bg-neutral-900 px-2 py-1.5">
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
           inputMode="text"
           autoComplete="off"
           autoCorrect="off"
@@ -545,13 +544,14 @@ export default function MobileChatTerminal({
           onCompositionStart={() => setIsComposing(true)}
           onCompositionEnd={(e) => {
             setIsComposing(false);
-            const v = (e.target as HTMLInputElement).value;
+            const v = (e.target as HTMLTextAreaElement).value;
             setInput(v);
             inputValueRef.current = v;
           }}
           onKeyDown={(e) => {
             if (
               e.key === "Enter" &&
+              (e.metaKey || e.ctrlKey) &&
               !isComposing &&
               !e.nativeEvent.isComposing
             ) {
@@ -560,7 +560,8 @@ export default function MobileChatTerminal({
             }
           }}
           placeholder={attached ? "Ask Orbit…" : "Ask Orbit while it connects…"}
-          className="min-h-[40px] min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 text-base text-neutral-100 placeholder-neutral-500 outline-none focus:border-border-focus"
+          rows={2}
+          className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-y rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base leading-5 text-neutral-100 placeholder-neutral-500 outline-none focus:border-border-focus"
         />
         <button
           type="button"

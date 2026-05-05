@@ -1,5 +1,40 @@
 # Tasks — Todo
 
+## 현재 작업 (2026-05-05 mac local session and remote auth hardening)
+
+- [x] remote auth bootstrap/header spoof 보안 보완
+- [x] mac local agent session 시작 안정화
+- [x] Orbit chat composer 줄바꿈 UX 보완
+- [x] workspace tab에서 세션/파일 구분성 개선
+- [x] 프로젝트별 active session count 정합성 보완
+- [x] 타입/빌드 검증 및 결과 기록
+
+## 계획 (mac local session and remote auth hardening)
+
+1. `ORBIT_ALLOW_REMOTE=true` 환경에서 token bootstrap이 remote/header spoof로 열리지 않도록 startup/API guard를 추가한다.
+2. remote scope 기본값을 `tailscale`로 좁히고 `any`는 명시 opt-in으로만 남긴다.
+3. mac local agent command는 login shell resolver를 통해 실행해 Finder 실행 PATH 문제를 완화하고 실패 메시지를 명확히 남긴다.
+4. chat composer는 multiline textarea 계약을 통일하고 전송/줄바꿈 키 동작을 정리한다.
+5. workspace tab은 프로젝트 색상과 별개로 session/file kind를 한 가지 신호로 구분한다.
+6. session lifecycle 후 project count가 stale로 남지 않도록 API/count refresh 기준을 정리한다.
+
+## 결과
+
+- [x] remote 모드 기본 scope를 `tailscale`로 변경하고 `ORBIT_REMOTE_SCOPE=any`는 명시 opt-in + warning으로 제한
+- [x] `ORBIT_ALLOW_REMOTE=true`에서 token이 없으면 서버 시작을 중단하도록 guard 추가
+- [x] auth session bootstrap이 `x-forwarded-for`/`x-real-ip`를 신뢰하지 않고 custom server의 실제 socket loopback 판정만 사용
+- [x] local agent 세션은 login shell resolver로 `codex`/`opencode`/`claude`를 찾고, 누락 시 terminal에 명확한 안내 출력
+- [x] PTY spawn 실패 메시지에 command/cwd/detail 포함 및 attach 실패 시 `lastContext`를 UI callback으로 반환
+- [x] mobile chat composer를 multiline `textarea`로 전환하고 `Cmd/Ctrl+Enter` 전송 shortcut 적용
+- [x] workspace tab에 session/file/files/harness/browser kind mark와 session status dot 추가
+- [x] dashboard/mobile session lifecycle 후 project list 재조회로 active session count stale 완화
+- [x] `npx tsc --noEmit` 통과
+- [x] `npm run lint` 통과
+- [x] `DATABASE_URL=file:/tmp/orbit-mac-local-hardening-build.db npm run build` 통과
+- [x] remote no-token startup smoke: expected failure 확인
+
+---
+
 ## 현재 작업 (2026-04-30 AgentRun ledger review fixes team execution)
 
 - [x] 개발 전 rollback tag 생성

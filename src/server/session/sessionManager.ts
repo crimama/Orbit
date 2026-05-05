@@ -23,6 +23,37 @@ const AGENT_TYPES = {
 } as const;
 
 const READY_MARKER_CMD = "printf '\\033]777;orbit-ready\\007'";
+const LOGIN_SHELL = process.env.SHELL?.trim() || "/bin/zsh";
+
+function loginShellScript(script: string): { command: string; args: string[] } {
+  return {
+    command: LOGIN_SHELL,
+    args: ["-lic", script],
+  };
+}
+
+function localAgentCommand(
+  agentType: string,
+  args: string[] = [],
+): { command: string; args: string[] } {
+  const quotedArgs = args.length > 0 ? ` ${args.map(shellQuote).join(" ")}` : "";
+
+  if (agentType === AGENT_TYPES.CODEX) {
+    return loginShellScript(
+      `${READY_MARKER_CMD}; if command -v codex >/dev/null 2>&1; then exec codex${quotedArgs}; else echo "[Agent Orbit] codex was not found in login shell PATH."; echo "[Agent Orbit] Install Codex CLI or add it to your shell profile PATH."; exec "\${SHELL:-/bin/zsh}" -l; fi`,
+    );
+  }
+
+  if (agentType === AGENT_TYPES.OPENCODE) {
+    return loginShellScript(
+      `${READY_MARKER_CMD}; if command -v opencode >/dev/null 2>&1; then exec opencode${quotedArgs}; else echo "[Agent Orbit] opencode was not found in login shell PATH."; echo "[Agent Orbit] Install OpenCode or add it to your shell profile PATH."; exec "\${SHELL:-/bin/zsh}" -l; fi`,
+    );
+  }
+
+  return loginShellScript(
+    `${READY_MARKER_CMD}; if command -v claude >/dev/null 2>&1; then exec claude${quotedArgs}; elif command -v claude-code >/dev/null 2>&1; then exec claude-code${quotedArgs}; else echo "[Agent Orbit] claude/claude-code was not found in login shell PATH."; echo "[Agent Orbit] Install Claude Code or add it to your shell profile PATH."; exec "\${SHELL:-/bin/zsh}" -l; fi`,
+  );
+}
 
 function dockerInnerCommand(
   workdir: string,
@@ -724,10 +755,21 @@ class SessionManager {
         `[SessionManager] ensureSessionRunning failed for ${sessionId}:`,
         err,
       );
-      await prisma.agentSession.update({
-        where: { id: sessionId },
-        data: { status: "terminated" },
-      });
+      const message =
+        err instanceof Error ? err.message : "Unknown terminal startup error";
+      const updated = await prisma.agentSession
+        .update({
+          where: { id: sessionId },
+          data: {
+            status: "terminated",
+            lastContext: `Local terminal start failed: ${message}`,
+          },
+          include: { project: { select: { name: true, color: true } } },
+        })
+        .catch(() => null);
+      if (updated) {
+        this.queueSessionUpdate(toSessionInfo(updated));
+      }
       return false;
     }
   }
@@ -766,22 +808,22 @@ class SessionManager {
     }
 
     if (req.agentType === AGENT_TYPES.CODEX) {
+      const command = localAgentCommand(req.agentType);
       return {
         cols: req.cols,
         rows: req.rows,
         cwd: project.path,
-        command: "codex",
-        args: [],
+        ...command,
       };
     }
 
     if (req.agentType === AGENT_TYPES.OPENCODE) {
+      const command = localAgentCommand(req.agentType);
       return {
         cols: req.cols,
         rows: req.rows,
         cwd: project.path,
-        command: "opencode",
-        args: [],
+        ...command,
       };
     }
 
@@ -790,12 +832,12 @@ class SessionManager {
     if (req.dangerouslySkipPermissions) {
       args.push("--dangerously-skip-permissions");
     }
+    const command = localAgentCommand(req.agentType, args);
     return {
       cols: req.cols,
       rows: req.rows,
       cwd: project.path,
-      command: "claude",
-      args,
+      ...command,
     };
   }
 
@@ -822,18 +864,18 @@ class SessionManager {
     }
 
     if (agentType === AGENT_TYPES.CODEX) {
+      const command = localAgentCommand(agentType);
       return {
         cwd: project.path,
-        command: "codex",
-        args: [],
+        ...command,
       };
     }
 
     if (agentType === AGENT_TYPES.OPENCODE) {
+      const command = localAgentCommand(agentType);
       return {
         cwd: project.path,
-        command: "opencode",
-        args: [],
+        ...command,
       };
     }
 
@@ -842,10 +884,10 @@ class SessionManager {
       : [];
     // Note: dangerouslySkipPermissions is not persisted per-session,
     // so recovered sessions start in normal permission mode.
+    const command = localAgentCommand(agentType, args);
     return {
       cwd: project.path,
-      command: "claude",
-      args,
+      ...command,
     };
   }
 

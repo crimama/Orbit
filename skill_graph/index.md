@@ -172,6 +172,9 @@
 | **ledger**          | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
 | **runtime-validation** | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
 | **concurrency**     | [AgentRun Ledger Review Fixes](bugfix/2026-04-30_agent-run-ledger-review-fixes.md) | bugfix |
+| **mac-local**       | [Mac Local Session + Remote Auth + Session UX 보완](bugfix/2026-05-05_mac-local-remote-auth-session-ux.md) | bugfix |
+| **remote-auth**     | [Mac Local Session + Remote Auth + Session UX 보완](bugfix/2026-05-05_mac-local-remote-auth-session-ux.md) | bugfix |
+| **session-count**   | [Mac Local Session + Remote Auth + Session UX 보완](bugfix/2026-05-05_mac-local-remote-auth-session-ux.md) | bugfix |
 
 ---
 

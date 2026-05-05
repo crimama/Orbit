@@ -396,6 +396,7 @@ export default function Dashboard() {
     if (!socket) return;
 
     const handleSessionUpdate = (session: SessionInfo) => {
+      void fetchProjects();
       setSessions((prev) => {
         const existingIndex = prev.findIndex((item) => item.id === session.id);
         const previous = existingIndex >= 0 ? prev[existingIndex] : null;
@@ -457,7 +458,7 @@ export default function Dashboard() {
       socket.off("session-context" as never, handleSessionContext);
       socket.off("session-notify" as never, handleSessionNotify);
     };
-  }, [socket]);
+  }, [fetchProjects, socket]);
 
   useEffect(() => {
     if (projects.length === 0) {
@@ -637,6 +638,7 @@ export default function Dashboard() {
             setInlineWorkspaceId(null);
           }
           await fetchSessions(request.projectId);
+          await fetchProjects();
         } else {
           console.error("[createSession] API error:", json);
         }
@@ -644,7 +646,7 @@ export default function Dashboard() {
         setCreatingSession(false);
       }
     },
-    [fetchSessions],
+    [fetchProjects, fetchSessions],
   );
 
   const handleResumeSession = useCallback(

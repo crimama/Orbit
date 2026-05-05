@@ -6,6 +6,7 @@ import {
 import { safeTokenCompare } from "@/lib/auth";
 
 const tokenCookieName = "orbit_token";
+const loopbackVerifiedHeader = "x-orbit-loopback-verified";
 
 // --- Rate limiting (in-memory) ---
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -40,10 +41,7 @@ setInterval(() => {
 }, 5 * 60_000).unref();
 
 function isLoopbackRequest(request: Request): boolean {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip") ?? "";
-  const normalized = ip.replace(/^::ffff:/, "");
-  return normalized === "127.0.0.1" || normalized === "::1" || normalized === "";
+  return request.headers.get(loopbackVerifiedHeader) === "true";
 }
 
 function setSessionCookie(response: NextResponse, value: string) {
@@ -92,7 +90,18 @@ export async function POST(request: Request) {
   const token = body.token?.trim() || body.password?.trim() || "";
 
   if (!accessToken) {
-    // Token initialization is only allowed from loopback IPs
+    if (process.env.ORBIT_ALLOW_REMOTE === "true") {
+      return NextResponse.json(
+        {
+          error:
+            "Remote access requires a preconfigured password before login.",
+        },
+        { status: 403 },
+      );
+    }
+
+    // Token initialization is only allowed after the custom server verifies
+    // the real socket address. Forwarded IP headers are client-controlled here.
     if (!isLoopbackRequest(request)) {
       return NextResponse.json(
         { error: "Token initialization is only allowed from localhost" },

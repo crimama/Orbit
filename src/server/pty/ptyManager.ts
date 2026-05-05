@@ -24,6 +24,26 @@ interface PtySession {
 type DataCallback = (data: string) => void;
 type ExitCallback = (exitCode: number) => void;
 
+function desktopPath(): string {
+  if (process.platform !== "darwin") return process.env.PATH ?? "";
+  const pathParts = [
+    process.env.PATH,
+    "/opt/homebrew/bin",
+    "/opt/homebrew/sbin",
+    "/usr/local/bin",
+    "/usr/local/sbin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin",
+    `${process.env.HOME ?? ""}/.local/bin`,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .flatMap((value) => value.split(":"));
+
+  return Array.from(new Set(pathParts)).join(":");
+}
+
 export interface CreateOptions {
   cols?: number;
   rows?: number;
@@ -53,15 +73,24 @@ class PtyManager implements PtyBackend {
     const env = {
       ...(process.env as Record<string, string>),
       ...(opts.env ?? {}),
+      PATH: opts.env?.PATH ?? desktopPath(),
     };
 
-    const proc = pty.spawn(command, args, {
-      name: "xterm-color",
-      cols,
-      rows,
-      cwd,
-      env,
-    });
+    let proc: IPty;
+    try {
+      proc = pty.spawn(command, args, {
+        name: "xterm-color",
+        cols,
+        rows,
+        cwd,
+        env,
+      });
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      throw new Error(
+        `Failed to start PTY command "${command}" in "${cwd}": ${detail}`,
+      );
+    }
 
     const session: PtySession = {
       id: sessionId,
