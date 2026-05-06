@@ -47,6 +47,7 @@ prisma/*.db-journal
 .locks/
 
 # local agent/runtime artifacts
+.claude/
 .claude/evals/
 .claude/worktrees/
 .clone/
