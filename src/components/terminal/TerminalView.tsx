@@ -3,7 +3,12 @@
 import { useEffect, useRef, useCallback, useState } from "react";
 import pako from "pako";
 import type { OrbitSocket } from "@/lib/socketClient";
+import { useTheme } from "@/lib/hooks/useTheme";
 import { useSocket } from "@/lib/useSocket";
+import {
+  getTerminalTheme,
+  TERMINAL_FONT_FAMILY,
+} from "@/lib/terminalAppearance";
 
 interface TerminalViewProps {
   sessionId: string;
@@ -30,6 +35,7 @@ export default function TerminalView({
   disableStdin = false,
 }: TerminalViewProps) {
   const { socket: fallbackSocket, connected: fallbackConnected } = useSocket();
+  const { theme } = useTheme();
   const activeSocket = socket ?? fallbackSocket;
   const activeConnected = connected ?? fallbackConnected;
   const [ready, setReady] = useState(false);
@@ -343,15 +349,9 @@ export default function TerminalView({
         lineHeight: 1.45,
         fontWeight: "500",
         fontWeightBold: "700",
-        fontFamily:
-          '"JetBrains Mono", "Cascadia Mono", "SF Mono", "Consolas", "Menlo", ui-monospace, monospace',
+        fontFamily: TERMINAL_FONT_FAMILY,
         minimumContrastRatio: 4.5,
-        theme: {
-          background: "#0b1220",
-          foreground: "#e6edf3",
-          cursor: "#93c5fd",
-          selectionBackground: "#334155",
-        },
+        theme: getTerminalTheme(theme),
         allowProposedApi: true,
         disableStdin,
       });
@@ -364,11 +364,12 @@ export default function TerminalView({
 
       termRef.current = term;
       fitAddonRef.current = fitAddon;
-      await initWebgl(term);
+      void initWebgl(term);
 
       // Attach to session with retry (PTY may still be initializing)
       const tryAttach = (attempt: number) => {
         if (disposed) return;
+        if (attachedRef.current) return;
         if (!socket.connected) {
           // Socket not connected yet — wait and retry
           if (attempt < 10) {
@@ -455,7 +456,13 @@ export default function TerminalView({
     const wasConnected = prevConnectedRef.current;
     prevConnectedRef.current = activeConnected;
 
-    if (!wasConnected && activeConnected && activeSocket && termRef.current) {
+    if (
+      !wasConnected &&
+      activeConnected &&
+      activeSocket &&
+      termRef.current &&
+      !attachedRef.current
+    ) {
       activeSocket.emit("session-attach", sessionId, (res) => {
         if (res.ok) {
           attachedRef.current = true;
@@ -471,16 +478,29 @@ export default function TerminalView({
     handleResize();
   }, [fontSize, handleResize]);
 
+  useEffect(() => {
+    if (!termRef.current) return;
+    termRef.current.options.theme = getTerminalTheme(theme);
+  }, [theme]);
+
   return (
     <div
       className="relative h-full w-full"
-      style={{ backgroundColor: "var(--terminal-bg)" }}
+      style={{
+        backgroundColor: "var(--terminal-bg)",
+        color: "var(--terminal-fg)",
+        fontFamily: "var(--terminal-font-family)",
+      }}
     >
       <div ref={containerRef} className="h-full w-full" />
       {!ready && (
         <div
           className="absolute inset-0 z-10 flex items-center justify-center"
-          style={{ backgroundColor: "var(--terminal-bg)" }}
+          style={{
+            backgroundColor: "var(--terminal-bg)",
+            color: "var(--terminal-fg)",
+            fontFamily: "var(--terminal-font-family)",
+          }}
         >
           <div className="flex w-full max-w-sm flex-col gap-4 px-6">
             <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-4 shadow-[0_0_0_1px_rgba(15,23,42,0.3)]">

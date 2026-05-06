@@ -41,7 +41,8 @@ function runAgentOrFallback(
   commandCandidates: string[],
   args: string[],
 ): string {
-  const quotedArgs = args.length > 0 ? ` ${args.map(shellQuote).join(" ")}` : "";
+  const quotedArgs =
+    args.length > 0 ? ` ${args.map(shellQuote).join(" ")}` : "";
   const checks = commandCandidates
     .map((command) => {
       const qCommand = shellQuote(command);
@@ -71,9 +72,7 @@ function localAgentCommand(
   }
 
   if (agentType === AGENT_TYPES.OPENCODE) {
-    return loginShellScript(
-      runAgentOrFallback("opencode", ["opencode"], args),
-    );
+    return loginShellScript(runAgentOrFallback("opencode", ["opencode"], args));
   }
 
   return loginShellScript(
@@ -104,6 +103,14 @@ function dockerInnerCommand(
     `elif command -v claude-code >/dev/null 2>&1; then exec claude-code${resumeArgs}; ` +
     `else echo "[Agent Orbit] claude/claude-code not found in container PATH."; exec /bin/sh; fi`;
   return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; ${claudeCmd}`;
+}
+
+function remoteTerminalCdCommand(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed || trimmed === "~" || trimmed === "$HOME") {
+    return "cd ~";
+  }
+  return `cd ${shellQuote(trimmed)} 2>/dev/null || cd ~`;
 }
 
 function toSessionInfo(row: {
@@ -298,6 +305,13 @@ class SessionManager {
       ...(options?.cols !== undefined && { cols: options.cols }),
       ...(options?.rows !== undefined && { rows: options.rows }),
       sshConfigId,
+      readyMode:
+        agentType === AGENT_TYPES.TERMINAL &&
+        !remoteProject.dockerContainer?.trim()
+          ? "immediate"
+          : "marker",
+      ...(agentType === AGENT_TYPES.TERMINAL &&
+        !remoteProject.dockerContainer?.trim() && { inputEcho: false }),
     });
 
     this.bootstrapRemoteAgent(
@@ -956,6 +970,7 @@ class SessionManager {
           req.resumeSessionRef,
           req.dangerouslySkipPermissions,
         );
+    const bootstrapDelayMs = req.agentType === AGENT_TYPES.TERMINAL ? 0 : 60;
     const timer = setTimeout(() => {
       this.bootstrapTimers.delete(sessionId);
       if (!remotePtyManager.has(sessionId)) return;
@@ -965,7 +980,7 @@ class SessionManager {
       if (isContainer) {
         this.watchDockerBootstrapErrors(sessionId);
       }
-    }, 120);
+    }, bootstrapDelayMs);
     this.bootstrapTimers.set(sessionId, timer);
   }
 
@@ -977,7 +992,8 @@ class SessionManager {
   ): string {
     const qPath = shellQuote(path);
     if (agentType === AGENT_TYPES.TERMINAL) {
-      return `cd ${qPath} && ${READY_MARKER_CMD}\r`;
+      const cdCommand = remoteTerminalCdCommand(path);
+      return `printf '\\r\\033[2K'; ${cdCommand}; stty echo 2>/dev/null || true\r`;
     }
     if (agentType === AGENT_TYPES.CODEX) {
       return `cd ${qPath} && ${READY_MARKER_CMD} && codex\r`;
