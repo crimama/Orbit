@@ -549,15 +549,25 @@ export default function MobileChatTerminal({
             inputValueRef.current = v;
           }}
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              (e.metaKey || e.ctrlKey) &&
-              !isComposing &&
-              !e.nativeEvent.isComposing
-            ) {
-              e.preventDefault();
+            if (e.key !== "Enter") return;
+            if (isComposing || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (e.metaKey || e.ctrlKey) {
               handleSubmit();
+              return;
             }
+
+            const target = e.currentTarget;
+            const start = target.selectionStart;
+            const end = target.selectionEnd;
+            const next = `${target.value.slice(0, start)}\n${target.value.slice(end)}`;
+            setInput(next);
+            inputValueRef.current = next;
+            window.requestAnimationFrame(() => {
+              target.setSelectionRange(start + 1, start + 1);
+            });
           }}
           placeholder={attached ? "Ask Orbit…" : "Ask Orbit while it connects…"}
           rows={2}

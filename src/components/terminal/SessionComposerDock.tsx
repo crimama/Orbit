@@ -91,9 +91,22 @@ export default function SessionComposerDock({
   function handlePromptKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key !== "Enter") return;
     if (e.nativeEvent.isComposing) return;
-    if (!e.metaKey && !e.ctrlKey) return;
     e.preventDefault();
-    e.currentTarget.form?.requestSubmit();
+    e.stopPropagation();
+
+    if (e.metaKey || e.ctrlKey) {
+      e.currentTarget.form?.requestSubmit();
+      return;
+    }
+
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const next = `${target.value.slice(0, start)}\n${target.value.slice(end)}`;
+    setPrompt(next);
+    window.requestAnimationFrame(() => {
+      target.setSelectionRange(start + 1, start + 1);
+    });
   }
 
   function addTodo(e: FormEvent) {
