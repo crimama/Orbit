@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 
 type DockMode = "prompt" | "question" | "approval" | "todo";
@@ -88,6 +88,14 @@ export default function SessionComposerDock({
     setMode("prompt");
   }
 
+  function handlePromptKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Enter") return;
+    if (e.nativeEvent.isComposing) return;
+    if (!e.metaKey && !e.ctrlKey) return;
+    e.preventDefault();
+    e.currentTarget.form?.requestSubmit();
+  }
+
   function addTodo(e: FormEvent) {
     e.preventDefault();
     if (!todoInput.trim()) return;
@@ -151,8 +159,9 @@ export default function SessionComposerDock({
                 setError(null);
               }
             }}
+            onKeyDown={handlePromptKeyDown}
             rows={3}
-            placeholder="Type command or prompt for this session..."
+            placeholder="Type command or prompt... Cmd+Enter to send"
             className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}
