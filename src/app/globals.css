@@ -8,6 +8,23 @@
   --background: #ffffff;
   --foreground: #171717;
   --terminal-bg: #0b1220;
+  --terminal-fg: #e6edf3;
+  --terminal-font-family:
+    "SF Mono", Menlo, Monaco, "Apple SD Gothic Neo", "Noto Sans Mono CJK KR",
+    ui-monospace, monospace;
+  --orbit-bg-primary: #0a0a0a;
+  --orbit-bg-secondary: #0f0f0f;
+  --orbit-bg-tertiary: #1a1a1a;
+  --orbit-text-primary: #f5f5f5;
+  --orbit-text-secondary: #a3a3a3;
+  --orbit-text-muted: #737373;
+  --orbit-border-default: #404040;
+  --orbit-border-subtle: #2a2a2a;
+  --orbit-accent-primary: #22d3ee;
+  --orbit-accent-hover: #67e8f9;
+  --orbit-surface-card: #171717;
+  --orbit-surface-panel: #111111;
+  --orbit-surface-overlay: rgba(0, 0, 0, 0.8);
 
   /* Surfaces */
   --surface: #ffffff;
@@ -39,12 +56,324 @@
   }
 }
 
+[data-theme="default"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --terminal-bg: #0b1220;
+  --terminal-fg: #e6edf3;
+  --surface: #0a0a0a;
+  --surface-elevated: #171717;
+  --surface-overlay: #262626;
+  --border: #404040;
+}
+
 [data-theme="oled"] {
   --background: #000000;
   --terminal-bg: #000000;
+  --terminal-fg: #e6edf3;
   --surface: #000000;
   --surface-elevated: #0a0a0a;
   --surface-overlay: #171717;
+}
+
+[data-theme="warm"] {
+  --background: #ece3ca;
+  --foreground: #2d281d;
+  --terminal-bg: #f2ead7;
+  --terminal-fg: #2d281d;
+  --surface: #f3ead5;
+  --surface-elevated: #e9dcc0;
+  --surface-overlay: #dfd0ae;
+  --border: #cab88e;
+  --border-focus: #0f7d91;
+  --accent: #0f7d91;
+  --accent-hover: #1295aa;
+  --orbit-bg-primary: #ece3ca;
+  --orbit-bg-secondary: #e5d8b9;
+  --orbit-bg-tertiary: #d9c9a7;
+  --orbit-text-primary: #2d281d;
+  --orbit-text-secondary: #65583e;
+  --orbit-text-muted: #8c7a55;
+  --orbit-border-default: #bca97e;
+  --orbit-border-subtle: #d2c19a;
+  --orbit-accent-primary: #0f7d91;
+  --orbit-accent-hover: #1295aa;
+  --orbit-surface-card: #f4ecd8;
+  --orbit-surface-panel: #eadfc4;
+  --orbit-surface-overlay: rgba(83, 72, 47, 0.16);
+}
+
+[data-theme="warm"] body {
+  color-scheme: light;
+}
+
+.xterm,
+.xterm * {
+  font-family: var(--terminal-font-family) !important;
+}
+
+.xterm,
+.xterm-viewport,
+.xterm-screen {
+  background-color: var(--terminal-bg) !important;
+}
+
+.xterm {
+  color: var(--terminal-fg) !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-950"],
+[data-theme="warm"] [class~="bg-slate-950"],
+[data-theme="warm"] [class~="bg-[#0a0a0a]"] {
+  background-color: #f2ead7 !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-950/70"],
+[data-theme="warm"] [class~="bg-neutral-950/60"],
+[data-theme="warm"] [class~="bg-neutral-950/50"],
+[data-theme="warm"] [class~="bg-neutral-950/35"],
+[data-theme="warm"] [class~="bg-slate-950/50"] {
+  background-color: rgba(242, 234, 215, 0.78) !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-900"],
+[data-theme="warm"] [class~="bg-slate-900"],
+[data-theme="warm"] [class~="bg-gray-900"] {
+  background-color: #e5d8b9 !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-900/60"],
+[data-theme="warm"] [class~="bg-neutral-900/90"],
+[data-theme="warm"] [class~="bg-neutral-900/80"],
+[data-theme="warm"] [class~="bg-neutral-900/70"],
+[data-theme="warm"] [class~="bg-neutral-900/50"],
+[data-theme="warm"] [class~="bg-neutral-900/40"],
+[data-theme="warm"] [class~="bg-neutral-900/30"],
+[data-theme="warm"] [class~="bg-gray-800/90"],
+[data-theme="warm"] [class~="bg-gray-800/95"] {
+  background-color: rgba(229, 216, 185, 0.76) !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-800"],
+[data-theme="warm"] [class~="bg-slate-800"],
+[data-theme="warm"] [class~="bg-gray-800"] {
+  background-color: #d9c9a7 !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-800/50"],
+[data-theme="warm"] [class~="bg-neutral-800/70"],
+[data-theme="warm"] [class~="bg-neutral-800/60"] {
+  background-color: rgba(217, 201, 167, 0.68) !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-700"],
+[data-theme="warm"] [class~="bg-slate-700"],
+[data-theme="warm"] [class~="bg-gray-700"] {
+  background-color: #cbb78c !important;
+}
+
+[data-theme="warm"] [class~="bg-neutral-600"],
+[data-theme="warm"] [class~="bg-neutral-500"],
+[data-theme="warm"] [class~="bg-neutral-400"],
+[data-theme="warm"] [class~="bg-gray-600"],
+[data-theme="warm"] [class~="bg-gray-500"] {
+  background-color: #bba374 !important;
+}
+
+[data-theme="warm"] [class~="bg-black/50"],
+[data-theme="warm"] [class~="bg-black/60"],
+[data-theme="warm"] [class~="bg-black/70"] {
+  background-color: rgba(83, 72, 47, 0.28) !important;
+}
+
+[data-theme="warm"] [class~="bg-red-950/40"],
+[data-theme="warm"] [class~="bg-red-950/50"],
+[data-theme="warm"] [class~="bg-red-900/20"],
+[data-theme="warm"] [class~="bg-red-900/30"],
+[data-theme="warm"] [class~="bg-red-900/90"],
+[data-theme="warm"] [class~="bg-red-900"],
+[data-theme="warm"] [class~="bg-red-600/20"],
+[data-theme="warm"] [class~="bg-red-500/20"],
+[data-theme="warm"] [class~="bg-red-500/15"],
+[data-theme="warm"] [class~="bg-red-500/10"] {
+  background-color: rgba(177, 91, 76, 0.16) !important;
+}
+
+[data-theme="warm"] [class~="bg-amber-950/60"],
+[data-theme="warm"] [class~="bg-amber-900/30"],
+[data-theme="warm"] [class~="bg-amber-900/90"],
+[data-theme="warm"] [class~="bg-amber-500/20"],
+[data-theme="warm"] [class~="bg-amber-500/15"],
+[data-theme="warm"] [class~="bg-amber-500/10"],
+[data-theme="warm"] [class~="bg-amber-400/15"] {
+  background-color: rgba(166, 119, 35, 0.18) !important;
+}
+
+[data-theme="warm"] [class~="bg-rose-900/30"] {
+  background-color: rgba(177, 91, 120, 0.16) !important;
+}
+
+[data-theme="warm"] [class~="text-neutral-100"],
+[data-theme="warm"] [class~="text-neutral-200"],
+[data-theme="warm"] [class~="text-slate-100"],
+[data-theme="warm"] [class~="text-slate-200"],
+[data-theme="warm"] [class~="text-gray-100"],
+[data-theme="warm"] [class~="text-gray-200"] {
+  color: #2d281d !important;
+}
+
+[data-theme="warm"] [class~="text-neutral-300"],
+[data-theme="warm"] [class~="text-neutral-400"],
+[data-theme="warm"] [class~="text-slate-300"],
+[data-theme="warm"] [class~="text-slate-400"],
+[data-theme="warm"] [class~="text-gray-300"],
+[data-theme="warm"] [class~="text-gray-400"] {
+  color: #65583e !important;
+}
+
+[data-theme="warm"] [class~="text-neutral-500"],
+[data-theme="warm"] [class~="text-neutral-600"],
+[data-theme="warm"] [class~="text-neutral-700"],
+[data-theme="warm"] [class~="text-neutral-800"],
+[data-theme="warm"] [class~="text-neutral-900"],
+[data-theme="warm"] [class~="text-slate-500"],
+[data-theme="warm"] [class~="text-slate-600"],
+[data-theme="warm"] [class~="text-gray-500"],
+[data-theme="warm"] [class~="text-gray-600"] {
+  color: #8c7a55 !important;
+}
+
+[data-theme="warm"] [class~="text-red-200"],
+[data-theme="warm"] [class~="text-red-300"],
+[data-theme="warm"] [class~="text-red-400"] {
+  color: #9f3434 !important;
+}
+
+[data-theme="warm"] [class~="text-amber-200"],
+[data-theme="warm"] [class~="text-amber-300"],
+[data-theme="warm"] [class~="text-amber-300/90"],
+[data-theme="warm"] [class~="text-amber-400"],
+[data-theme="warm"] [class~="text-amber-500"],
+[data-theme="warm"] [class~="text-amber-700"],
+[data-theme="warm"] [class~="text-amber-800"],
+[data-theme="warm"] [class~="text-amber-900"] {
+  color: #8a5a17 !important;
+}
+
+[data-theme="warm"] [class~="text-rose-400"] {
+  color: #9f345d !important;
+}
+
+[data-theme="warm"] [class~="border-neutral-600"],
+[data-theme="warm"] [class~="border-neutral-700"],
+[data-theme="warm"] [class~="border-neutral-800"],
+[data-theme="warm"] [class~="border-neutral-700/60"],
+[data-theme="warm"] [class~="border-neutral-800/80"],
+[data-theme="warm"] [class~="border-neutral-800/60"],
+[data-theme="warm"] [class~="border-neutral-800/50"],
+[data-theme="warm"] [class~="border-neutral-800/30"],
+[data-theme="warm"] [class~="border-slate-600"],
+[data-theme="warm"] [class~="border-slate-700"],
+[data-theme="warm"] [class~="border-slate-800/80"],
+[data-theme="warm"] [class~="border-gray-600"],
+[data-theme="warm"] [class~="border-gray-700"],
+[data-theme="warm"] [class~="border-gray-800"] {
+  border-color: #c8b68b !important;
+}
+
+[data-theme="warm"] [class~="border-red-900"],
+[data-theme="warm"] [class~="border-red-800"],
+[data-theme="warm"] [class~="border-red-700"],
+[data-theme="warm"] [class~="border-red-500/40"],
+[data-theme="warm"] [class~="border-red-500/30"],
+[data-theme="warm"] [class~="border-red-500/20"] {
+  border-color: rgba(159, 52, 52, 0.35) !important;
+}
+
+[data-theme="warm"] [class~="border-amber-700"],
+[data-theme="warm"] [class~="border-amber-700/50"],
+[data-theme="warm"] [class~="border-amber-600/50"],
+[data-theme="warm"] [class~="border-amber-500/60"],
+[data-theme="warm"] [class~="border-amber-500/50"],
+[data-theme="warm"] [class~="border-amber-500/40"],
+[data-theme="warm"] [class~="border-amber-400/70"] {
+  border-color: rgba(138, 90, 23, 0.38) !important;
+}
+
+[data-theme="warm"] [class~="hover:bg-neutral-800"]:hover,
+[data-theme="warm"] [class~="hover:bg-neutral-800/70"]:hover,
+[data-theme="warm"] [class~="hover:bg-neutral-800/60"]:hover,
+[data-theme="warm"] [class~="hover:bg-neutral-800/50"]:hover,
+[data-theme="warm"] [class~="hover:bg-neutral-800/40"]:hover,
+[data-theme="warm"] [class~="hover:bg-slate-800"]:hover,
+[data-theme="warm"] [class~="hover:bg-gray-800"]:hover {
+  background-color: #d9c9a7 !important;
+}
+
+[data-theme="warm"] [class~="hover:bg-neutral-700"]:hover,
+[data-theme="warm"] [class~="hover:bg-slate-700"]:hover,
+[data-theme="warm"] [class~="hover:bg-gray-700"]:hover {
+  background-color: #cbb78c !important;
+}
+
+[data-theme="warm"] [class~="hover:bg-neutral-600"]:hover,
+[data-theme="warm"] [class~="active:bg-neutral-700"]:active,
+[data-theme="warm"] [class~="active:bg-neutral-600"]:active,
+[data-theme="warm"] [class~="active:bg-neutral-500"]:active {
+  background-color: #bba374 !important;
+}
+
+[data-theme="warm"] [class~="hover:bg-red-900/30"]:hover,
+[data-theme="warm"] [class~="hover:bg-red-600/30"]:hover,
+[data-theme="warm"] [class~="hover:bg-rose-900/30"]:hover {
+  background-color: rgba(177, 91, 76, 0.2) !important;
+}
+
+[data-theme="warm"] [class~="hover:text-neutral-100"]:hover,
+[data-theme="warm"] [class~="hover:text-neutral-200"]:hover,
+[data-theme="warm"] [class~="hover:text-slate-100"]:hover,
+[data-theme="warm"] [class~="hover:text-slate-200"]:hover,
+[data-theme="warm"] [class~="hover:text-gray-200"]:hover {
+  color: #2d281d !important;
+}
+
+[data-theme="warm"] [class~="shadow-2xl"] {
+  box-shadow: 0 24px 48px rgba(75, 63, 37, 0.18) !important;
+}
+
+[data-theme="warm"] .xterm {
+  color: #2d281d;
+}
+
+[data-theme="warm"] .prose,
+[data-theme="warm"] .prose-invert {
+  --tw-prose-body: #65583e;
+  --tw-prose-headings: #2d281d;
+  --tw-prose-lead: #65583e;
+  --tw-prose-links: #0f7d91;
+  --tw-prose-bold: #2d281d;
+  --tw-prose-counters: #8c7a55;
+  --tw-prose-bullets: #8c7a55;
+  --tw-prose-hr: #c8b68b;
+  --tw-prose-quotes: #65583e;
+  --tw-prose-quote-borders: #c8b68b;
+  --tw-prose-captions: #8c7a55;
+  --tw-prose-code: #8a5a17;
+  --tw-prose-pre-code: #2d281d;
+  --tw-prose-pre-bg: #e5d8b9;
+  --tw-prose-th-borders: #c8b68b;
+  --tw-prose-td-borders: #d2c19a;
+}
+
+[data-theme="warm"] .prose code {
+  background-color: #d9c9a7 !important;
+  color: #8a5a17 !important;
+}
+
+[data-theme="warm"] .prose pre {
+  background-color: #e5d8b9 !important;
+  border-color: #c8b68b !important;
+  color: #2d281d !important;
 }
 
 /* Project item hover via CSS (replaces onMouseEnter/Leave) */
@@ -53,11 +382,19 @@
 }
 
 .project-item:hover {
-  background-color: color-mix(in srgb, var(--project-color, transparent) 6%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--project-color, transparent) 6%,
+    transparent
+  );
 }
 
 .project-item[data-selected="true"] {
-  background-color: color-mix(in srgb, var(--project-color, transparent) 12%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--project-color, transparent) 12%,
+    transparent
+  );
 }
 
 .session-item {
@@ -65,20 +402,34 @@
 }
 
 .session-item:hover {
-  background-color: color-mix(in srgb, var(--project-color, transparent) 7%, transparent);
+  background-color: color-mix(
+    in srgb,
+    var(--project-color, transparent) 7%,
+    transparent
+  );
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family:
-    var(--font-geist-sans), "Noto Sans KR", "Apple SD Gothic Neo", sans-serif;
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
+}
+
+code,
+pre,
+.font-mono,
+.xterm {
+  font-family:
+    "SF Mono", Menlo, Monaco, "Apple SD Gothic Neo", "Noto Sans Mono CJK KR",
+    ui-monospace, monospace;
 }
 
 input,

@@ -81,7 +81,7 @@ class PtyManager implements PtyBackend {
     let proc: IPty;
     try {
       proc = pty.spawn(command, args, {
-        name: "xterm-color",
+        name: "xterm-256color",
         cols,
         rows,
         cwd,

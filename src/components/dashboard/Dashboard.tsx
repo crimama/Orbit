@@ -15,6 +15,7 @@ import CostDashboard from "./CostDashboard";
 import AgentRunsPanel from "./AgentRunsPanel";
 import AuditLogPanel from "./AuditLogPanel";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
+import { useTheme } from "@/lib/hooks/useTheme";
 import { useSocket } from "@/lib/useSocket";
 import { useToast } from "@/hooks/useToast";
 import { useConfirmContext } from "@/components/ui/ConfirmDialog";
@@ -238,9 +239,11 @@ export default function Dashboard() {
     readDashboardResumeSnapshot(),
   );
   const { socket } = useSocket();
+  const { theme, setTheme } = useTheme();
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
   const showResumeLoading = !resumeReady;
+  const warmThemeActive = theme === "warm";
 
   const openViewedFile = useCallback(
     (path: string, content: string, mtimeMs: number) => {
@@ -591,8 +594,12 @@ export default function Dashboard() {
       const json = (await res.json()) as ApiResponse<SessionInfo>;
       if ("data" in json) {
         setInlineSessionId(json.data.id);
+        setSessions((prev) => {
+          const withoutOld = prev.filter((s) => s.id !== id);
+          return [json.data, ...withoutOld];
+        });
       }
-      fetchSessions(session.projectId);
+      void fetchSessions();
     },
     [sessions, fetchSessions],
   );
@@ -623,12 +630,44 @@ export default function Dashboard() {
         });
         const json = (await res.json()) as ApiResponse<SessionInfo>;
         if ("data" in json) {
-          if (options?.activateInWorkspace !== false) {
-            setInlineSessionId(json.data.id);
+          const createdSession = json.data;
+          const shouldActivate =
+            options?.activateInWorkspace !== false ||
+            request.agentType === "terminal";
+
+          setSessions((prev) => {
+            const existingIndex = prev.findIndex(
+              (session) => session.id === createdSession.id,
+            );
+            if (existingIndex === -1) return [createdSession, ...prev];
+
+            const next = [...prev];
+            next[existingIndex] = createdSession;
+            return next;
+          });
+          setSessionsLoaded(true);
+
+          const project = projects.find(
+            (item) => item.id === createdSession.projectId,
+          );
+          if (project) {
+            setSelectedProject(project);
+          }
+
+          setSessionViewMode("active");
+          setProjectFocusTab("sessions");
+          setShowHarnessManager(false);
+          setProjectPaneMode("terminal");
+
+          if (shouldActivate) {
+            setInlineSessionId(createdSession.id);
             setInlineWorkspaceId(null);
           }
-          await fetchSessions(request.projectId);
-          await fetchProjects();
+
+          void fetchProjects();
+          window.setTimeout(() => {
+            void fetchSessions();
+          }, 500);
         } else {
           console.error("[createSession] API error:", json);
         }
@@ -636,7 +675,7 @@ export default function Dashboard() {
         setCreatingSession(false);
       }
     },
-    [fetchProjects, fetchSessions],
+    [fetchProjects, fetchSessions, projects],
   );
 
   const handleResumeSession = useCallback(
@@ -826,7 +865,7 @@ export default function Dashboard() {
       setProjectPaneMode("terminal");
       setInlineSessionId(session.id);
       setInlineWorkspaceId(null);
-      void fetchSessions(session.projectId);
+      void fetchSessions();
     },
     [projects, fetchSessions],
   );
@@ -1083,6 +1122,30 @@ export default function Dashboard() {
           Agent Orbit
         </h1>
         <div className="relative flex flex-wrap items-center gap-1 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setTheme(warmThemeActive ? "default" : "warm")}
+            className={`flex h-6 items-center gap-1.5 rounded border px-2 text-[11px] font-medium transition ${
+              warmThemeActive
+                ? "border-amber-600/50 bg-amber-100 text-amber-950 hover:bg-amber-200"
+                : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+            }`}
+            aria-pressed={warmThemeActive}
+            title={
+              warmThemeActive
+                ? "Switch to dark theme"
+                : "Switch to warm light theme"
+            }
+          >
+            <span
+              className={`h-2.5 w-2.5 rounded-full border ${
+                warmThemeActive
+                  ? "border-amber-700 bg-[#ece3ca]"
+                  : "border-sky-500 bg-neutral-950"
+              }`}
+            />
+            <span>{warmThemeActive ? "Warm" : "Dark"}</span>
+          </button>
           <button
             ref={notifBellRef}
             onClick={() => setShowNotifications((v) => !v)}
@@ -1520,7 +1583,6 @@ export default function Dashboard() {
                         }
                       />
                     ) : null}
-
                   </div>
                 ) : null}
 
