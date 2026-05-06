@@ -70,11 +70,13 @@ class PtyManager implements PtyBackend {
 
     const command = opts.command ?? DEFAULT_SHELL;
     const args = opts.args ?? [];
-    const env = {
+    const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       ...(opts.env ?? {}),
       PATH: opts.env?.PATH ?? desktopPath(),
     };
+    delete env.ELECTRON_RUN_AS_NODE;
+    delete env.NODE_PATH;
 
     let proc: IPty;
     try {

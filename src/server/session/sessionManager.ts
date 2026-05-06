@@ -32,26 +32,52 @@ function loginShellScript(script: string): { command: string; args: string[] } {
   };
 }
 
+function fallbackInteractiveShell(): string {
+  return 'exec "${SHELL:-/bin/zsh}" -l';
+}
+
+function runAgentOrFallback(
+  displayName: string,
+  commandCandidates: string[],
+  args: string[],
+): string {
+  const quotedArgs = args.length > 0 ? ` ${args.map(shellQuote).join(" ")}` : "";
+  const checks = commandCandidates
+    .map((command) => {
+      const qCommand = shellQuote(command);
+      return (
+        `if command -v ${qCommand} >/dev/null 2>&1; then ` +
+        `${command}${quotedArgs}; status=$?; ` +
+        `echo "[Agent Orbit] ${displayName} exited with status ${"$"}status."; ` +
+        `${fallbackInteractiveShell()}; fi`
+      );
+    })
+    .join("; ");
+
+  return (
+    `${READY_MARKER_CMD}; ${checks}; ` +
+    `echo "[Agent Orbit] ${displayName} was not found in login shell PATH."; ` +
+    `echo "[Agent Orbit] Install ${displayName} or add it to your shell profile PATH."; ` +
+    fallbackInteractiveShell()
+  );
+}
+
 function localAgentCommand(
   agentType: string,
   args: string[] = [],
 ): { command: string; args: string[] } {
-  const quotedArgs = args.length > 0 ? ` ${args.map(shellQuote).join(" ")}` : "";
-
   if (agentType === AGENT_TYPES.CODEX) {
-    return loginShellScript(
-      `${READY_MARKER_CMD}; if command -v codex >/dev/null 2>&1; then exec codex${quotedArgs}; else echo "[Agent Orbit] codex was not found in login shell PATH."; echo "[Agent Orbit] Install Codex CLI or add it to your shell profile PATH."; exec "\${SHELL:-/bin/zsh}" -l; fi`,
-    );
+    return loginShellScript(runAgentOrFallback("codex", ["codex"], args));
   }
 
   if (agentType === AGENT_TYPES.OPENCODE) {
     return loginShellScript(
-      `${READY_MARKER_CMD}; if command -v opencode >/dev/null 2>&1; then exec opencode${quotedArgs}; else echo "[Agent Orbit] opencode was not found in login shell PATH."; echo "[Agent Orbit] Install OpenCode or add it to your shell profile PATH."; exec "\${SHELL:-/bin/zsh}" -l; fi`,
+      runAgentOrFallback("opencode", ["opencode"], args),
     );
   }
 
   return loginShellScript(
-    `${READY_MARKER_CMD}; if command -v claude >/dev/null 2>&1; then exec claude${quotedArgs}; elif command -v claude-code >/dev/null 2>&1; then exec claude-code${quotedArgs}; else echo "[Agent Orbit] claude/claude-code was not found in login shell PATH."; echo "[Agent Orbit] Install Claude Code or add it to your shell profile PATH."; exec "\${SHELL:-/bin/zsh}" -l; fi`,
+    runAgentOrFallback("claude/claude-code", ["claude", "claude-code"], args),
   );
 }
 
