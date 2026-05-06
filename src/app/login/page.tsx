@@ -61,19 +61,19 @@ function LoginPageContent() {
     const isSetup = configured === false;
     const token = password.trim();
     if (!token) {
-      setError("Password is required");
+      setError("Access code is required");
       return;
     }
     if (isSetup && token.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("Access code must be at least 8 characters");
       return;
     }
     if (isSetup && !confirmPassword.trim()) {
-      setError("Password confirmation is required");
+      setError("Access code confirmation is required");
       return;
     }
     if (isSetup && confirmPassword.trim() && confirmPassword.trim() !== token) {
-      setError("Password confirmation does not match");
+      setError("Access code confirmation does not match");
       return;
     }
 
@@ -111,8 +111,8 @@ function LoginPageContent() {
         </h1>
         <p className="text-sm text-slate-400">
           {configured === false
-            ? "Create an admin password for first-time setup."
-            : "Enter your password to continue."}
+            ? "Create an access code for first-time setup."
+            : "Enter your access code to continue."}
         </p>
         {configured === null ? (
           <p className="text-sm text-slate-300">Checking login status...</p>
@@ -121,7 +121,7 @@ function LoginPageContent() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Password"
+          placeholder="Access code"
           className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-border-focus"
           autoFocus
         />
@@ -130,7 +130,7 @@ function LoginPageContent() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm password"
+            placeholder="Confirm access code"
             className="w-full rounded-md border border-slate-600 bg-slate-950 px-3 py-2 text-slate-100 outline-none focus:border-border-focus"
           />
         ) : null}
@@ -143,7 +143,7 @@ function LoginPageContent() {
           {submitting
             ? "Verifying..."
             : configured === false
-              ? "Set password"
+              ? "Set access code"
               : "Sign in"}
         </button>
       </form>

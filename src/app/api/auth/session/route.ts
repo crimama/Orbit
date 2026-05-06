@@ -94,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Remote access requires a preconfigured password before login.",
+            "Remote access requires a preconfigured access code before login.",
         },
         { status: 403 },
       );
@@ -113,25 +113,25 @@ export async function POST(request: Request) {
       body.confirmToken?.trim() || body.confirmPassword?.trim() || "";
     if (!token) {
       return NextResponse.json(
-        { error: "Password is required" },
+        { error: "Access code is required" },
         { status: 400 },
       );
     }
     if (token.length < 8) {
       return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
+        { error: "Access code must be at least 8 characters" },
         { status: 400 },
       );
     }
     if (!confirm) {
       return NextResponse.json(
-        { error: "Password confirmation is required" },
+        { error: "Access code confirmation is required" },
         { status: 400 },
       );
     }
     if (confirm !== token) {
       return NextResponse.json(
-        { error: "Password confirmation does not match" },
+        { error: "Access code confirmation does not match" },
         { status: 400 },
       );
     }

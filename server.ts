@@ -30,13 +30,17 @@ if (!(process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "")) {
 }
 
 function currentAccessToken(): string {
-  return process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "";
+  return (
+    process.env.ORBIT_ACCESS_CODE?.trim() ||
+    process.env.ORBIT_ACCESS_TOKEN?.trim() ||
+    ""
+  );
 }
 
 function assertRemoteAuthConfigured(): void {
   if (!allowRemote || currentAccessToken()) return;
   throw new Error(
-    "Remote access requires a configured ORBIT_ACCESS_TOKEN or persisted access token before startup.",
+    "Remote access requires a configured ORBIT_ACCESS_CODE, ORBIT_ACCESS_TOKEN, or persisted access code before startup.",
   );
 }
 

@@ -3,7 +3,9 @@ import os from "os";
 import path from "path";
 
 function tokenFilePath(): string {
-  const fromEnv = process.env.ORBIT_ACCESS_TOKEN_FILE?.trim();
+  const fromEnv =
+    process.env.ORBIT_ACCESS_CODE_FILE?.trim() ||
+    process.env.ORBIT_ACCESS_TOKEN_FILE?.trim();
   if (fromEnv) return fromEnv;
   return path.join(os.homedir(), ".orbit", "access-token");
 }
@@ -62,13 +64,17 @@ export async function writePersistedAccessToken(token: string): Promise<void> {
 }
 
 export function getConfiguredAccessTokenSync(): string {
-  const envToken = sanitize(process.env.ORBIT_ACCESS_TOKEN ?? "");
+  const envToken = sanitize(
+    process.env.ORBIT_ACCESS_CODE ?? process.env.ORBIT_ACCESS_TOKEN ?? "",
+  );
   if (envToken) return envToken;
   return readPersistedAccessTokenSync();
 }
 
 export async function getConfiguredAccessToken(): Promise<string> {
-  const envToken = sanitize(process.env.ORBIT_ACCESS_TOKEN ?? "");
+  const envToken = sanitize(
+    process.env.ORBIT_ACCESS_CODE ?? process.env.ORBIT_ACCESS_TOKEN ?? "",
+  );
   if (envToken) return envToken;
   return readPersistedAccessToken();
 }

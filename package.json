@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "rm -rf .next && tsx watch --tsconfig tsconfig.server.json server.ts",
     "dev:tailnet": "bash scripts/run-tailscale.sh",
+    "access:code": "bash scripts/access-code.sh",
     "build": "next build",
     "start": "NODE_ENV=production tsx --tsconfig tsconfig.server.json server.ts",
     "lint": "next lint",

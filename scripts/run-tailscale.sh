@@ -11,7 +11,7 @@ if ! tailscale status >/dev/null 2>&1; then
   exit 1
 fi
 
-token_file="${ORBIT_ACCESS_TOKEN_FILE:-$HOME/.orbit/access-token}"
+token_file="${ORBIT_ACCESS_CODE_FILE:-${ORBIT_ACCESS_TOKEN_FILE:-$HOME/.orbit/access-token}}"
 token_generated=false
 token_rotated=false
 auto_token_provision="${ORBIT_TAILNET_AUTO_TOKEN:-true}"
@@ -43,7 +43,9 @@ load_token_from_file() {
 
 rotate="${ORBIT_ACCESS_TOKEN_ROTATE:-false}"
 if [[ "$auto_token_provision" == "false" ]]; then
-  if [[ -n "${ORBIT_ACCESS_TOKEN:-}" ]]; then
+  if [[ -n "${ORBIT_ACCESS_CODE:-}" ]]; then
+    ORBIT_ACCESS_TOKEN="$(printf '%s' "$ORBIT_ACCESS_CODE" | tr -d '\r\n')"
+  elif [[ -n "${ORBIT_ACCESS_TOKEN:-}" ]]; then
     ORBIT_ACCESS_TOKEN="$(printf '%s' "$ORBIT_ACCESS_TOKEN" | tr -d '\r\n')"
   fi
 elif [[ "$rotate" == "true" ]]; then
@@ -56,6 +58,12 @@ elif [[ "$rotate" == "true" ]]; then
   ORBIT_ACCESS_TOKEN="$new_token"
   token_generated=true
   token_rotated=true
+elif [[ -n "${ORBIT_ACCESS_CODE:-}" ]]; then
+  ORBIT_ACCESS_TOKEN="$(printf '%s' "$ORBIT_ACCESS_CODE" | tr -d '\r\n')"
+  if [[ -z "$ORBIT_ACCESS_TOKEN" ]]; then
+    echo "ORBIT_ACCESS_CODE is empty after trimming."
+    exit 1
+  fi
 elif [[ -n "${ORBIT_ACCESS_TOKEN:-}" ]]; then
   ORBIT_ACCESS_TOKEN="$(printf '%s' "$ORBIT_ACCESS_TOKEN" | tr -d '\r\n')"
   if [[ -z "$ORBIT_ACCESS_TOKEN" ]]; then
@@ -76,6 +84,7 @@ else
 fi
 
 export ORBIT_ACCESS_TOKEN
+export ORBIT_ACCESS_CODE="$ORBIT_ACCESS_TOKEN"
 
 if [[ -z "${SSH_PASSWORD_SECRET:-}" ]]; then
   echo "SSH_PASSWORD_SECRET is required when using SSH password auth."
@@ -93,17 +102,18 @@ export HOST=0.0.0.0
 
 echo "Starting Orbit in tailnet-only mode."
 if [[ "$auto_token_provision" == "false" ]]; then
-  echo "ORBIT_TAILNET_AUTO_TOKEN=false -> no preconfigured token (first-setup mode)"
+  echo "ORBIT_TAILNET_AUTO_TOKEN=false -> no preconfigured access code (first-setup mode)"
   echo "Open from another device: http://${TS_IP}:3000/login"
 elif [[ "$token_generated" == "true" ]]; then
   if [[ "$token_rotated" == "true" ]]; then
-    echo "ORBIT_ACCESS_TOKEN rotated and saved to ${token_file}"
+    echo "Orbit access code rotated and saved to ${token_file}"
   else
-    echo "ORBIT_ACCESS_TOKEN generated and saved to ${token_file}"
+    echo "Orbit access code generated and saved to ${token_file}"
   fi
+  echo "Access code: ${ORBIT_ACCESS_TOKEN}"
   echo "Pair from another device: http://${TS_IP}:3000/login?token=${ORBIT_ACCESS_TOKEN}&next=/"
 else
-  echo "Using existing ORBIT_ACCESS_TOKEN (set env or ${token_file})"
+  echo "Using existing Orbit access code (set env or ${token_file})"
   echo "Open from another device: http://${TS_IP}:3000/login"
 fi
 
