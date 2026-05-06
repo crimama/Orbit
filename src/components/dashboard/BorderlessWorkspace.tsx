@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SplitDivider from "@/components/terminal/SplitDivider";
 import MultiTerminal from "@/components/terminal/MultiTerminal";
 import FileEditor from "@/components/dashboard/FileEditor";
+import PdfViewer from "@/components/dashboard/PdfViewer";
 import type { ProjectInfo, SessionInfo } from "@/lib/types";
 
 type ProjectPaneMode = "terminal" | "files" | "harness";
@@ -41,6 +42,15 @@ type WorkspaceTab =
     }
   | {
       id: string;
+      kind: "pdf-view";
+      title: string;
+      projectId: string;
+      projectName: string;
+      projectColor: string;
+      filePath: string;
+    }
+  | {
+      id: string;
       kind: "browser";
       title: string;
       url: string;
@@ -68,6 +78,7 @@ type WorkspaceLayoutNode =
 export interface ViewedFile {
   projectId: string;
   path: string;
+  viewer: "editor" | "pdf";
   content: string;
   mtimeMs: number;
   requestId: string;
@@ -240,6 +251,7 @@ function findFallbackTabId(tabs: WorkspaceTab[], tabId: string) {
 function tabKindLabel(tab: WorkspaceTab) {
   if (tab.kind === "session") return "Session";
   if (tab.kind === "file-view") return "File";
+  if (tab.kind === "pdf-view") return "PDF";
   if (tab.kind === "files") return "Files";
   if (tab.kind === "harness") return "Harness";
   return "Browser";
@@ -248,6 +260,7 @@ function tabKindLabel(tab: WorkspaceTab) {
 function tabKindMark(tab: WorkspaceTab) {
   if (tab.kind === "session") return "$";
   if (tab.kind === "file-view") return "F";
+  if (tab.kind === "pdf-view") return "PDF";
   if (tab.kind === "files") return "DIR";
   if (tab.kind === "harness") return "H";
   return "WEB";
@@ -667,17 +680,29 @@ export default function BorderlessWorkspace({
     if (key === lastViewedFileRef.current) return;
     lastViewedFileRef.current = key;
 
-    const fileTab: WorkspaceTab = {
-      id: `file-view:${viewedFile.projectId}:${viewedFile.path}`,
-      kind: "file-view",
-      title: viewedFile.path.split("/").pop() ?? viewedFile.path,
-      projectId: viewedFile.projectId,
-      projectName: selectedProject.name,
-      projectColor: selectedProject.color,
-      filePath: viewedFile.path,
-      fileContent: viewedFile.content,
-      fileMtimeMs: viewedFile.mtimeMs,
-    };
+    const title = viewedFile.path.split("/").pop() ?? viewedFile.path;
+    const fileTab: WorkspaceTab =
+      viewedFile.viewer === "pdf"
+        ? {
+            id: `pdf-view:${viewedFile.projectId}:${viewedFile.path}`,
+            kind: "pdf-view",
+            title,
+            projectId: viewedFile.projectId,
+            projectName: selectedProject.name,
+            projectColor: selectedProject.color,
+            filePath: viewedFile.path,
+          }
+        : {
+            id: `file-view:${viewedFile.projectId}:${viewedFile.path}`,
+            kind: "file-view",
+            title,
+            projectId: viewedFile.projectId,
+            projectName: selectedProject.name,
+            projectColor: selectedProject.color,
+            filePath: viewedFile.path,
+            fileContent: viewedFile.content,
+            fileMtimeMs: viewedFile.mtimeMs,
+          };
 
     upsertTab(fileTab, activePanel.id);
   }, [activePanel.id, selectedProject, upsertTab, viewedFile]);
@@ -693,6 +718,15 @@ export default function BorderlessWorkspace({
           initialContent={tab.fileContent}
           initialMtimeMs={tab.fileMtimeMs}
           onClose={onCloseFile}
+        />
+      );
+    }
+    if (tab.kind === "pdf-view") {
+      return (
+        <PdfViewer
+          key={tab.id}
+          projectId={tab.projectId}
+          filePath={tab.filePath}
         />
       );
     }
