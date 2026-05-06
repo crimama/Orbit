@@ -52,8 +52,7 @@ export default function SessionComposerDock({
     target?.focus();
   }, [focusSignal, sessionId]);
 
-  async function submitPrompt(e: FormEvent) {
-    e.preventDefault();
+  async function sendPrompt() {
     const nextPrompt = prompt.trim();
     if (!nextPrompt) return;
 
@@ -77,6 +76,10 @@ export default function SessionComposerDock({
     }
   }
 
+  function submitPrompt(e: FormEvent) {
+    e.preventDefault();
+  }
+
   function submitQuestion(e: FormEvent) {
     e.preventDefault();
     if (!question.trim()) return;
@@ -93,11 +96,6 @@ export default function SessionComposerDock({
     if (e.nativeEvent.isComposing) return;
     e.preventDefault();
     e.stopPropagation();
-
-    if (e.metaKey || e.ctrlKey) {
-      e.currentTarget.form?.requestSubmit();
-      return;
-    }
 
     const target = e.currentTarget;
     const start = target.selectionStart;
@@ -174,13 +172,14 @@ export default function SessionComposerDock({
             }}
             onKeyDown={handlePromptKeyDown}
             rows={3}
-            placeholder="Type command or prompt... Cmd+Enter to send"
+            placeholder="Type command or prompt..."
             className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}
           <div className="flex justify-end">
             <button
-              type="submit"
+              type="button"
+              onClick={() => void sendPrompt()}
               disabled={!prompt.trim()}
               className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 disabled:opacity-60"
             >
