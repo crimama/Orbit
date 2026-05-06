@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import Link from "next/link";
 import ProjectList from "./ProjectList";
 import SessionList from "./SessionList";
 import SidebarFileTree from "./SidebarFileTree";
@@ -22,7 +21,6 @@ import { useConfirmContext } from "@/components/ui/ConfirmDialog";
 import type {
   ProjectInfo,
   SessionInfo,
-  GraphState,
   ApiResponse,
   ApiError,
   CreateSessionRequest,
@@ -68,13 +66,22 @@ function readDashboardResumeSnapshot(): DashboardResumeSnapshot | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<DashboardResumeSnapshot>;
 
+    const projectPaneMode =
+      parsed.projectPaneMode === "harness"
+        ? "terminal"
+        : (parsed.projectPaneMode ?? "terminal");
+    const projectFocusTab =
+      parsed.projectFocusTab === "harness"
+        ? "sessions"
+        : (parsed.projectFocusTab ?? "sessions");
+
     return {
       selectedProjectId: parsed.selectedProjectId ?? null,
       inlineSessionId: parsed.inlineSessionId ?? null,
       inlineWorkspaceId: parsed.inlineWorkspaceId ?? null,
       sessionViewMode: parsed.sessionViewMode ?? "active",
-      projectPaneMode: parsed.projectPaneMode ?? "terminal",
-      projectFocusTab: parsed.projectFocusTab ?? "sessions",
+      projectPaneMode,
+      projectFocusTab,
     };
   } catch {
     return null;
@@ -214,7 +221,6 @@ export default function Dashboard() {
   const [paletteCursor, setPaletteCursor] = useState(0);
   const layoutSplitRef = useRef<HTMLDivElement>(null);
   const paletteInputRef = useRef<HTMLInputElement>(null);
-  const [skillCount, setSkillCount] = useState(0);
   const [projectDirMap, setProjectDirMap] = useState<Record<string, string>>(
     {},
   );
@@ -487,22 +493,6 @@ export default function Dashboard() {
     },
     [fetchSessions, projectPaneMode],
   );
-
-  const fetchSkillCount = useCallback(async (projectId: string) => {
-    const res = await fetch(`/api/skills?projectId=${projectId}`);
-    const json = (await res.json()) as ApiResponse<GraphState>;
-    if ("data" in json) {
-      setSkillCount(json.data.nodes.length);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!selectedProject) {
-      setSkillCount(0);
-      return;
-    }
-    void fetchSkillCount(selectedProject.id);
-  }, [selectedProject, fetchSkillCount]);
 
   const patchProject = useCallback(
     async (id: string, updates: Partial<ProjectInfo>) => {
@@ -1421,20 +1411,6 @@ export default function Dashboard() {
                       >
                         Files
                       </button>
-                      <button
-                        onClick={() => {
-                          setProjectFocusTab("harness");
-                          setProjectPaneMode("harness");
-                          setShowHarnessManager(true);
-                        }}
-                        className={`flex-1 rounded px-2 py-1 ${
-                          projectFocusTab === "harness"
-                            ? "bg-neutral-700 text-neutral-100"
-                            : "text-neutral-400 hover:text-neutral-200"
-                        }`}
-                      >
-                        Harness
-                      </button>
                     </div>
 
                     {projectFocusTab === "sessions" ? (
@@ -1545,33 +1521,6 @@ export default function Dashboard() {
                       />
                     ) : null}
 
-                    {projectFocusTab === "harness" ? (
-                      <div className="rounded border border-neutral-800 bg-neutral-900/40 p-3">
-                        <div className="mb-2 text-xs text-neutral-400">
-                          Skills linked to this project
-                        </div>
-                        <div className="mb-3 text-2xl font-semibold text-cyan-300">
-                          {skillCount}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setProjectPaneMode("harness");
-                              setShowHarnessManager(true);
-                            }}
-                            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-                          >
-                            Open Harness
-                          </button>
-                          <Link
-                            href={`/graph?projectId=${selectedProject!.id}`}
-                            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-                          >
-                            Manage Skills
-                          </Link>
-                        </div>
-                      </div>
-                    ) : null}
                   </div>
                 ) : null}
 

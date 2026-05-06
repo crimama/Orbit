@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SplitDivider from "@/components/terminal/SplitDivider";
 import MultiTerminal from "@/components/terminal/MultiTerminal";
-import ProjectHarnessPanel from "@/components/dashboard/ProjectHarnessPanel";
 import FileEditor from "@/components/dashboard/FileEditor";
 import type { ProjectInfo, SessionInfo } from "@/lib/types";
 
@@ -99,20 +98,6 @@ function buildSessionTab(
     projectColor: session.projectColor,
     sessionId: session.id,
     status: session.status,
-  };
-}
-
-function buildProjectTab(
-  project: ProjectInfo,
-  kind: "files" | "harness",
-): WorkspaceTab {
-  return {
-    id: `${kind}:${project.id}`,
-    kind,
-    title: kind === "files" ? "Files" : "Harness",
-    projectId: project.id,
-    projectName: project.name,
-    projectColor: project.color,
   };
 }
 
@@ -424,10 +409,7 @@ export default function BorderlessWorkspace({
 
     if (!selectedProject) return;
 
-    if (projectPaneMode === "harness") {
-      upsertTab(buildProjectTab(selectedProject, "harness"), activePanel.id);
-      return;
-    }
+    if (projectPaneMode === "harness") return;
 
     const projectActiveSession = sessions.find(
       (session) =>
@@ -734,9 +716,6 @@ export default function BorderlessWorkspace({
           />
         </div>
       );
-    }
-    if (tab.kind === "harness") {
-      return <ProjectHarnessPanel key={tab.id} projectId={tab.projectId} />;
     }
     return null;
   };
