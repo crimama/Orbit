@@ -554,6 +554,11 @@ export default function MobileChatTerminal({
             e.preventDefault();
             e.stopPropagation();
 
+            if (!e.altKey) {
+              handleSubmit();
+              return;
+            }
+
             const target = e.currentTarget;
             const start = target.selectionStart;
             const end = target.selectionEnd;
