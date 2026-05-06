@@ -114,6 +114,15 @@ DATABASE_URL=file:./orbit.db npm start
 3. Remote URL에는 `http://<tailscale-ip>:3000`처럼 서버 주소를 입력합니다.
 4. local agent session이 안 뜨면 app 안의 terminal 오류 메시지에서 `codex`, `claude`, `opencode`가 login shell PATH에 있는지 확인합니다.
 
+Local packaged mac app을 만들고 바로 열려면 `Orbit-mac` 복사본에서:
+
+```bash
+npm run desktop:pack:local
+open dist-packaged-local/mac-arm64/Orbit.app
+```
+
+Apple Silicon이 아닌 Mac에서는 생성된 `dist-packaged-local/` 하위 architecture 디렉토리명을 확인한 뒤 해당 `.app` 경로를 열면 됩니다.
+
 ## Usage Guide
 
 ### Projects
