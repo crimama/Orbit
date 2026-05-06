@@ -12,6 +12,19 @@ function inlineFileName(filePath: string): string {
   return name.replace(/["\\\r\n]/g, "_");
 }
 
+function asciiFileName(fileName: string): string {
+  const sanitized = fileName
+    .replace(/["\\\r\n]/g, "_")
+    .replace(/[^\x20-\x7E]/g, "_")
+    .trim();
+  return sanitized || "document.pdf";
+}
+
+function inlineContentDisposition(filePath: string): string {
+  const name = inlineFileName(filePath);
+  return `inline; filename="${asciiFileName(name)}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+}
+
 function isPdfPath(filePath: string): boolean {
   return /\.pdf$/i.test(filePath.trim());
 }
@@ -92,9 +105,9 @@ export async function GET(
     const baseHeaders = {
       "Accept-Ranges": "bytes",
       "Cache-Control": "private, no-store",
-      "Content-Disposition": `inline; filename="${inlineFileName(
+      "Content-Disposition": inlineContentDisposition(
         data.path || requestedPath,
-      )}"`,
+      ),
       "Content-Type": "application/pdf",
       "X-Content-Type-Options": "nosniff",
     };
