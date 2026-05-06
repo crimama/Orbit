@@ -379,6 +379,23 @@ export default function ProjectFilesPanel({
       setBusyPath(filePath);
       setError(null);
       try {
+        if (isPdfPath(filePath)) {
+          setDocs((prev) => ({
+            ...prev,
+            [filePath]: {
+              path: filePath,
+              content: "",
+              originalContent: "",
+              mtimeMs: 0,
+              size: 0,
+              isBinary: true,
+            },
+          }));
+          setTree((prev) => updateLeafSession(prev, targetPaneId, filePath));
+          setActivePaneId(targetPaneId);
+          return;
+        }
+
         const query = new URLSearchParams({ path: filePath }).toString();
         const res = await fetch(
           `/api/projects/${projectId}/files/read?${query}`,
