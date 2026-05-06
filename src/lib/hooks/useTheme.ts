@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-export type Theme = "default" | "oled";
+export type Theme = "default" | "warm" | "oled";
 
 const STORAGE_KEY = "orbit-theme";
 const DEFAULT_THEME: Theme = "default";
 
 function isTheme(value: string | null): value is Theme {
-  return value === "default" || value === "oled";
+  return value === "default" || value === "warm" || value === "oled";
 }
 
 function getStoredTheme(): Theme {
@@ -44,5 +44,5 @@ export function useTheme() {
     applyTheme(nextTheme);
   };
 
-  return { theme, setTheme, themes: ["default", "oled"] as const };
+  return { theme, setTheme, themes: ["default", "warm", "oled"] as const };
 }

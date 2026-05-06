@@ -23,6 +23,62 @@ const AGENT_TYPES = {
 } as const;
 
 const READY_MARKER_CMD = "printf '\\033]777;orbit-ready\\007'";
+const LOGIN_SHELL = process.env.SHELL?.trim() || "/bin/zsh";
+
+function loginShellScript(script: string): { command: string; args: string[] } {
+  return {
+    command: LOGIN_SHELL,
+    args: ["-lic", script],
+  };
+}
+
+function fallbackInteractiveShell(): string {
+  return 'exec "${SHELL:-/bin/zsh}" -l';
+}
+
+function runAgentOrFallback(
+  displayName: string,
+  commandCandidates: string[],
+  args: string[],
+): string {
+  const quotedArgs =
+    args.length > 0 ? ` ${args.map(shellQuote).join(" ")}` : "";
+  const checks = commandCandidates
+    .map((command) => {
+      const qCommand = shellQuote(command);
+      return (
+        `if command -v ${qCommand} >/dev/null 2>&1; then ` +
+        `${command}${quotedArgs}; status=$?; ` +
+        `echo "[Agent Orbit] ${displayName} exited with status ${"$"}status."; ` +
+        `${fallbackInteractiveShell()}; fi`
+      );
+    })
+    .join("; ");
+
+  return (
+    `${READY_MARKER_CMD}; ${checks}; ` +
+    `echo "[Agent Orbit] ${displayName} was not found in login shell PATH."; ` +
+    `echo "[Agent Orbit] Install ${displayName} or add it to your shell profile PATH."; ` +
+    fallbackInteractiveShell()
+  );
+}
+
+function localAgentCommand(
+  agentType: string,
+  args: string[] = [],
+): { command: string; args: string[] } {
+  if (agentType === AGENT_TYPES.CODEX) {
+    return loginShellScript(runAgentOrFallback("codex", ["codex"], args));
+  }
+
+  if (agentType === AGENT_TYPES.OPENCODE) {
+    return loginShellScript(runAgentOrFallback("opencode", ["opencode"], args));
+  }
+
+  return loginShellScript(
+    runAgentOrFallback("claude/claude-code", ["claude", "claude-code"], args),
+  );
+}
 
 function dockerInnerCommand(
   workdir: string,
@@ -47,6 +103,14 @@ function dockerInnerCommand(
     `elif command -v claude-code >/dev/null 2>&1; then exec claude-code${resumeArgs}; ` +
     `else echo "[Agent Orbit] claude/claude-code not found in container PATH."; exec /bin/sh; fi`;
   return `cd ${qPath} 2>/dev/null || cd /; ${READY_MARKER_CMD}; ${claudeCmd}`;
+}
+
+function remoteTerminalCdCommand(path: string): string {
+  const trimmed = path.trim();
+  if (!trimmed || trimmed === "~" || trimmed === "$HOME") {
+    return "cd ~";
+  }
+  return `cd ${shellQuote(trimmed)} 2>/dev/null || cd ~`;
 }
 
 function toSessionInfo(row: {
@@ -241,6 +305,13 @@ class SessionManager {
       ...(options?.cols !== undefined && { cols: options.cols }),
       ...(options?.rows !== undefined && { rows: options.rows }),
       sshConfigId,
+      readyMode:
+        agentType === AGENT_TYPES.TERMINAL &&
+        !remoteProject.dockerContainer?.trim()
+          ? "immediate"
+          : "marker",
+      ...(agentType === AGENT_TYPES.TERMINAL &&
+        !remoteProject.dockerContainer?.trim() && { inputEcho: false }),
     });
 
     this.bootstrapRemoteAgent(
@@ -725,13 +796,19 @@ class SessionManager {
         `[SessionManager] ensureSessionRunning failed for ${sessionId}:`,
         err,
       );
-      await prisma.agentSession.update({
-        where: { id: sessionId },
-        data: {
-          status: "terminated",
-          lastContext: `Local terminal start failed: ${message}`,
-        },
-      });
+      const updated = await prisma.agentSession
+        .update({
+          where: { id: sessionId },
+          data: {
+            status: "terminated",
+            lastContext: `Local terminal start failed: ${message}`,
+          },
+          include: { project: { select: { name: true, color: true } } },
+        })
+        .catch(() => null);
+      if (updated) {
+        this.queueSessionUpdate(toSessionInfo(updated));
+      }
       return false;
     }
   }
@@ -770,22 +847,22 @@ class SessionManager {
     }
 
     if (req.agentType === AGENT_TYPES.CODEX) {
+      const command = localAgentCommand(req.agentType);
       return {
         cols: req.cols,
         rows: req.rows,
         cwd: project.path,
-        command: "codex",
-        args: [],
+        ...command,
       };
     }
 
     if (req.agentType === AGENT_TYPES.OPENCODE) {
+      const command = localAgentCommand(req.agentType);
       return {
         cols: req.cols,
         rows: req.rows,
         cwd: project.path,
-        command: "opencode",
-        args: [],
+        ...command,
       };
     }
 
@@ -794,12 +871,12 @@ class SessionManager {
     if (req.dangerouslySkipPermissions) {
       args.push("--dangerously-skip-permissions");
     }
+    const command = localAgentCommand(req.agentType, args);
     return {
       cols: req.cols,
       rows: req.rows,
       cwd: project.path,
-      command: "claude",
-      args,
+      ...command,
     };
   }
 
@@ -826,18 +903,18 @@ class SessionManager {
     }
 
     if (agentType === AGENT_TYPES.CODEX) {
+      const command = localAgentCommand(agentType);
       return {
         cwd: project.path,
-        command: "codex",
-        args: [],
+        ...command,
       };
     }
 
     if (agentType === AGENT_TYPES.OPENCODE) {
+      const command = localAgentCommand(agentType);
       return {
         cwd: project.path,
-        command: "opencode",
-        args: [],
+        ...command,
       };
     }
 
@@ -846,10 +923,10 @@ class SessionManager {
       : [];
     // Note: dangerouslySkipPermissions is not persisted per-session,
     // so recovered sessions start in normal permission mode.
+    const command = localAgentCommand(agentType, args);
     return {
       cwd: project.path,
-      command: "claude",
-      args,
+      ...command,
     };
   }
 
@@ -892,6 +969,7 @@ class SessionManager {
           req.resumeSessionRef,
           req.dangerouslySkipPermissions,
         );
+    const bootstrapDelayMs = req.agentType === AGENT_TYPES.TERMINAL ? 0 : 60;
     const timer = setTimeout(() => {
       this.bootstrapTimers.delete(sessionId);
       if (!remotePtyManager.has(sessionId)) return;
@@ -901,7 +979,7 @@ class SessionManager {
       if (isContainer) {
         this.watchDockerBootstrapErrors(sessionId);
       }
-    }, 120);
+    }, bootstrapDelayMs);
     this.bootstrapTimers.set(sessionId, timer);
   }
 
@@ -913,7 +991,8 @@ class SessionManager {
   ): string {
     const qPath = shellQuote(path);
     if (agentType === AGENT_TYPES.TERMINAL) {
-      return `cd ${qPath} && ${READY_MARKER_CMD}\r`;
+      const cdCommand = remoteTerminalCdCommand(path);
+      return `printf '\\r\\033[2K'; ${cdCommand}; stty echo 2>/dev/null || true\r`;
     }
     if (agentType === AGENT_TYPES.CODEX) {
       return `cd ${qPath} && ${READY_MARKER_CMD} && codex\r`;

@@ -19,8 +19,9 @@ const port = parseInt(process.env.PORT ?? String(DEFAULT_PORT), 10);
 const allowRemote = process.env.ORBIT_ALLOW_REMOTE === "true";
 const host = process.env.HOST ?? (allowRemote ? "0.0.0.0" : "127.0.0.1");
 const remoteScope =
-  process.env.ORBIT_REMOTE_SCOPE?.trim().toLowerCase() ?? "any";
+  process.env.ORBIT_REMOTE_SCOPE?.trim().toLowerCase() ?? "tailscale";
 const desktopLocal = process.env.ORBIT_DESKTOP_LOCAL === "1";
+const loopbackVerifiedHeader = "x-orbit-loopback-verified";
 
 if (!(process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "")) {
   const persistedToken = getConfiguredAccessTokenSync();
@@ -30,7 +31,18 @@ if (!(process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "")) {
 }
 
 function currentAccessToken(): string {
-  return process.env.ORBIT_ACCESS_TOKEN?.trim() ?? "";
+  return (
+    process.env.ORBIT_ACCESS_CODE?.trim() ||
+    process.env.ORBIT_ACCESS_TOKEN?.trim() ||
+    ""
+  );
+}
+
+function assertRemoteAuthConfigured(): void {
+  if (!allowRemote || currentAccessToken()) return;
+  throw new Error(
+    "Remote access requires a configured ORBIT_ACCESS_CODE, ORBIT_ACCESS_TOKEN, or persisted access code before startup.",
+  );
 }
 
 function isLoopbackAddress(address: string | undefined): boolean {
@@ -71,7 +83,8 @@ function isTailscaleAddress(address: string | undefined): boolean {
 function isAllowedRemoteAddress(address: string | undefined): boolean {
   if (isLoopbackAddress(address)) return true;
   if (remoteScope === "tailscale") return isTailscaleAddress(address);
-  return true;
+  if (remoteScope === "any") return true;
+  return false;
 }
 
 function isLoopbackHostname(value: string | null): boolean {
@@ -216,6 +229,8 @@ function writeRedirect(response: ServerResponse, location: string): void {
 }
 
 async function main() {
+  assertRemoteAuthConfigured();
+
   const app = next({ dev });
   const handle = app.getRequestHandler();
 
@@ -240,6 +255,11 @@ async function main() {
       writeJson(res, 403, { error: message });
       return;
     }
+    req.headers[loopbackVerifiedHeader] = isLoopbackAddress(
+      req.socket.remoteAddress,
+    )
+      ? "true"
+      : "false";
 
     // WARNING: Token in URL query string is visible in server/proxy logs.
     // Consume it immediately, set a cookie, and redirect to strip it from the URL.
@@ -331,6 +351,15 @@ async function main() {
     );
     if (allowRemote) {
       console.log(`> Remote scope: ${remoteScope}`);
+      if (remoteScope === "any") {
+        console.warn(
+          "> Warning: ORBIT_REMOTE_SCOPE=any allows non-Tailscale remote clients. Keep a strong access token configured.",
+        );
+      } else if (remoteScope !== "tailscale") {
+        console.warn(
+          `> Warning: Unknown ORBIT_REMOTE_SCOPE=${remoteScope}; remote clients outside loopback will be rejected.`,
+        );
+      }
     }
   });
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useMemo, useState } from "react";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
 
 type DockMode = "prompt" | "question" | "approval" | "todo";
@@ -88,6 +88,37 @@ export default function SessionComposerDock({
     setMode("prompt");
   }
 
+  function handlePromptKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key !== "Enter") return;
+    if (e.nativeEvent.isComposing) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const hasModifier =
+      e.altKey ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.nativeEvent.getModifierState("Alt") ||
+      e.nativeEvent.getModifierState("Meta") ||
+      e.nativeEvent.getModifierState("Control") ||
+      e.nativeEvent.getModifierState("Shift");
+
+    if (!hasModifier) {
+      e.currentTarget.form?.requestSubmit();
+      return;
+    }
+
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const next = `${target.value.slice(0, start)}\n${target.value.slice(end)}`;
+    setPrompt(next);
+    window.requestAnimationFrame(() => {
+      target.setSelectionRange(start + 1, start + 1);
+    });
+  }
+
   function addTodo(e: FormEvent) {
     e.preventDefault();
     if (!todoInput.trim()) return;
@@ -151,8 +182,9 @@ export default function SessionComposerDock({
                 setError(null);
               }
             }}
+            onKeyDown={handlePromptKeyDown}
             rows={3}
-            placeholder="Type command or prompt for this session..."
+            placeholder="Type command or prompt... Option+Enter for newline"
             className="w-full rounded-2xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           {error && <p className="text-xs text-red-600">{error}</p>}

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import SplitDivider from "@/components/terminal/SplitDivider";
 import MultiTerminal from "@/components/terminal/MultiTerminal";
-import ProjectHarnessPanel from "@/components/dashboard/ProjectHarnessPanel";
 import FileEditor from "@/components/dashboard/FileEditor";
+import PdfViewer from "@/components/dashboard/PdfViewer";
 import type { ProjectInfo, SessionInfo } from "@/lib/types";
 
 type ProjectPaneMode = "terminal" | "files" | "harness";
@@ -19,6 +19,7 @@ type WorkspaceTab =
       projectName: string;
       projectColor: string;
       sessionId: string;
+      status: SessionInfo["status"];
     }
   | {
       id: string;
@@ -38,6 +39,15 @@ type WorkspaceTab =
       filePath: string;
       fileContent: string;
       fileMtimeMs: number;
+    }
+  | {
+      id: string;
+      kind: "pdf-view";
+      title: string;
+      projectId: string;
+      projectName: string;
+      projectColor: string;
+      filePath: string;
     }
   | {
       id: string;
@@ -68,6 +78,7 @@ type WorkspaceLayoutNode =
 export interface ViewedFile {
   projectId: string;
   path: string;
+  viewer: "editor" | "pdf";
   content: string;
   mtimeMs: number;
   requestId: string;
@@ -97,20 +108,7 @@ function buildSessionTab(
     projectName: session.projectName,
     projectColor: session.projectColor,
     sessionId: session.id,
-  };
-}
-
-function buildProjectTab(
-  project: ProjectInfo,
-  kind: "files" | "harness",
-): WorkspaceTab {
-  return {
-    id: `${kind}:${project.id}`,
-    kind,
-    title: kind === "files" ? "Files" : "Harness",
-    projectId: project.id,
-    projectName: project.name,
-    projectColor: project.color,
+    status: session.status,
   };
 }
 
@@ -253,9 +251,19 @@ function findFallbackTabId(tabs: WorkspaceTab[], tabId: string) {
 function tabKindLabel(tab: WorkspaceTab) {
   if (tab.kind === "session") return "Session";
   if (tab.kind === "file-view") return "File";
+  if (tab.kind === "pdf-view") return "PDF";
   if (tab.kind === "files") return "Files";
   if (tab.kind === "harness") return "Harness";
   return "Browser";
+}
+
+function tabKindMark(tab: WorkspaceTab) {
+  if (tab.kind === "session") return "$";
+  if (tab.kind === "file-view") return "F";
+  if (tab.kind === "pdf-view") return "PDF";
+  if (tab.kind === "files") return "DIR";
+  if (tab.kind === "harness") return "H";
+  return "WEB";
 }
 
 function hexToRgba(hex: string, alpha: number) {
@@ -379,6 +387,7 @@ export default function BorderlessWorkspace({
           projectName: selectedProject?.name ?? "",
           projectColor: selectedProject?.color ?? "#64748b",
           sessionId: inlineSessionId,
+          status: "active",
         };
 
     upsertTab(tab, activePanel.id);
@@ -394,7 +403,8 @@ export default function BorderlessWorkspace({
         const updated = buildSessionTab(fresh);
         if (
           updated.title === tab.title &&
-          updated.projectName === tab.projectName
+          updated.projectName === tab.projectName &&
+          updated.status === tab.status
         ) {
           return tab;
         }
@@ -412,10 +422,7 @@ export default function BorderlessWorkspace({
 
     if (!selectedProject) return;
 
-    if (projectPaneMode === "harness") {
-      upsertTab(buildProjectTab(selectedProject, "harness"), activePanel.id);
-      return;
-    }
+    if (projectPaneMode === "harness") return;
 
     const projectActiveSession = sessions.find(
       (session) =>
@@ -673,17 +680,29 @@ export default function BorderlessWorkspace({
     if (key === lastViewedFileRef.current) return;
     lastViewedFileRef.current = key;
 
-    const fileTab: WorkspaceTab = {
-      id: `file-view:${viewedFile.projectId}:${viewedFile.path}`,
-      kind: "file-view",
-      title: viewedFile.path.split("/").pop() ?? viewedFile.path,
-      projectId: viewedFile.projectId,
-      projectName: selectedProject.name,
-      projectColor: selectedProject.color,
-      filePath: viewedFile.path,
-      fileContent: viewedFile.content,
-      fileMtimeMs: viewedFile.mtimeMs,
-    };
+    const title = viewedFile.path.split("/").pop() ?? viewedFile.path;
+    const fileTab: WorkspaceTab =
+      viewedFile.viewer === "pdf"
+        ? {
+            id: `pdf-view:${viewedFile.projectId}:${viewedFile.path}`,
+            kind: "pdf-view",
+            title,
+            projectId: viewedFile.projectId,
+            projectName: selectedProject.name,
+            projectColor: selectedProject.color,
+            filePath: viewedFile.path,
+          }
+        : {
+            id: `file-view:${viewedFile.projectId}:${viewedFile.path}`,
+            kind: "file-view",
+            title,
+            projectId: viewedFile.projectId,
+            projectName: selectedProject.name,
+            projectColor: selectedProject.color,
+            filePath: viewedFile.path,
+            fileContent: viewedFile.content,
+            fileMtimeMs: viewedFile.mtimeMs,
+          };
 
     upsertTab(fileTab, activePanel.id);
   }, [activePanel.id, selectedProject, upsertTab, viewedFile]);
@@ -699,6 +718,15 @@ export default function BorderlessWorkspace({
           initialContent={tab.fileContent}
           initialMtimeMs={tab.fileMtimeMs}
           onClose={onCloseFile}
+        />
+      );
+    }
+    if (tab.kind === "pdf-view") {
+      return (
+        <PdfViewer
+          key={tab.id}
+          projectId={tab.projectId}
+          filePath={tab.filePath}
         />
       );
     }
@@ -722,9 +750,6 @@ export default function BorderlessWorkspace({
           />
         </div>
       );
-    }
-    if (tab.kind === "harness") {
-      return <ProjectHarnessPanel key={tab.id} projectId={tab.projectId} />;
     }
     return null;
   };
@@ -860,10 +885,26 @@ export default function BorderlessWorkspace({
                   onClick={() => setPanelActiveTab(panel.id, tab.id)}
                   className="flex cursor-grab items-center gap-1.5 py-1.5 pl-2 pr-1 active:cursor-grabbing"
                 >
+                  <span
+                    className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded border border-neutral-700 bg-neutral-950/50 px-1 font-mono text-[10px] font-semibold text-neutral-300"
+                    aria-hidden="true"
+                  >
+                    {tabKindMark(tab)}
+                  </span>
                   {"projectName" in tab && (
                     <span className="font-semibold text-neutral-200">
                       {tab.projectName}
                     </span>
+                  )}
+                  {tab.kind === "session" && (
+                    <span
+                      className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                        tab.status === "active"
+                          ? "bg-emerald-400"
+                          : "bg-neutral-500"
+                      }`}
+                      aria-hidden="true"
+                    />
                   )}
                   <span
                     className={`${"projectName" in tab ? "ml-0.5 " : ""}max-w-[13rem] truncate text-neutral-300`}

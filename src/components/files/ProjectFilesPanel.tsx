@@ -21,6 +21,7 @@ import type {
   ProjectFileWriteResponse,
 } from "@/lib/types";
 import SplitDivider from "@/components/terminal/SplitDivider";
+import PdfViewer from "@/components/dashboard/PdfViewer";
 import CodeEditor, { languageFromPath } from "./CodeEditor";
 
 type FileDoc = {
@@ -33,6 +34,10 @@ type FileDoc = {
 };
 
 type DirectoryMap = Record<string, ProjectFileEntryInfo[]>;
+
+function isPdfPath(filePath: string | null | undefined): boolean {
+  return /\.pdf$/i.test(filePath ?? "");
+}
 
 interface ProjectFilesPanelProps {
   projectId: string;
@@ -52,6 +57,7 @@ function parentPath(value: string): string {
 }
 
 type RendererProps = {
+  projectId: string;
   node: PaneNode;
   activePaneId: string;
   docs: Record<string, FileDoc>;
@@ -66,6 +72,7 @@ type RendererProps = {
 };
 
 function FilePaneRenderer({
+  projectId,
   node,
   activePaneId,
   docs,
@@ -173,6 +180,8 @@ function FilePaneRenderer({
                 Select a file
               </p>
             </div>
+          ) : isPdfPath(doc.path) ? (
+            <PdfViewer projectId={projectId} filePath={doc.path} />
           ) : doc.isBinary ? (
             <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-600">
               Binary file is not editable.
@@ -208,6 +217,7 @@ function FilePaneRenderer({
             className="min-h-0 min-w-0 overflow-hidden"
           >
             <FilePaneRenderer
+              projectId={projectId}
               node={child}
               activePaneId={activePaneId}
               docs={docs}
@@ -369,6 +379,23 @@ export default function ProjectFilesPanel({
       setBusyPath(filePath);
       setError(null);
       try {
+        if (isPdfPath(filePath)) {
+          setDocs((prev) => ({
+            ...prev,
+            [filePath]: {
+              path: filePath,
+              content: "",
+              originalContent: "",
+              mtimeMs: 0,
+              size: 0,
+              isBinary: true,
+            },
+          }));
+          setTree((prev) => updateLeafSession(prev, targetPaneId, filePath));
+          setActivePaneId(targetPaneId);
+          return;
+        }
+
         const query = new URLSearchParams({ path: filePath }).toString();
         const res = await fetch(
           `/api/projects/${projectId}/files/read?${query}`,
@@ -1001,6 +1028,8 @@ export default function ProjectFilesPanel({
             <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-600">
               Opening file...
             </div>
+          ) : isPdfPath(focusedDoc.path) ? (
+            <PdfViewer projectId={projectId} filePath={focusedDoc.path} />
           ) : focusedDoc.isBinary ? (
             <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-600">
               Binary file is not editable.
@@ -1096,6 +1125,7 @@ export default function ProjectFilesPanel({
 
       <section className="min-h-0 overflow-hidden rounded-lg border border-neutral-800 bg-neutral-950 p-2">
         <FilePaneRenderer
+          projectId={projectId}
           node={tree}
           activePaneId={activePaneId}
           docs={docsMap}

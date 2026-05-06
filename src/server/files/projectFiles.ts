@@ -8,6 +8,7 @@ import {
   PROJECT_FILES_MAX_EDIT_BYTES,
   PROJECT_FILES_MAX_ENTRIES,
   PROJECT_FILES_MAX_READ_BYTES,
+  PROJECT_FILES_MAX_VIEW_BYTES,
   PROJECT_FILES_MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
 import type {
@@ -89,7 +90,11 @@ function bytesToText(buffer: Buffer): {
   const isBinary = buffer.includes(0);
   if (isBinary) {
     // Preserve raw bytes as base64 so download endpoints can reconstruct the file.
-    return { isBinary: true, content: buffer.toString("base64"), encoding: "binary" };
+    return {
+      isBinary: true,
+      content: buffer.toString("base64"),
+      encoding: "binary",
+    };
   }
   return {
     isBinary: false,
@@ -105,6 +110,13 @@ type LocalResolvedExisting = {
   st: Stats;
   lst: Stats;
   relPath: string;
+};
+
+export type ProjectFileBinaryResponse = {
+  path: string;
+  buffer: Buffer;
+  size: number;
+  mtimeMs: number;
 };
 
 const MODE_TYPE_MASK = 0o170000;
@@ -390,6 +402,7 @@ function normalizeSshRelative(pathRaw: string): string {
 
 type DockerExecOptions = {
   input?: string;
+  maxBufferBytes?: number;
 };
 
 const DOCKER_LIST_SCRIPT = [
@@ -567,6 +580,9 @@ async function dockerExec(
     ["exec", "-i", container, "sh", "-lc", script, "sh", ...args],
     {
       maxBuffer: Math.max(PROJECT_FILES_MAX_READ_BYTES * 2, 20_000_000),
+      ...(options?.maxBufferBytes != null
+        ? { maxBuffer: Math.max(options.maxBufferBytes * 2, 20_000_000) }
+        : {}),
       ...(options?.input != null ? { input: options.input } : {}),
     },
   );
@@ -864,6 +880,78 @@ export async function readProjectFile(
   });
 }
 
+export async function readProjectFileBinary(
+  project: ProjectRecord,
+  rawPath: string,
+  maxBytes = PROJECT_FILES_MAX_VIEW_BYTES,
+): Promise<ProjectFileBinaryResponse> {
+  const backend = pathByType(project);
+
+  if (backend === "DOCKER") {
+    const relPath = normalizeSshRelative(rawPath);
+    const stdout = await dockerExec(
+      project,
+      DOCKER_READ_SCRIPT,
+      [project.path, relPath, String(maxBytes)],
+      { maxBufferBytes: maxBytes },
+    ).catch((error) => {
+      dockerErrorFromText(dockerExecErrorText(error));
+    });
+
+    const lines = stdout.split("\n");
+    if (lines[0]?.trim() !== "__OK__") {
+      dockerErrorFromText(stdout);
+    }
+    const size = Number((lines[1] ?? "0").trim());
+    const mtimeSec = Number((lines[2] ?? "0").trim());
+    const b64 = (lines.slice(3).join("\n") ?? "").trim();
+
+    return {
+      path: relPath,
+      buffer: Buffer.from(b64, "base64"),
+      size,
+      mtimeMs: mtimeSec * 1000,
+    };
+  }
+
+  if (backend === "LOCAL") {
+    const resolved = await resolveLocalExisting(project.path, rawPath);
+    if (!resolved.st.isFile()) fail("Not a file", 400);
+    if (resolved.st.size > maxBytes) {
+      fail(`File exceeds view limit (${maxBytes} bytes)`, 413);
+    }
+
+    return {
+      path: resolved.relPath,
+      buffer: await fs.readFile(resolved.realPath),
+      size: Number(resolved.st.size),
+      mtimeMs: Number(resolved.st.mtimeMs),
+    };
+  }
+
+  return withSshRoot(project, async (sftp, rootReal) => {
+    const resolved = await resolveSshExisting(sftp, rootReal, rawPath);
+    if (!attrsIsFile(resolved.attrs)) fail("Not a file", 400);
+    const size = Number(resolved.attrs.size ?? 0);
+    if (size > maxBytes) {
+      fail(`File exceeds view limit (${maxBytes} bytes)`, 413);
+    }
+
+    const buffer = await sftpReadFile(sftp, resolved.canonicalPath).catch(
+      (error) => {
+        fromSftpError(error, "Failed to read file");
+      },
+    );
+
+    return {
+      path: path.posix.relative(rootReal, resolved.canonicalPath) || "",
+      buffer,
+      size,
+      mtimeMs: Number(resolved.attrs.mtime ?? 0) * 1000,
+    };
+  });
+}
+
 export async function writeProjectFile(
   project: ProjectRecord,
   rawPath: string,
@@ -956,7 +1044,8 @@ export async function writeProjectFile(
     } catch (error) {
       await fs.unlink(tmpPath).catch(() => undefined);
       if (!isNodeErrCode(error, "EACCES", "EPERM")) throw error;
-      if (!existingLst?.isFile()) fail("Permission denied while creating file", 403);
+      if (!existingLst?.isFile())
+        fail("Permission denied while creating file", 403);
       try {
         await fs.writeFile(targetAbs, content, "utf8");
       } catch (directError) {
@@ -1195,8 +1284,7 @@ export async function copyProjectPath(
       toRel,
     );
     const toExisting = await fs.lstat(toAbs).catch(() => null);
-    if (toExisting && !body.overwrite)
-      fail("Destination already exists", 409);
+    if (toExisting && !body.overwrite) fail("Destination already exists", 409);
     await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
     return { ok: true };
   }
@@ -1247,8 +1335,7 @@ export async function copyProjectPath(
       toRel,
     );
     const toExisting = await fs.lstat(toAbs).catch(() => null);
-    if (toExisting && !body.overwrite)
-      fail("Destination already exists", 409);
+    if (toExisting && !body.overwrite) fail("Destination already exists", 409);
     await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
     return { ok: true };
   }
@@ -1261,8 +1348,7 @@ export async function copyProjectPath(
       toRel,
     );
     const toExisting = await sftpLstat(sftp, toAbs).catch(() => null);
-    if (toExisting && !body.overwrite)
-      fail("Destination already exists", 409);
+    if (toExisting && !body.overwrite) fail("Destination already exists", 409);
     if (toExisting) await sftpDeleteRecursive(sftp, toAbs);
     await sftpCopyRecursive(sftp, fromResolved.absPath, toAbs);
     return { ok: true };
@@ -1290,8 +1376,7 @@ export async function moveProjectPath(
       toRel,
     );
     const toExisting = await fs.lstat(toAbs).catch(() => null);
-    if (toExisting && !body.overwrite)
-      fail("Destination already exists", 409);
+    if (toExisting && !body.overwrite) fail("Destination already exists", 409);
     if (toExisting) await fs.rm(toAbs, { recursive: true, force: false });
     await fs.rename(fromResolved.absPath, toAbs).catch(async () => {
       await fs.cp(fromResolved.absPath, toAbs, { recursive: true });
@@ -1346,8 +1431,7 @@ export async function moveProjectPath(
       toRel,
     );
     const toExisting = await fs.lstat(toAbs).catch(() => null);
-    if (toExisting && !body.overwrite)
-      fail("Destination already exists", 409);
+    if (toExisting && !body.overwrite) fail("Destination already exists", 409);
     if (toExisting) await fs.rm(toAbs, { recursive: true, force: false });
     await fs.rename(fromResolved.absPath, toAbs).catch(async () => {
       // Cross-device move: copy + delete
@@ -1365,8 +1449,7 @@ export async function moveProjectPath(
       toRel,
     );
     const toExisting = await sftpLstat(sftp, toAbs).catch(() => null);
-    if (toExisting && !body.overwrite)
-      fail("Destination already exists", 409);
+    if (toExisting && !body.overwrite) fail("Destination already exists", 409);
     if (toExisting) await sftpDeleteRecursive(sftp, toAbs);
     await sftpRename(sftp, fromResolved.absPath, toAbs).catch(async () => {
       // If rename fails (cross-filesystem), copy + delete
@@ -1433,8 +1516,7 @@ export async function uploadProjectFile(
     const existingLst = await fs.lstat(targetAbs).catch(() => null);
     if (existingLst?.isSymbolicLink())
       fail("Symlink operations are not allowed", 400);
-    if (existingLst?.isDirectory())
-      fail("Cannot overwrite a directory", 400);
+    if (existingLst?.isDirectory()) fail("Cannot overwrite a directory", 400);
 
     const tmpPath = `${targetAbs}.orbit-tmp-${Date.now()}-${Math.random().toString(16).slice(2)}`;
     try {

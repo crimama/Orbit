@@ -154,7 +154,7 @@ export default function MobileChatTerminal({
   const [approvals, setApprovals] = useState<ApprovalCard[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const inputValueRef = useRef("");
   const viewportRef = useRef<HTMLDivElement>(null);
   const pendingAssistantIdRef = useRef<string | null>(null);
@@ -529,9 +529,8 @@ export default function MobileChatTerminal({
 
       {/* Input bar */}
       <div className="flex items-center gap-1.5 border-t border-neutral-800 bg-neutral-900 px-2 py-1.5">
-        <input
+        <textarea
           ref={inputRef}
-          type="text"
           inputMode="text"
           autoComplete="off"
           autoCorrect="off"
@@ -545,22 +544,44 @@ export default function MobileChatTerminal({
           onCompositionStart={() => setIsComposing(true)}
           onCompositionEnd={(e) => {
             setIsComposing(false);
-            const v = (e.target as HTMLInputElement).value;
+            const v = (e.target as HTMLTextAreaElement).value;
             setInput(v);
             inputValueRef.current = v;
           }}
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              !isComposing &&
-              !e.nativeEvent.isComposing
-            ) {
-              e.preventDefault();
+            if (e.key !== "Enter") return;
+            if (isComposing || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const hasModifier =
+              e.altKey ||
+              e.metaKey ||
+              e.ctrlKey ||
+              e.shiftKey ||
+              e.nativeEvent.getModifierState("Alt") ||
+              e.nativeEvent.getModifierState("Meta") ||
+              e.nativeEvent.getModifierState("Control") ||
+              e.nativeEvent.getModifierState("Shift");
+
+            if (!hasModifier) {
               handleSubmit();
+              return;
             }
+
+            const target = e.currentTarget;
+            const start = target.selectionStart;
+            const end = target.selectionEnd;
+            const next = `${target.value.slice(0, start)}\n${target.value.slice(end)}`;
+            setInput(next);
+            inputValueRef.current = next;
+            window.requestAnimationFrame(() => {
+              target.setSelectionRange(start + 1, start + 1);
+            });
           }}
           placeholder={attached ? "Ask Orbit…" : "Ask Orbit while it connects…"}
-          className="min-h-[40px] min-w-0 flex-1 rounded-lg border border-neutral-700 bg-neutral-800 px-3 text-base text-neutral-100 placeholder-neutral-500 outline-none focus:border-border-focus"
+          rows={2}
+          className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-y rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-base leading-5 text-neutral-100 placeholder-neutral-500 outline-none focus:border-border-focus"
         />
         <button
           type="button"

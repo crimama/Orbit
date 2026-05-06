@@ -27,7 +27,12 @@ interface SidebarFileTreeProps {
   activePath?: string | null;
   initialDir?: string;
   recentFiles?: RecentFileShortcut[];
-  onFileOpen?: (path: string, content: string, mtimeMs: number) => void;
+  onFileOpen?: (
+    path: string,
+    content: string,
+    mtimeMs: number,
+    viewer?: "editor" | "pdf",
+  ) => void;
   onDirChange?: (dir: string) => void;
 }
 
@@ -72,6 +77,12 @@ export default function SidebarFileTree({
     mode: "copy" | "move";
     entry: FileEntry;
   } | null>(null);
+  const [nameDialog, setNameDialog] = useState<{
+    mode: "file" | "folder" | "rename";
+    title: string;
+    value: string;
+    entry?: FileEntry;
+  } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const entryMapRef = useRef<Map<string, FileEntry>>(new Map());
 
@@ -115,6 +126,10 @@ export default function SidebarFileTree({
   const openFile = useCallback(
     async (filePath: string) => {
       if (!onFileOpen) return;
+      if (/\.pdf$/i.test(filePath)) {
+        onFileOpen(filePath, "", 0, "pdf");
+        return;
+      }
       setLoadingFile(filePath);
       try {
         const query = new URLSearchParams({ path: filePath }).toString();
@@ -165,8 +180,8 @@ export default function SidebarFileTree({
   );
 
   const renameEntry = useCallback(
-    async (entry: FileEntry) => {
-      const next = window.prompt("Rename", entry.name)?.trim();
+    async (entry: FileEntry, nextName: string) => {
+      const next = nextName.trim();
       if (!next || next === entry.name) return;
       const toPath = parentPath(entry.path)
         ? `${parentPath(entry.path)}/${next}`
@@ -181,8 +196,8 @@ export default function SidebarFileTree({
     [currentDir, doFetch, navigateTo],
   );
 
-  const createFile = useCallback(async () => {
-    const name = window.prompt("New file name", "untitled.txt")?.trim();
+  const createFile = useCallback(async (nextName: string) => {
+    const name = nextName.trim();
     if (!name) return;
     const fullPath = currentDir ? `${currentDir}/${name}` : name;
     setError(null);
@@ -205,8 +220,8 @@ export default function SidebarFileTree({
     }
   }, [currentDir, projectId, navigateTo]);
 
-  const createFolder = useCallback(async () => {
-    const name = window.prompt("New folder name", "new-folder")?.trim();
+  const createFolder = useCallback(async (nextName: string) => {
+    const name = nextName.trim();
     if (!name) return;
     const fullPath = currentDir ? `${currentDir}/${name}` : name;
     setError(null);
@@ -217,6 +232,51 @@ export default function SidebarFileTree({
       setError(err instanceof Error ? err.message : "Failed to create folder");
     }
   }, [currentDir, doFetch, navigateTo]);
+
+  const openCreateFileDialog = useCallback(() => {
+    setNameDialog({
+      mode: "file",
+      title: "New File",
+      value: "untitled.txt",
+    });
+  }, []);
+
+  const openCreateFolderDialog = useCallback(() => {
+    setNameDialog({
+      mode: "folder",
+      title: "New Folder",
+      value: "new-folder",
+    });
+  }, []);
+
+  const openRenameDialog = useCallback((entry: FileEntry) => {
+    setNameDialog({
+      mode: "rename",
+      title: `Rename ${entry.isDir ? "Folder" : "File"}`,
+      value: entry.name,
+      entry,
+    });
+  }, []);
+
+  const submitNameDialog = useCallback(async () => {
+    if (!nameDialog) return;
+    const value = nameDialog.value.trim();
+    if (!value) return;
+    const current = nameDialog;
+    setNameDialog(null);
+
+    if (current.mode === "file") {
+      await createFile(value);
+      return;
+    }
+    if (current.mode === "folder") {
+      await createFolder(value);
+      return;
+    }
+    if (current.entry) {
+      await renameEntry(current.entry, value);
+    }
+  }, [createFile, createFolder, nameDialog, renameEntry]);
 
   const openCopyPicker = useCallback((entry: FileEntry) => {
     setPicker({ mode: "copy", entry });
@@ -414,6 +474,22 @@ export default function SidebarFileTree({
         {loading && (
           <span className="text-[10px] text-neutral-500">…</span>
         )}
+        <button
+          type="button"
+          onClick={openCreateFileDialog}
+          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] font-medium text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100"
+          title="New file"
+        >
+          + File
+        </button>
+        <button
+          type="button"
+          onClick={openCreateFolderDialog}
+          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] font-medium text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100"
+          title="New folder"
+        >
+          + Folder
+        </button>
       </div>
 
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-1">
@@ -537,7 +613,7 @@ export default function SidebarFileTree({
                 Move
               </button>
               <button
-                onClick={() => void renameEntry(ctxMenu.entry!)}
+                onClick={() => openRenameDialog(ctxMenu.entry!)}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
                 type="button"
               >
@@ -555,14 +631,14 @@ export default function SidebarFileTree({
           ) : (
             <>
               <button
-                onClick={() => void createFile()}
+                onClick={openCreateFileDialog}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
                 type="button"
               >
                 New File
               </button>
               <button
-                onClick={() => void createFolder()}
+                onClick={openCreateFolderDialog}
                 className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
                 type="button"
               >
@@ -581,6 +657,52 @@ export default function SidebarFileTree({
           onSelect={(dest, destPid) => void handlePickerSelect(dest, destPid)}
           onClose={() => setPicker(null)}
         />
+      ) : null}
+
+      {nameDialog ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onMouseDown={() => setNameDialog(null)}
+        >
+          <form
+            className="w-full max-w-sm rounded-lg border border-neutral-700 bg-neutral-900 p-4 shadow-xl"
+            onMouseDown={(event) => event.stopPropagation()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              void submitNameDialog();
+            }}
+          >
+            <h3 className="text-sm font-semibold text-neutral-100">
+              {nameDialog.title}
+            </h3>
+            <input
+              autoFocus
+              value={nameDialog.value}
+              onChange={(event) =>
+                setNameDialog((current) =>
+                  current ? { ...current, value: event.target.value } : current,
+                )
+              }
+              className="mt-3 w-full rounded border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-border-focus"
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setNameDialog(null)}
+                className="rounded px-3 py-1.5 text-xs text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!nameDialog.value.trim()}
+                className="rounded bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-950 disabled:opacity-50"
+              >
+                Confirm
+              </button>
+            </div>
+          </form>
+        </div>
       ) : null}
     </div>
   );

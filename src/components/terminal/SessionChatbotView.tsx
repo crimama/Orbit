@@ -247,9 +247,33 @@ export default function SessionChatbotView({
 
   function handleInputKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key !== "Enter") return;
-    if (e.shiftKey) return;
+    if (e.nativeEvent.isComposing) return;
     e.preventDefault();
-    void sendPrompt();
+    e.stopPropagation();
+
+    const hasModifier =
+      e.altKey ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.nativeEvent.getModifierState("Alt") ||
+      e.nativeEvent.getModifierState("Meta") ||
+      e.nativeEvent.getModifierState("Control") ||
+      e.nativeEvent.getModifierState("Shift");
+
+    if (!hasModifier) {
+      void sendPrompt();
+      return;
+    }
+
+    const target = e.currentTarget;
+    const start = target.selectionStart;
+    const end = target.selectionEnd;
+    const next = `${target.value.slice(0, start)}\n${target.value.slice(end)}`;
+    setInput(next);
+    window.requestAnimationFrame(() => {
+      target.setSelectionRange(start + 1, start + 1);
+    });
   }
 
   const statusText = useMemo(() => {
@@ -332,7 +356,7 @@ export default function SessionChatbotView({
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleInputKeyDown}
             rows={2}
-            placeholder="Type your request..."
+            placeholder="Type your request... Option+Enter for newline"
             className="max-h-40 min-h-[44px] flex-1 resize-y rounded-2xl border border-slate-300 px-3 py-2 text-sm text-slate-800 outline-none focus:border-border-focus"
           />
           <button

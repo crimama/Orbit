@@ -1,120 +1,185 @@
 # Agent Orbit
 
-**AI 에이전트 오케스트레이션 플랫폼**
+Mac 앱으로 Claude Code, Codex, OpenCode 같은 AI 에이전트 세션을 열고 관리하는 Orbit 클라이언트입니다.
 
-로컬/원격(SSH) 서버의 AI 에이전트(Claude Code, Codex 등)를 하나의 웹 대시보드에서 관리합니다.
-세션 지속성(resume), 시각적 스킬 그래프, 모바일 PWA 환경을 제공합니다.
+이 README는 **Mac 앱으로 쓰는 경우**를 기준으로 설명합니다. Orbit은 앱 창 안에서 Orbit UI를 띄우며, 백엔드는 두 방식 중 하나로 연결합니다.
 
-## Core Features
+| Mode | Backend | Mac App |
+| ---- | ------- | ------- |
+| Remote URL | 다른 서버/데스크탑에서 실행 | 원격 Orbit 주소에 접속 |
+| This Mac | MacBook 자체에서 실행 | 앱이 로컬 Orbit 서버에 접속 |
 
-- **Hybrid Workspace** — 로컬/SSH 원격 프로젝트 통합 관리
-- **Smart Session Resume** — 에이전트 세션 자동 인덱싱 + `--resume` 복구
-- **Visual Skill Graph** — React Flow 노드 기반 에이전트/스킬 시각화 + 라이브 트레이스
-- **Mobile-First UX** — PWA + 가상 보조키 + 적응형 레이아웃
+## 1. 원격 서버에 Mac 앱으로 접속
 
-## Tech Stack
+서버나 데스크탑에서 Orbit 백엔드를 실행하고, Mac 앱은 클라이언트처럼 접속하는 방식입니다. 여러 기기에서 같은 Orbit에 들어가려면 이 방식을 권장합니다.
 
-| Layer         | Technology                           |
-| ------------- | ------------------------------------ |
-| Frontend      | Next.js 14 (App Router) + TypeScript |
-| Terminal      | xterm.js + WebGL Addon               |
-| Visualization | React Flow (XyFlow)                  |
-| Real-time     | Socket.io (WebSocket)                |
-| Backend       | Node.js + node-pty + ssh2            |
-| Database      | Prisma + SQLite                      |
-| Mobile        | PWA (next-pwa)                       |
-
-## Getting Started
+### 서버에서 실행
 
 ```bash
-# 의존성 설치
+git pull
 npm install
-
-# 개발 서버 실행
-npm run dev
-
-# 빌드
-npm run build
-
-# 프로덕션 실행
-npm start
-```
-
-### Security Defaults
-
-- API/Socket are loopback-only by default (`127.0.0.1`).
-- To allow remote access explicitly, set `ORBIT_ALLOW_REMOTE=true`.
-- Optional: `ORBIT_REMOTE_SCOPE=tailscale` to accept only loopback/Tailscale clients.
-- To require authentication, set `ORBIT_ACCESS_TOKEN`.
-- Sign in on `/login` with the token (or open with `?token=<value>` once).
-- Password-based SSH profiles require `SSH_PASSWORD_SECRET` (AES-GCM encryption key material).
-
-### Tailscale-Only Access (Recommended)
-
-For personal multi-device use, run Orbit so only Tailnet clients can connect:
-
-```bash
-export SSH_PASSWORD_SECRET="change-this-too"
-npm run dev:tailnet
-```
-
-- `ORBIT_ACCESS_TOKEN` is auto-generated on first tailnet run and persisted at `~/.orbit/access-token`.
-- To rotate it manually: `ORBIT_ACCESS_TOKEN_ROTATE=true npm run dev:tailnet`.
-- Optional override path: `ORBIT_ACCESS_TOKEN_FILE=/custom/path/token npm run dev:tailnet`.
-- To force first-time setup mode (no auto token): `ORBIT_TAILNET_AUTO_TOKEN=false npm run dev:tailnet`.
-
-- This sets:
-  - `ORBIT_ALLOW_REMOTE=true`
-  - `ORBIT_REMOTE_SCOPE=tailscale` (rejects non-loopback/non-tailnet IPs)
-  - `HOST=0.0.0.0`
-- Then open from another Tailnet device: `http://<tailscale-ip>:3000/login`
-
-## Development
-
-```bash
-# 타입 체크
-npx tsc --noEmit
-
-# 린트
-npm run lint
-
-# 포매팅
-npm run format
-
-# Prisma DB 동기화
+npx prisma generate
 npx prisma db push
 ```
 
-## Architecture
+Access code를 먼저 만들거나 확인합니다.
 
-```
-[Client: Next.js + xterm.js + React Flow]
-        ↕ Socket.io (WebSocket)
-[Backend: Node.js (TypeScript)]
-    ├── PTY Manager (node-pty)
-    ├── SSH Tunnel (ssh2)
-    └── Session Watcher
-        ↕
-[Target: Local/Remote Agent Infrastructure]
+```bash
+npm run access:code -- rotate
+npm run access:code -- show
 ```
 
-## Project Structure
+Tailscale로 원격 접속을 열려면:
 
+```bash
+export SSH_PASSWORD_SECRET="change-this-if-you-use-ssh-passwords"
+npm run dev:tailnet
 ```
-src/
-├── app/              # Next.js App Router
-│   └── api/          # API routes
-├── components/
-│   ├── terminal/     # xterm.js terminal
-│   ├── graph/        # React Flow skill graph
-│   ├── dashboard/    # Project/session dashboard
-│   └── mobile/       # Mobile-specific UI
-├── server/
-│   ├── pty/          # PTY process manager
-│   ├── ssh/          # SSH tunneling
-│   ├── session/      # Session management
-│   └── socket/       # Socket.io handlers
-└── lib/              # Shared utilities
+
+서버 출력에 표시되는 Tailscale 주소를 확인합니다.
+
+```txt
+http://<tailscale-ip>:3000
+```
+
+### Mac 앱에서 접속
+
+1. Orbit Mac 앱을 엽니다.
+2. 연결 방식에서 `Remote URL`을 선택합니다.
+3. URL에 `http://<tailscale-ip>:3000`을 입력합니다.
+4. 로그인 화면에서 access code를 입력합니다.
+
+앱이 원격 Orbit UI에 붙는 구조라서, 이 모드에서는 Mac 앱이 서버를 직접 띄우지 않습니다.
+
+## 2. Mac 자체에서 Orbit 앱 실행
+
+MacBook 안에서 Orbit 백엔드도 실행하고, Mac 앱도 그 로컬 서버에 붙는 방식입니다. 브라우저 대신 앱처럼 쓰고 싶을 때 사용합니다.
+
+### Mac에서 준비
+
+```bash
+git pull
+npm install
+npx prisma generate
+npx prisma db push
+```
+
+Access code를 설정합니다.
+
+```bash
+npm run access:code -- set "your-strong-access-code"
+```
+
+또는 자동 생성합니다.
+
+```bash
+npm run access:code -- rotate
+```
+
+### Mac 앱 빌드 및 실행
+
+Electron 앱 개발/패키징 스크립트가 있는 `Orbit-mac` 복사본에서 실행합니다.
+
+```bash
+npm run desktop:pack:local
+open dist-packaged-local/mac-arm64/Orbit.app
+```
+
+앱이 열리면 `This Mac` 또는 local 연결 방식을 선택합니다.
+
+Apple Silicon이 아닌 Mac에서는 `dist-packaged-local/` 아래의 실제 architecture 디렉터리명을 확인해서 해당 `.app`을 열면 됩니다.
+
+## Access Code 관리
+
+Access code는 Orbit 로그인에 쓰는 비밀번호입니다. 기본 저장 위치는 `~/.orbit/access-token`입니다.
+
+현재 access code 확인:
+
+```bash
+npm run access:code -- show
+```
+
+새 access code 생성:
+
+```bash
+npm run access:code -- rotate
+```
+
+원하는 값으로 지정:
+
+```bash
+npm run access:code -- set "your-strong-access-code"
+```
+
+환경변수로 직접 지정할 수도 있습니다.
+
+```bash
+ORBIT_ACCESS_CODE="your-strong-access-code" npm run dev
+```
+
+기존 이름인 `ORBIT_ACCESS_TOKEN`도 호환됩니다.
+
+## Mac 앱에서 세션 열기
+
+1. 프로젝트를 선택합니다.
+2. `Terminal`, `Claude Code`, `Codex`, `OpenCode` 중 하나를 선택합니다.
+3. 세션 탭이 열리면 터미널 또는 채팅 입력을 사용합니다.
+4. Mac 앱 채팅 입력은 일반 `Enter`가 줄바꿈이고, `Cmd/Ctrl+Enter`가 전송입니다.
+
+로컬 앱 모드에서 agent CLI가 바로 종료되면 터미널 안에 종료 코드와 오류 메시지가 남습니다. 아래 명령으로 Mac login shell에서 CLI가 잡히는지 확인합니다.
+
+```bash
+zsh -lic 'command -v claude; command -v codex; command -v opencode'
+```
+
+## 문제 해결
+
+### `Forbidden: API is restricted to loopback access`
+
+기본 로컬 서버를 다른 기기에서 열려고 한 상태입니다. 원격 접속은 서버에서 Tailnet 모드로 실행해야 합니다.
+
+```bash
+npm run dev:tailnet
+```
+
+### `Remote access requires a configured ORBIT_ACCESS_CODE`
+
+원격 모드는 보안상 최초 access code 설정을 원격에서 허용하지 않습니다. 서버에서 먼저 생성합니다.
+
+```bash
+npm run access:code -- rotate
+```
+
+그 다음 다시 실행합니다.
+
+```bash
+npm run dev:tailnet
+```
+
+### `The table main.AgentSession does not exist`
+
+SQLite schema가 아직 적용되지 않은 상태입니다.
+
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+### Mac 로컬 세션이 바로 꺼짐
+
+앱 안의 터미널에 남은 오류 메시지를 먼저 확인합니다. CLI 경로 문제라면 Mac login shell에서 아래 명령이 모두 잡혀야 합니다.
+
+```bash
+zsh -lic 'command -v claude; command -v codex; command -v opencode'
+```
+
+필요한 CLI가 없다면 설치하거나 shell profile의 `PATH`를 정리합니다.
+
+## 개발 확인
+
+```bash
+npx tsc --noEmit
+npm run lint
 ```
 
 ## License

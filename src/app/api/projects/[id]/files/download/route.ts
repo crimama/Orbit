@@ -11,6 +11,19 @@ function downloadFileName(filePath: string): string {
   return name.replace(/["\\\r\n]/g, "_");
 }
 
+function asciiFileName(fileName: string): string {
+  const sanitized = fileName
+    .replace(/["\\\r\n]/g, "_")
+    .replace(/[^\x20-\x7E]/g, "_")
+    .trim();
+  return sanitized || "download";
+}
+
+function attachmentContentDisposition(filePath: string): string {
+  const name = downloadFileName(filePath);
+  return `attachment; filename="${asciiFileName(name)}"; filename*=UTF-8''${encodeURIComponent(name)}`;
+}
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } },
@@ -31,9 +44,9 @@ export async function GET(
 
     return new Response(buffer, {
       headers: {
-        "Content-Disposition": `attachment; filename="${downloadFileName(
+        "Content-Disposition": attachmentContentDisposition(
           data.path || requestedPath,
-        )}"`,
+        ),
         "Content-Type": "application/octet-stream",
       },
     });

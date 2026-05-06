@@ -25,9 +25,6 @@ interface PtySession {
 type DataCallback = (data: string) => void;
 type ExitCallback = (exitCode: number) => void;
 
-const MACOS_DESKTOP_PATH =
-  "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin";
-
 function defaultShell(): string {
   const configured = process.env.SHELL?.trim();
   if (configured) return configured;
@@ -37,15 +34,23 @@ function defaultShell(): string {
 }
 
 function desktopPath(): string {
-  const current = process.env.PATH?.trim();
-  if (process.platform !== "darwin") return current ?? "";
-  if (!current) return MACOS_DESKTOP_PATH;
+  if (process.platform !== "darwin") return process.env.PATH ?? "";
+  const pathParts = [
+    process.env.PATH,
+    "/opt/homebrew/bin",
+    "/opt/homebrew/sbin",
+    "/usr/local/bin",
+    "/usr/local/sbin",
+    "/usr/bin",
+    "/bin",
+    "/usr/sbin",
+    "/sbin",
+    `${process.env.HOME ?? ""}/.local/bin`,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .flatMap((value) => value.split(":"));
 
-  const parts = new Set(current.split(":").filter(Boolean));
-  for (const part of MACOS_DESKTOP_PATH.split(":")) {
-    parts.add(part);
-  }
-  return Array.from(parts).join(":");
+  return Array.from(new Set(pathParts)).join(":");
 }
 
 function formatSpawnError(error: unknown, command: string, cwd: string): Error {
@@ -81,17 +86,19 @@ class PtyManager implements PtyBackend {
 
     const command = opts.command ?? defaultShell();
     const args = opts.args ?? [];
-    const env = {
+    const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       ...(opts.env ?? {}),
       PATH: opts.env?.PATH ?? desktopPath(),
       SHELL: process.env.SHELL ?? defaultShell(),
     };
+    delete env.ELECTRON_RUN_AS_NODE;
+    delete env.NODE_PATH;
 
     let proc: IPty;
     try {
       proc = pty.spawn(command, args, {
-        name: "xterm-color",
+        name: "xterm-256color",
         cols,
         rows,
         cwd,

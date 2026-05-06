@@ -268,6 +268,7 @@ export default function MobileModeScreen() {
       setControlState("chat");
       await fetchAllSessions();
       await fetchSessions(selectedProjectId);
+      await fetchProjects();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start session");
     } finally {
@@ -276,6 +277,7 @@ export default function MobileModeScreen() {
   }, [
     activeSession,
     fetchAllSessions,
+    fetchProjects,
     fetchSessions,
     isBusy,
     isOffline,
@@ -309,6 +311,7 @@ export default function MobileModeScreen() {
       if (selectedProjectId) {
         await fetchSessions(selectedProjectId);
       }
+      await fetchProjects();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to stop session");
     } finally {
@@ -317,6 +320,7 @@ export default function MobileModeScreen() {
   }, [
     activeSession,
     fetchAllSessions,
+    fetchProjects,
     fetchSessions,
     isBusy,
     isOffline,
@@ -335,7 +339,8 @@ export default function MobileModeScreen() {
     if (selectedProjectId) {
       void fetchSessions(selectedProjectId);
     }
-  }, [fetchSessions, selectedProjectId]);
+    void fetchProjects();
+  }, [fetchProjects, fetchSessions, selectedProjectId]);
 
   return (
     <main

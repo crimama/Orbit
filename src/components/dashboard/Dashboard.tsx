@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import Link from "next/link";
 import ProjectList from "./ProjectList";
 import SessionList from "./SessionList";
 import SidebarFileTree from "./SidebarFileTree";
@@ -16,13 +15,13 @@ import CostDashboard from "./CostDashboard";
 import AgentRunsPanel from "./AgentRunsPanel";
 import AuditLogPanel from "./AuditLogPanel";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
+import { useTheme } from "@/lib/hooks/useTheme";
 import { useSocket } from "@/lib/useSocket";
 import { useToast } from "@/hooks/useToast";
 import { useConfirmContext } from "@/components/ui/ConfirmDialog";
 import type {
   ProjectInfo,
   SessionInfo,
-  GraphState,
   ApiResponse,
   ApiError,
   CreateSessionRequest,
@@ -68,13 +67,22 @@ function readDashboardResumeSnapshot(): DashboardResumeSnapshot | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<DashboardResumeSnapshot>;
 
+    const projectPaneMode =
+      parsed.projectPaneMode === "harness"
+        ? "terminal"
+        : (parsed.projectPaneMode ?? "terminal");
+    const projectFocusTab =
+      parsed.projectFocusTab === "harness"
+        ? "sessions"
+        : (parsed.projectFocusTab ?? "sessions");
+
     return {
       selectedProjectId: parsed.selectedProjectId ?? null,
       inlineSessionId: parsed.inlineSessionId ?? null,
       inlineWorkspaceId: parsed.inlineWorkspaceId ?? null,
       sessionViewMode: parsed.sessionViewMode ?? "active",
-      projectPaneMode: parsed.projectPaneMode ?? "terminal",
-      projectFocusTab: parsed.projectFocusTab ?? "sessions",
+      projectPaneMode,
+      projectFocusTab,
     };
   } catch {
     return null;
@@ -205,6 +213,7 @@ export default function Dashboard() {
   const [viewedFile, setViewedFile] = useState<{
     projectId: string;
     path: string;
+    viewer: "editor" | "pdf";
     content: string;
     mtimeMs: number;
     requestId: string;
@@ -214,7 +223,6 @@ export default function Dashboard() {
   const [paletteCursor, setPaletteCursor] = useState(0);
   const layoutSplitRef = useRef<HTMLDivElement>(null);
   const paletteInputRef = useRef<HTMLInputElement>(null);
-  const [skillCount, setSkillCount] = useState(0);
   const [projectDirMap, setProjectDirMap] = useState<Record<string, string>>(
     {},
   );
@@ -232,17 +240,25 @@ export default function Dashboard() {
     readDashboardResumeSnapshot(),
   );
   const { socket } = useSocket();
+  const { theme, setTheme } = useTheme();
   const { pendingApprovals, approve, deny, latestApproval } =
     usePendingApprovals();
   const showResumeLoading = !resumeReady;
+  const warmThemeActive = theme === "warm";
 
   const openViewedFile = useCallback(
-    (path: string, content: string, mtimeMs: number) => {
+    (
+      path: string,
+      content: string,
+      mtimeMs: number,
+      viewer: "editor" | "pdf" = "editor",
+    ) => {
       if (!selectedProject) return;
 
       setViewedFile({
         projectId: selectedProject.id,
         path,
+        viewer,
         content,
         mtimeMs,
         requestId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -396,6 +412,7 @@ export default function Dashboard() {
     if (!socket) return;
 
     const handleSessionUpdate = (session: SessionInfo) => {
+      void fetchProjects();
       setSessions((prev) => {
         const existingIndex = prev.findIndex((item) => item.id === session.id);
         const previous = existingIndex >= 0 ? prev[existingIndex] : null;
@@ -457,7 +474,7 @@ export default function Dashboard() {
       socket.off("session-context" as never, handleSessionContext);
       socket.off("session-notify" as never, handleSessionNotify);
     };
-  }, [socket]);
+  }, [fetchProjects, socket]);
 
   useEffect(() => {
     if (projects.length === 0) {
@@ -486,22 +503,6 @@ export default function Dashboard() {
     },
     [fetchSessions, projectPaneMode],
   );
-
-  const fetchSkillCount = useCallback(async (projectId: string) => {
-    const res = await fetch(`/api/skills?projectId=${projectId}`);
-    const json = (await res.json()) as ApiResponse<GraphState>;
-    if ("data" in json) {
-      setSkillCount(json.data.nodes.length);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!selectedProject) {
-      setSkillCount(0);
-      return;
-    }
-    void fetchSkillCount(selectedProject.id);
-  }, [selectedProject, fetchSkillCount]);
 
   const patchProject = useCallback(
     async (id: string, updates: Partial<ProjectInfo>) => {
@@ -600,8 +601,12 @@ export default function Dashboard() {
       const json = (await res.json()) as ApiResponse<SessionInfo>;
       if ("data" in json) {
         setInlineSessionId(json.data.id);
+        setSessions((prev) => {
+          const withoutOld = prev.filter((s) => s.id !== id);
+          return [json.data, ...withoutOld];
+        });
       }
-      fetchSessions(session.projectId);
+      void fetchSessions();
     },
     [sessions, fetchSessions],
   );
@@ -632,11 +637,44 @@ export default function Dashboard() {
         });
         const json = (await res.json()) as ApiResponse<SessionInfo>;
         if ("data" in json) {
-          if (options?.activateInWorkspace !== false) {
-            setInlineSessionId(json.data.id);
+          const createdSession = json.data;
+          const shouldActivate =
+            options?.activateInWorkspace !== false ||
+            request.agentType === "terminal";
+
+          setSessions((prev) => {
+            const existingIndex = prev.findIndex(
+              (session) => session.id === createdSession.id,
+            );
+            if (existingIndex === -1) return [createdSession, ...prev];
+
+            const next = [...prev];
+            next[existingIndex] = createdSession;
+            return next;
+          });
+          setSessionsLoaded(true);
+
+          const project = projects.find(
+            (item) => item.id === createdSession.projectId,
+          );
+          if (project) {
+            setSelectedProject(project);
+          }
+
+          setSessionViewMode("active");
+          setProjectFocusTab("sessions");
+          setShowHarnessManager(false);
+          setProjectPaneMode("terminal");
+
+          if (shouldActivate) {
+            setInlineSessionId(createdSession.id);
             setInlineWorkspaceId(null);
           }
-          await fetchSessions(request.projectId);
+
+          void fetchProjects();
+          window.setTimeout(() => {
+            void fetchSessions();
+          }, 500);
         } else {
           console.error("[createSession] API error:", json);
         }
@@ -644,7 +682,7 @@ export default function Dashboard() {
         setCreatingSession(false);
       }
     },
-    [fetchSessions],
+    [fetchProjects, fetchSessions, projects],
   );
 
   const handleResumeSession = useCallback(
@@ -834,7 +872,7 @@ export default function Dashboard() {
       setProjectPaneMode("terminal");
       setInlineSessionId(session.id);
       setInlineWorkspaceId(null);
-      void fetchSessions(session.projectId);
+      void fetchSessions();
     },
     [projects, fetchSessions],
   );
@@ -1091,6 +1129,30 @@ export default function Dashboard() {
           Agent Orbit
         </h1>
         <div className="relative flex flex-wrap items-center gap-1 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setTheme(warmThemeActive ? "default" : "warm")}
+            className={`flex h-6 items-center gap-1.5 rounded border px-2 text-[11px] font-medium transition ${
+              warmThemeActive
+                ? "border-amber-600/50 bg-amber-100 text-amber-950 hover:bg-amber-200"
+                : "border-neutral-700 bg-neutral-900 text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200"
+            }`}
+            aria-pressed={warmThemeActive}
+            title={
+              warmThemeActive
+                ? "Switch to dark theme"
+                : "Switch to warm light theme"
+            }
+          >
+            <span
+              className={`h-2.5 w-2.5 rounded-full border ${
+                warmThemeActive
+                  ? "border-amber-700 bg-[#ece3ca]"
+                  : "border-sky-500 bg-neutral-950"
+              }`}
+            />
+            <span>{warmThemeActive ? "Warm" : "Dark"}</span>
+          </button>
           <button
             ref={notifBellRef}
             onClick={() => setShowNotifications((v) => !v)}
@@ -1427,20 +1489,6 @@ export default function Dashboard() {
                       >
                         Files
                       </button>
-                      <button
-                        onClick={() => {
-                          setProjectFocusTab("harness");
-                          setProjectPaneMode("harness");
-                          setShowHarnessManager(true);
-                        }}
-                        className={`flex-1 rounded px-2 py-1 ${
-                          projectFocusTab === "harness"
-                            ? "bg-neutral-700 text-neutral-100"
-                            : "text-neutral-400 hover:text-neutral-200"
-                        }`}
-                      >
-                        Harness
-                      </button>
                     </div>
 
                     {projectFocusTab === "sessions" ? (
@@ -1549,34 +1597,6 @@ export default function Dashboard() {
                           }))
                         }
                       />
-                    ) : null}
-
-                    {projectFocusTab === "harness" ? (
-                      <div className="rounded border border-neutral-800 bg-neutral-900/40 p-3">
-                        <div className="mb-2 text-xs text-neutral-400">
-                          Skills linked to this project
-                        </div>
-                        <div className="mb-3 text-2xl font-semibold text-cyan-300">
-                          {skillCount}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setProjectPaneMode("harness");
-                              setShowHarnessManager(true);
-                            }}
-                            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-                          >
-                            Open Harness
-                          </button>
-                          <Link
-                            href={`/graph?projectId=${selectedProject!.id}`}
-                            className="rounded border border-neutral-700 px-2 py-1 text-xs text-neutral-300 hover:bg-neutral-800"
-                          >
-                            Manage Skills
-                          </Link>
-                        </div>
-                      </div>
                     ) : null}
                   </div>
                 ) : null}

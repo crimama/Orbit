@@ -6,11 +6,7 @@ import {
   registerPtyBackend,
 } from "@/server/pty/ptyBackend";
 import { sshManager } from "@/server/ssh/sshManager";
-import {
-  DEFAULT_COLS,
-  DEFAULT_ROWS,
-  SCROLLBACK_LIMIT,
-} from "@/lib/constants";
+import { DEFAULT_COLS, DEFAULT_ROWS, SCROLLBACK_LIMIT } from "@/lib/constants";
 
 type DataCallback = (data: string) => void;
 type ExitCallback = (exitCode: number) => void;
@@ -28,6 +24,8 @@ export interface RemoteCreateOptions {
   cols?: number;
   rows?: number;
   sshConfigId: string;
+  readyMode?: "marker" | "immediate";
+  inputEcho?: boolean;
 }
 
 const READY_MARKER = "\x1b]777;orbit-ready\x07";
@@ -54,10 +52,12 @@ class RemotePtyManager implements PtyBackend {
 
     const cols = opts.cols ?? DEFAULT_COLS;
     const rows = opts.rows ?? DEFAULT_ROWS;
+    const waitForReadyMarker = opts.readyMode !== "immediate";
 
     const channel = await sshManager.createShell(opts.sshConfigId, {
       cols,
       rows,
+      inputEcho: opts.inputEcho,
     });
 
     const session: RemoteSession = {
@@ -76,21 +76,25 @@ class RemotePtyManager implements PtyBackend {
     const decoder = new StringDecoder("utf8");
     this.decoders.set(sessionId, decoder);
 
-    // Start fallback ready timer
-    const fallbackTimer = setTimeout(() => {
-      this.readyTimers.delete(sessionId);
-      if (!this.readySessions.has(sessionId)) {
-        this.markReady(sessionId);
-      }
-    }, READY_FALLBACK_MS);
-    this.readyTimers.set(sessionId, fallbackTimer);
+    if (waitForReadyMarker) {
+      // Start fallback ready timer
+      const fallbackTimer = setTimeout(() => {
+        this.readyTimers.delete(sessionId);
+        if (!this.readySessions.has(sessionId)) {
+          this.markReady(sessionId);
+        }
+      }, READY_FALLBACK_MS);
+      this.readyTimers.set(sessionId, fallbackTimer);
+    } else {
+      this.readySessions.add(sessionId);
+    }
 
     channel.on("data", (data: Buffer) => {
       session.lastActivity = Date.now();
       let str = decoder.write(data);
 
       // Check for ready marker before session is ready
-      if (!this.readySessions.has(sessionId)) {
+      if (waitForReadyMarker && !this.readySessions.has(sessionId)) {
         const markerIdx = str.indexOf(READY_MARKER);
         if (markerIdx !== -1) {
           // Strip marker and everything before it
@@ -192,7 +196,9 @@ class RemotePtyManager implements PtyBackend {
       this.readyCallbacks.set(sessionId, cbs);
     }
     cbs.add(cb);
-    return () => { cbs!.delete(cb); };
+    return () => {
+      cbs!.delete(cb);
+    };
   }
 
   private markReady(sessionId: string): void {
@@ -224,7 +230,12 @@ class RemotePtyManager implements PtyBackend {
     session.cols = safeCols;
     session.rows = safeRows;
     try {
-      session.channel.setWindow(safeRows, safeCols, safeRows * 16, safeCols * 8);
+      session.channel.setWindow(
+        safeRows,
+        safeCols,
+        safeRows * 16,
+        safeCols * 8,
+      );
     } catch {
       // Resize can fail if channel is closed
     }
@@ -332,7 +343,10 @@ class RemotePtyManager implements PtyBackend {
 
       console.log(`[RemotePty] Re-opened channel for session ${sessionId}`);
     } catch (err) {
-      console.error(`[RemotePty] Failed to re-open channel for ${sessionId}:`, err);
+      console.error(
+        `[RemotePty] Failed to re-open channel for ${sessionId}:`,
+        err,
+      );
     }
   }
 
@@ -377,7 +391,10 @@ class RemotePtyManager implements PtyBackend {
 
 // globalThis singleton
 const RPTY_KEY = "__orbit_remote_pty_manager__" as const;
-const _rg = globalThis as unknown as Record<string, RemotePtyManager | undefined>;
+const _rg = globalThis as unknown as Record<
+  string,
+  RemotePtyManager | undefined
+>;
 if (!_rg[RPTY_KEY]) {
   _rg[RPTY_KEY] = new RemotePtyManager();
   registerPtyBackend(_rg[RPTY_KEY]);

@@ -19,6 +19,7 @@ const LEDGER_PREVIEW_LIMIT = 512;
 const LEDGER_RAW_LIMIT = 8192;
 const OUTPUT_LEDGER_FLUSH_MS = 750;
 const OUTPUT_LEDGER_FLUSH_CHARS = 4096;
+const INTERACTIVE_OUTPUT_FLUSH_MS = 4;
 
 type TerminalIoDirection = "input" | "output";
 
@@ -98,6 +99,35 @@ function createTerminalIoPayload(
   return payload;
 }
 
+function removeLastCodePoint(value: string): string {
+  const chars = Array.from(value);
+  chars.pop();
+  return chars.join("");
+}
+
+function removeLastWord(value: string): string {
+  return value.replace(/\s*\S+\s*$/, "");
+}
+
+function findAnsiSequenceEnd(data: string, startIndex: number): number {
+  if (data[startIndex] !== "\x1b") return startIndex;
+
+  const second = data[startIndex + 1];
+  if (second === "[") {
+    for (let i = startIndex + 2; i < data.length; i += 1) {
+      const code = data.charCodeAt(i);
+      if (code >= 0x40 && code <= 0x7e) return i;
+    }
+    return data.length - 1;
+  }
+
+  if (second === "O") {
+    return Math.min(startIndex + 2, data.length - 1);
+  }
+
+  return Math.min(startIndex + 1, data.length - 1);
+}
+
 function extractOscEvents(
   sessionId: string,
   data: string,
@@ -108,6 +138,8 @@ function extractOscEvents(
   // All regex created per-call to avoid shared lastIndex state across sessions
   const oscNotifyRe = /\x1b\]777;notify;([^;]*);([^\x07]*)\x07/g;
   const oscCwdRe = /\x1b\]7;file:\/\/[^/]*([^\x07]*)\x07/g;
+  const oscThemeColorRe =
+    /\x1b\](?:4|10|11|12)(?:(?!\x07|\x1b\\)[\s\S])*(?:\x07|\x1b\\)/g;
 
   // Extract notifications
   let match: RegExpExecArray | null;
@@ -131,6 +163,7 @@ function extractOscEvents(
     socket.emit("session-context", ctx);
   }
   cleaned = cleaned.replace(oscCwdRe, "");
+  cleaned = cleaned.replace(oscThemeColorRe, "");
 
   // Agent Teams pattern detection (non-destructive, no g flag needed)
   if (/\[Agent Teams?\]\s*(?:teammate|agent)\s+\S+\s+is idle/i.test(data)) {
@@ -174,6 +207,7 @@ export function registerTerminalHandlers(
   let sessionRoom: string | null = null;
   let outputLedgerBuffer = "";
   let outputLedgerFlushTimer: ReturnType<typeof setTimeout> | null = null;
+  const inputLedgerBuffers = new Map<string, string>();
 
   function clearOutputLedgerFlushTimer() {
     if (outputLedgerFlushTimer) {
@@ -215,6 +249,79 @@ export function registerTerminalHandlers(
     }
   }
 
+  function appendInputLedgerEvent(sessionId: string, line: string) {
+    if (!line) return;
+
+    void agentRunLedger
+      .appendEventBySession(
+        sessionId,
+        "terminal-input",
+        createTerminalIoPayload("input", line),
+        "socket",
+      )
+      .catch((err) => {
+        console.error("[AgentRunLedger] failed to record input:", err);
+      });
+
+    void sessionManager.autoRenameFromInput(sessionId, line).catch((err) => {
+      console.error("[SessionManager] failed to auto-rename from input:", err);
+    });
+  }
+
+  function clearInputLedgerBuffer(sessionId: string) {
+    inputLedgerBuffers.delete(sessionId);
+  }
+
+  function queueInputLedgerData(sessionId: string, data: string) {
+    let buffer = inputLedgerBuffers.get(sessionId) ?? "";
+
+    for (let i = 0; i < data.length; i += 1) {
+      const ch = data[i];
+
+      if (ch === "\r" || ch === "\n") {
+        appendInputLedgerEvent(sessionId, buffer);
+        buffer = "";
+        if (ch === "\r" && data[i + 1] === "\n") {
+          i += 1;
+        }
+        continue;
+      }
+
+      if (ch === "\x03" || ch === "\x04" || ch === "\x1a") {
+        buffer = "";
+        continue;
+      }
+
+      if (ch === "\x15") {
+        buffer = "";
+        continue;
+      }
+
+      if (ch === "\x17") {
+        buffer = removeLastWord(buffer);
+        continue;
+      }
+
+      if (ch === "\x7f" || ch === "\b") {
+        buffer = removeLastCodePoint(buffer);
+        continue;
+      }
+
+      if (ch === "\x1b") {
+        i = findAnsiSequenceEnd(data, i);
+        continue;
+      }
+
+      buffer += ch;
+    }
+
+    if (buffer) {
+      inputLedgerBuffers.set(sessionId, buffer);
+    } else {
+      clearInputLedgerBuffer(sessionId);
+    }
+  }
+
   function detach() {
     if (sessionRoom) {
       socket.leave(sessionRoom);
@@ -223,6 +330,7 @@ export function registerTerminalHandlers(
     const attachedSessionId = socket.data.attachedSessionId;
     if (attachedSessionId) {
       flushOutputLedger(attachedSessionId);
+      clearInputLedgerBuffer(attachedSessionId);
     } else {
       clearOutputLedgerFlushTimer();
       outputLedgerBuffer = "";
@@ -245,6 +353,11 @@ export function registerTerminalHandlers(
   }
 
   socket.on("session-attach", async (sessionId, callback) => {
+    if (socket.data.attachedSessionId === sessionId && unsubData) {
+      callback({ ok: true });
+      return;
+    }
+
     detach();
 
     // Check all backends (local + remote)
@@ -256,7 +369,7 @@ export function registerTerminalHandlers(
         const session = await sessionManager.getSession(sessionId);
         callback({
           ok: false,
-          error: session?.lastContext || "Session not found or not running",
+          error: session?.lastContext ?? "Session not found or not running",
         });
         return;
       }
@@ -299,7 +412,7 @@ export function registerTerminalHandlers(
         } else {
           socket.emit("terminal-data", payload as string);
         }
-      });
+      }, INTERACTIVE_OUTPUT_FLUSH_MS);
 
       unsubData = resolvedBackend.onData(sessionId, (data) => {
         const cleaned = extractOscEvents(sessionId, data, socket);
@@ -386,23 +499,11 @@ export function registerTerminalHandlers(
     }
 
     if (forwarded) {
-      sessionManager.bufferActivity(sid);
-      void agentRunLedger
-        .appendEventBySession(
-          sid,
-          "terminal-input",
-          createTerminalIoPayload("input", data),
-          "socket",
-        )
-        .catch((err) => {
-          console.error("[AgentRunLedger] failed to record input:", err);
-        });
       backend.write(sid, data);
-
-      // Auto-rename session based on user input (fire-and-forget)
-      if (data.includes("\r") || data.includes("\n")) {
-        void sessionManager.autoRenameFromInput(sid, data);
-      }
+      sessionManager.bufferActivity(sid);
+      queueInputLedgerData(sid, data);
+    } else {
+      clearInputLedgerBuffer(sid);
     }
   });
 

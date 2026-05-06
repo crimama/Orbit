@@ -50,12 +50,25 @@ prisma/*.db-journal
 .locks/
 
 # local agent/runtime artifacts
+AGENTS.md
+CLAUDE.md
+LLM_WIKI.md
+OUTLINE.md
+note.md
+.claude/
 .claude/evals/
 .claude/worktrees/
 .clone/
 .codex
 .orchestrator/
+orchestrator/
 .sisyphus/
+skill_graph/
+tasks/
+tests/e2e/
+playwright.config.ts
+dev.sh
+dev_run.sh
 tests/e2e/artifacts/
 tests/e2e/playwright-report/
 

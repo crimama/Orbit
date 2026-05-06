@@ -49,7 +49,9 @@ class SshManager {
     const cbs = this.reconnectListeners.get(configId);
     if (cbs) {
       cbs.forEach((cb) => {
-        try { cb(); } catch (err) {
+        try {
+          cb();
+        } catch (err) {
           console.error(`[SSH] Reconnect listener error for ${configId}:`, err);
         }
       });
@@ -449,7 +451,7 @@ class SshManager {
   /** Create an interactive shell on the remote server */
   async createShell(
     configId: string,
-    opts: { cols: number; rows: number },
+    opts: { cols: number; rows: number; inputEcho?: boolean },
   ): Promise<ClientChannel> {
     const client = this.getConnection(configId);
     if (!client) {
@@ -459,9 +461,10 @@ class SshManager {
     return new Promise<ClientChannel>((resolve, reject) => {
       client.shell(
         {
-          term: "xterm-color",
+          term: "xterm-256color",
           cols: opts.cols,
           rows: opts.rows,
+          ...(opts.inputEcho === false && { modes: { ECHO: 0 } }),
         },
         (err, channel) => {
           if (err) {
@@ -566,4 +569,12 @@ class SshManager {
   }
 }
 
-export const sshManager = new SshManager();
+const SSH_MANAGER_KEY = "__orbit_ssh_manager__" as const;
+const _sshGlobal = globalThis as unknown as Record<
+  string,
+  SshManager | undefined
+>;
+if (!_sshGlobal[SSH_MANAGER_KEY]) {
+  _sshGlobal[SSH_MANAGER_KEY] = new SshManager();
+}
+export const sshManager: SshManager = _sshGlobal[SSH_MANAGER_KEY];
