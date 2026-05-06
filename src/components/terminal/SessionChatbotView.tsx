@@ -251,7 +251,17 @@ export default function SessionChatbotView({
     e.preventDefault();
     e.stopPropagation();
 
-    if (!e.altKey) {
+    const hasModifier =
+      e.altKey ||
+      e.metaKey ||
+      e.ctrlKey ||
+      e.shiftKey ||
+      e.nativeEvent.getModifierState("Alt") ||
+      e.nativeEvent.getModifierState("Meta") ||
+      e.nativeEvent.getModifierState("Control") ||
+      e.nativeEvent.getModifierState("Shift");
+
+    if (!hasModifier) {
       void sendPrompt();
       return;
     }
