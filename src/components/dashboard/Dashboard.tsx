@@ -212,6 +212,7 @@ export default function Dashboard() {
   const [viewedFile, setViewedFile] = useState<{
     projectId: string;
     path: string;
+    viewer: "editor" | "pdf";
     content: string;
     mtimeMs: number;
     requestId: string;
@@ -243,12 +244,18 @@ export default function Dashboard() {
   const showResumeLoading = !resumeReady;
 
   const openViewedFile = useCallback(
-    (path: string, content: string, mtimeMs: number) => {
+    (
+      path: string,
+      content: string,
+      mtimeMs: number,
+      viewer: "editor" | "pdf" = "editor",
+    ) => {
       if (!selectedProject) return;
 
       setViewedFile({
         projectId: selectedProject.id,
         path,
+        viewer,
         content,
         mtimeMs,
         requestId: `${Date.now()}-${Math.random().toString(16).slice(2)}`,

@@ -27,7 +27,12 @@ interface SidebarFileTreeProps {
   activePath?: string | null;
   initialDir?: string;
   recentFiles?: RecentFileShortcut[];
-  onFileOpen?: (path: string, content: string, mtimeMs: number) => void;
+  onFileOpen?: (
+    path: string,
+    content: string,
+    mtimeMs: number,
+    viewer?: "editor" | "pdf",
+  ) => void;
   onDirChange?: (dir: string) => void;
 }
 
@@ -115,6 +120,10 @@ export default function SidebarFileTree({
   const openFile = useCallback(
     async (filePath: string) => {
       if (!onFileOpen) return;
+      if (/\.pdf$/i.test(filePath)) {
+        onFileOpen(filePath, "", 0, "pdf");
+        return;
+      }
       setLoadingFile(filePath);
       try {
         const query = new URLSearchParams({ path: filePath }).toString();

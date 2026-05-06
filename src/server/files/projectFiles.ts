@@ -107,6 +107,13 @@ type LocalResolvedExisting = {
   relPath: string;
 };
 
+export type ProjectFileBinaryResponse = {
+  path: string;
+  buffer: Buffer;
+  size: number;
+  mtimeMs: number;
+};
+
 const MODE_TYPE_MASK = 0o170000;
 const MODE_DIRECTORY = 0o040000;
 const MODE_FILE = 0o100000;
@@ -860,6 +867,82 @@ export async function readProjectFile(
       size,
       mtimeMs: Number(resolved.attrs.mtime ?? 0) * 1000,
       encoding: parsed.encoding,
+    };
+  });
+}
+
+export async function readProjectFileBinary(
+  project: ProjectRecord,
+  rawPath: string,
+): Promise<ProjectFileBinaryResponse> {
+  const backend = pathByType(project);
+
+  if (backend === "DOCKER") {
+    const relPath = normalizeSshRelative(rawPath);
+    const stdout = await dockerExec(project, DOCKER_READ_SCRIPT, [
+      project.path,
+      relPath,
+      String(PROJECT_FILES_MAX_READ_BYTES),
+    ]).catch((error) => {
+      dockerErrorFromText(dockerExecErrorText(error));
+    });
+
+    const lines = stdout.split("\n");
+    if (lines[0]?.trim() !== "__OK__") {
+      dockerErrorFromText(stdout);
+    }
+    const size = Number((lines[1] ?? "0").trim());
+    const mtimeSec = Number((lines[2] ?? "0").trim());
+    const b64 = (lines.slice(3).join("\n") ?? "").trim();
+
+    return {
+      path: relPath,
+      buffer: Buffer.from(b64, "base64"),
+      size,
+      mtimeMs: mtimeSec * 1000,
+    };
+  }
+
+  if (backend === "LOCAL") {
+    const resolved = await resolveLocalExisting(project.path, rawPath);
+    if (!resolved.st.isFile()) fail("Not a file", 400);
+    if (resolved.st.size > PROJECT_FILES_MAX_READ_BYTES) {
+      fail(
+        `File exceeds read limit (${PROJECT_FILES_MAX_READ_BYTES} bytes)`,
+        413,
+      );
+    }
+
+    return {
+      path: resolved.relPath,
+      buffer: await fs.readFile(resolved.realPath),
+      size: Number(resolved.st.size),
+      mtimeMs: Number(resolved.st.mtimeMs),
+    };
+  }
+
+  return withSshRoot(project, async (sftp, rootReal) => {
+    const resolved = await resolveSshExisting(sftp, rootReal, rawPath);
+    if (!attrsIsFile(resolved.attrs)) fail("Not a file", 400);
+    const size = Number(resolved.attrs.size ?? 0);
+    if (size > PROJECT_FILES_MAX_READ_BYTES) {
+      fail(
+        `File exceeds read limit (${PROJECT_FILES_MAX_READ_BYTES} bytes)`,
+        413,
+      );
+    }
+
+    const buffer = await sftpReadFile(sftp, resolved.canonicalPath).catch(
+      (error) => {
+        fromSftpError(error, "Failed to read file");
+      },
+    );
+
+    return {
+      path: path.posix.relative(rootReal, resolved.canonicalPath) || "",
+      buffer,
+      size,
+      mtimeMs: Number(resolved.attrs.mtime ?? 0) * 1000,
     };
   });
 }
