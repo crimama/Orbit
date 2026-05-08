@@ -371,9 +371,23 @@ export default function BorderlessWorkspace({
     [],
   );
 
+  const findSessionPanelId = useCallback(
+    (sessionId: string | null) => {
+      if (sessionId) {
+        const tabId = `session:${sessionId}`;
+        const panel = panels.find((item) => item.activeTabId === tabId);
+        if (panel) return panel.id;
+      }
+
+      return activePanel?.id ?? panels[0]?.id ?? "panel-1";
+    },
+    [activePanel?.id, panels],
+  );
+
   useEffect(() => {
     if (!inlineSessionId) return;
     if (inlineSessionId === lastInlineSessionIdRef.current) return;
+    const previousInlineSessionId = lastInlineSessionIdRef.current;
     lastInlineSessionIdRef.current = inlineSessionId;
 
     const session = sessions.find((item) => item.id === inlineSessionId);
@@ -390,8 +404,14 @@ export default function BorderlessWorkspace({
           status: "active",
         };
 
-    upsertTab(tab, activePanel.id);
-  }, [activePanel.id, inlineSessionId, selectedProject, sessions, upsertTab]);
+    upsertTab(tab, findSessionPanelId(previousInlineSessionId));
+  }, [
+    findSessionPanelId,
+    inlineSessionId,
+    selectedProject,
+    sessions,
+    upsertTab,
+  ]);
 
   useEffect(() => {
     setTabs((prev) => {
@@ -432,10 +452,13 @@ export default function BorderlessWorkspace({
     );
 
     if (projectActiveSession) {
-      upsertTab(buildSessionTab(projectActiveSession), activePanel.id);
+      upsertTab(
+        buildSessionTab(projectActiveSession),
+        findSessionPanelId(projectActiveSession.id),
+      );
     }
   }, [
-    activePanel.id,
+    findSessionPanelId,
     inlineSessionId,
     projectPaneMode,
     selectedProject,
