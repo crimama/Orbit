@@ -6,6 +6,7 @@ import type {
   ApiResponse,
   ProjectFileListResponse,
   ProjectFileReadResponse,
+  ProjectFileUploadResponse,
 } from "@/lib/types";
 import ProjectDirPicker from "./ProjectDirPicker";
 
@@ -64,6 +65,7 @@ export default function SidebarFileTree({
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingFile, setLoadingFile] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // --- Context menu state ---
@@ -84,6 +86,7 @@ export default function SidebarFileTree({
     entry?: FileEntry;
   } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const entryMapRef = useRef<Map<string, FileEntry>>(new Map());
 
   const navigateTo = useCallback(
@@ -248,6 +251,48 @@ export default function SidebarFileTree({
       value: "new-folder",
     });
   }, []);
+
+  const openUploadPicker = useCallback(() => {
+    uploadInputRef.current?.click();
+  }, []);
+
+  const uploadFiles = useCallback(
+    async (fileList: FileList | null) => {
+      const selectedFiles = Array.from(fileList ?? []);
+      if (selectedFiles.length === 0) return;
+
+      setUploading(true);
+      setError(null);
+      try {
+        const form = new FormData();
+        if (currentDir) {
+          form.append("path", currentDir);
+        }
+        for (const file of selectedFiles) {
+          form.append("files", file);
+        }
+
+        const res = await fetch(`/api/projects/${projectId}/files/upload`, {
+          method: "POST",
+          body: form,
+        });
+        const json =
+          (await res.json()) as ApiResponse<ProjectFileUploadResponse> | ApiError;
+        if (!res.ok || "error" in json) {
+          throw new Error("error" in json ? json.error : "Failed to upload");
+        }
+        await navigateTo(currentDir);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to upload");
+      } finally {
+        setUploading(false);
+        if (uploadInputRef.current) {
+          uploadInputRef.current.value = "";
+        }
+      }
+    },
+    [currentDir, navigateTo, projectId],
+  );
 
   const openRenameDialog = useCallback((entry: FileEntry) => {
     setNameDialog({
@@ -467,13 +512,29 @@ export default function SidebarFileTree({
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-neutral-800 bg-neutral-900/40">
       {/* Current directory header */}
       <div className="flex shrink-0 items-center gap-1.5 border-b border-neutral-800 px-2 py-1.5">
+        <input
+          ref={uploadInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(event) => void uploadFiles(event.currentTarget.files)}
+        />
         <span className="text-[10px] text-amber-400">📁</span>
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-300">
           {dirLabel}
         </span>
-        {loading && (
+        {(loading || uploading) && (
           <span className="text-[10px] text-neutral-500">…</span>
         )}
+        <button
+          type="button"
+          onClick={openUploadPicker}
+          disabled={uploading}
+          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] font-medium text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Upload files"
+        >
+          Upload
+        </button>
         <button
           type="button"
           onClick={openCreateFileDialog}
@@ -643,6 +704,14 @@ export default function SidebarFileTree({
                 type="button"
               >
                 New Folder
+              </button>
+              <div className="mx-2 my-1 border-t border-neutral-700" />
+              <button
+                onClick={openUploadPicker}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                Upload File
               </button>
             </>
           )}
