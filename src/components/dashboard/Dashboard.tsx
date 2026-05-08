@@ -191,6 +191,7 @@ export default function Dashboard() {
   const [inlineWorkspaceId, setInlineWorkspaceId] = useState<string | null>(
     null,
   );
+  const [workspaceFocusRequestId, setWorkspaceFocusRequestId] = useState(0);
   const [quickSessionAgent, setQuickSessionAgent] =
     useState<NewSessionAgent>("claude-code");
   const [quickSessionProjectId, setQuickSessionProjectId] = useState("");
@@ -245,6 +246,12 @@ export default function Dashboard() {
     usePendingApprovals();
   const showResumeLoading = !resumeReady;
   const warmThemeActive = theme === "warm";
+
+  const focusInlineSession = useCallback((sessionId: string) => {
+    setInlineSessionId(sessionId);
+    setInlineWorkspaceId(null);
+    setWorkspaceFocusRequestId((value) => value + 1);
+  }, []);
 
   const openViewedFile = useCallback(
     (
@@ -600,7 +607,7 @@ export default function Dashboard() {
       });
       const json = (await res.json()) as ApiResponse<SessionInfo>;
       if ("data" in json) {
-        setInlineSessionId(json.data.id);
+        focusInlineSession(json.data.id);
         setSessions((prev) => {
           const withoutOld = prev.filter((s) => s.id !== id);
           return [json.data, ...withoutOld];
@@ -608,7 +615,7 @@ export default function Dashboard() {
       }
       void fetchSessions();
     },
-    [sessions, fetchSessions],
+    [focusInlineSession, sessions, fetchSessions],
   );
 
   const handleRenameSession = useCallback(
@@ -667,8 +674,7 @@ export default function Dashboard() {
           setProjectPaneMode("terminal");
 
           if (shouldActivate) {
-            setInlineSessionId(createdSession.id);
-            setInlineWorkspaceId(null);
+            focusInlineSession(createdSession.id);
           }
 
           void fetchProjects();
@@ -682,7 +688,7 @@ export default function Dashboard() {
         setCreatingSession(false);
       }
     },
-    [fetchProjects, fetchSessions, projects],
+    [fetchProjects, fetchSessions, focusInlineSession, projects],
   );
 
   const handleResumeSession = useCallback(
@@ -792,13 +798,12 @@ export default function Dashboard() {
       setProjectFocusTab("sessions");
       setShowHarnessManager(false);
       setProjectPaneMode("terminal");
-      setInlineSessionId(session.id);
-      setInlineWorkspaceId(null);
+      focusInlineSession(session.id);
       setSessions((prev) =>
         prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
       );
     },
-    [projects],
+    [focusInlineSession, projects],
   );
 
   const openSshProjectForm = useCallback((profileId?: string | null) => {
@@ -860,10 +865,9 @@ export default function Dashboard() {
       setProjectFocusTab("sessions");
       setShowHarnessManager(false);
       setProjectPaneMode("terminal");
-      setInlineSessionId(sessionId);
-      setInlineWorkspaceId(null);
+      focusInlineSession(sessionId);
     },
-    [sessions, projects],
+    [focusInlineSession, sessions, projects],
   );
 
   const openSessionInDashboard = useCallback(
@@ -877,11 +881,10 @@ export default function Dashboard() {
       setProjectFocusTab("sessions");
       setShowHarnessManager(false);
       setProjectPaneMode("terminal");
-      setInlineSessionId(session.id);
-      setInlineWorkspaceId(null);
+      focusInlineSession(session.id);
       void fetchSessions();
     },
-    [projects, fetchSessions],
+    [focusInlineSession, projects, fetchSessions],
   );
 
   const openFileInProject = useCallback(
@@ -1233,7 +1236,7 @@ export default function Dashboard() {
                               (p) => p.id === session.projectId,
                             );
                             if (project) setSelectedProject(project);
-                            setInlineSessionId(session.id);
+                            focusInlineSession(session.id);
                           }
                           setShowNotifications(false);
                         }}
@@ -1682,6 +1685,7 @@ export default function Dashboard() {
                         projectPaneMode={projectPaneMode}
                         inlineSessionId={inlineSessionId}
                         inlineWorkspaceId={inlineWorkspaceId}
+                        focusRequestId={workspaceFocusRequestId}
                         viewedFile={viewedFile}
                         onCloseFile={() => setViewedFile(null)}
                         onKillSession={handleTerminateSession}
@@ -1784,7 +1788,7 @@ export default function Dashboard() {
                           (p) => p.id === session.projectId,
                         );
                         if (project) setSelectedProject(project);
-                        setInlineSessionId(sessionId);
+                        focusInlineSession(sessionId);
                       }
                     }}
                   />
@@ -1798,7 +1802,7 @@ export default function Dashboard() {
                           (p) => p.id === session.projectId,
                         );
                         if (project) setSelectedProject(project);
-                        setInlineSessionId(sessionId);
+                        focusInlineSession(sessionId);
                       }
                     }}
                   />

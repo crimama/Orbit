@@ -90,6 +90,7 @@ interface BorderlessWorkspaceProps {
   projectPaneMode: ProjectPaneMode;
   inlineSessionId: string | null;
   inlineWorkspaceId: string | null;
+  focusRequestId?: number;
   viewedFile?: ViewedFile | null;
   onCloseFile?: () => void;
   onKillSession: (sessionId: string) => Promise<void> | void;
@@ -293,6 +294,7 @@ export default function BorderlessWorkspace({
   projectPaneMode,
   inlineSessionId,
   inlineWorkspaceId,
+  focusRequestId = 0,
   viewedFile,
   onCloseFile,
   onKillSession,
@@ -321,6 +323,7 @@ export default function BorderlessWorkspace({
   const panelIdCounterRef = useRef(1);
   const splitIdCounterRef = useRef(0);
   const lastInlineSessionIdRef = useRef<string | null>(null);
+  const lastFocusRequestIdRef = useRef(0);
   const lastProjectPaneKeyRef = useRef<string>("");
   const lastViewedFileRef = useRef<string | null>(null);
   const prevTabCountRef = useRef(tabs.length);
@@ -386,9 +389,15 @@ export default function BorderlessWorkspace({
 
   useEffect(() => {
     if (!inlineSessionId) return;
-    if (inlineSessionId === lastInlineSessionIdRef.current) return;
+    if (
+      inlineSessionId === lastInlineSessionIdRef.current &&
+      focusRequestId === lastFocusRequestIdRef.current
+    ) {
+      return;
+    }
     const previousInlineSessionId = lastInlineSessionIdRef.current;
     lastInlineSessionIdRef.current = inlineSessionId;
+    lastFocusRequestIdRef.current = focusRequestId;
 
     const session = sessions.find((item) => item.id === inlineSessionId);
     const tab: WorkspaceTab = session
@@ -407,6 +416,7 @@ export default function BorderlessWorkspace({
     upsertTab(tab, findSessionPanelId(previousInlineSessionId));
   }, [
     findSessionPanelId,
+    focusRequestId,
     inlineSessionId,
     selectedProject,
     sessions,
