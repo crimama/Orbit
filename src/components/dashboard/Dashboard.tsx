@@ -724,18 +724,15 @@ export default function Dashboard() {
     const autoName =
       quickSessionName.trim() ||
       `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    await createSession(
-      {
-        projectId,
-        agentType: quickSessionAgent,
-        name: autoName,
-        ...(skipPermissions &&
-          quickSessionAgent === "claude-code" && {
-            dangerouslySkipPermissions: true,
-          }),
-      },
-      { activateInWorkspace: false },
-    );
+    await createSession({
+      projectId,
+      agentType: quickSessionAgent,
+      name: autoName,
+      ...(skipPermissions &&
+        quickSessionAgent === "claude-code" && {
+          dangerouslySkipPermissions: true,
+        }),
+    });
     setQuickSessionName("");
   }, [
     quickSessionProjectId,
@@ -754,18 +751,15 @@ export default function Dashboard() {
     const autoName =
       projectSessionName.trim() ||
       `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    await createSession(
-      {
-        projectId: selectedProject.id,
-        agentType: quickSessionAgent,
-        name: autoName,
-        ...(skipPermissions &&
-          quickSessionAgent === "claude-code" && {
-            dangerouslySkipPermissions: true,
-          }),
-      },
-      { activateInWorkspace: false },
-    );
+    await createSession({
+      projectId: selectedProject.id,
+      agentType: quickSessionAgent,
+      name: autoName,
+      ...(skipPermissions &&
+        quickSessionAgent === "claude-code" && {
+          dangerouslySkipPermissions: true,
+        }),
+    });
     setProjectSessionName("");
   }, [
     selectedProject,
@@ -787,12 +781,25 @@ export default function Dashboard() {
     [handleSelectProject],
   );
 
-  const handleVaultQuickConnect = useCallback((session: SessionInfo) => {
-    setInlineSessionId(session.id);
-    setSessions((prev) =>
-      prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
-    );
-  }, []);
+  const handleVaultQuickConnect = useCallback(
+    (session: SessionInfo) => {
+      const project = projects.find((item) => item.id === session.projectId);
+      if (project) {
+        setSelectedProject(project);
+      }
+
+      setSessionViewMode("active");
+      setProjectFocusTab("sessions");
+      setShowHarnessManager(false);
+      setProjectPaneMode("terminal");
+      setInlineSessionId(session.id);
+      setInlineWorkspaceId(null);
+      setSessions((prev) =>
+        prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
+      );
+    },
+    [projects],
+  );
 
   const openSshProjectForm = useCallback((profileId?: string | null) => {
     setPrefillSshProfileId(profileId ?? null);
