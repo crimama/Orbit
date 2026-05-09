@@ -2,8 +2,10 @@ import {
   app,
   BrowserWindow,
   ipcMain,
+  Menu,
   shell,
   type BrowserWindowConstructorOptions,
+  type MenuItemConstructorOptions,
 } from "electron";
 import { existsSync } from "node:fs";
 import path from "node:path";
@@ -37,6 +39,7 @@ type DesktopConnectionRequest = OrbitDesktopConnectionProfile & {
 
 let mainWindow: BrowserWindow | undefined;
 let mainWindowMode: WindowMode | undefined;
+const orbitWindows = new Set<BrowserWindow>();
 let localServer: OrbitLocalServerHandle | undefined;
 let sshTunnel: SshTunnelHandle | undefined;
 let quitAfterCleanup = false;
@@ -107,10 +110,12 @@ async function writeProfiles(profiles: OrbitDesktopConnectionProfile[]) {
 
 function setStatus(status: OrbitDesktopConnectionStatus) {
   activeStatus = status;
-  mainWindow?.webContents.send("orbit-desktop:status-changed", status);
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send("orbit-desktop:status-changed", status);
+  }
 }
 
-function createWindow(mode: WindowMode) {
+function createBrowserWindow(mode: WindowMode) {
   const webPreferences: BrowserWindowConstructorOptions["webPreferences"] = {
     nodeIntegration: false,
     contextIsolation: true,
@@ -118,8 +123,7 @@ function createWindow(mode: WindowMode) {
     preload: mode === "picker" ? preloadPath() : undefined,
   };
 
-  mainWindowMode = mode;
-  mainWindow = new BrowserWindow({
+  const window = new BrowserWindow({
     width: 1220,
     height: 820,
     minWidth: 840,
@@ -129,25 +133,32 @@ function createWindow(mode: WindowMode) {
     webPreferences,
   });
 
-  mainWindow.once("ready-to-show", () => mainWindow?.show());
-  mainWindow.on("closed", () => {
-    mainWindow = undefined;
-    mainWindowMode = undefined;
+  if (mode === "orbit") {
+    orbitWindows.add(window);
+  }
+
+  window.once("ready-to-show", () => window.show());
+  window.on("closed", () => {
+    orbitWindows.delete(window);
+    if (mainWindow === window) {
+      mainWindow = undefined;
+      mainWindowMode = undefined;
+    }
   });
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+  window.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url).catch(() => undefined);
     return { action: "deny" };
   });
 
-  mainWindow.webContents.on("will-navigate", (event, targetUrl) => {
+  window.webContents.on("will-navigate", (event, targetUrl) => {
     const target = toUrl(targetUrl);
     if (!target) {
       event.preventDefault();
       return;
     }
 
-    const currentUrl = mainWindow?.webContents.getURL() ?? "";
+    const currentUrl = window.webContents.getURL();
     if (currentUrl.startsWith(PICKER_ORIGIN) && target.protocol === "file:")
       return;
 
@@ -157,6 +168,12 @@ function createWindow(mode: WindowMode) {
     }
   });
 
+  return window;
+}
+
+function createWindow(mode: WindowMode) {
+  mainWindowMode = mode;
+  mainWindow = createBrowserWindow(mode);
   return mainWindow;
 }
 
@@ -166,6 +183,26 @@ function ensureWindow(mode: WindowMode) {
 
   mainWindow.destroy();
   return createWindow(mode);
+}
+
+function closeOrbitWindows() {
+  for (const window of Array.from(orbitWindows)) {
+    if (!window.isDestroyed()) {
+      window.destroy();
+    }
+  }
+  orbitWindows.clear();
+}
+
+async function openOrbitWindowFromActiveConnection() {
+  if (activeStatus.state !== "connected" || !activeStatus.url) {
+    await showConnectionPicker();
+    return;
+  }
+
+  const url = new URL(activeStatus.url);
+  const window = createBrowserWindow("orbit");
+  await window.loadURL(url.toString());
 }
 
 function toUrl(rawUrl: string): URL | undefined {
@@ -304,6 +341,7 @@ async function stopActiveConnection() {
 }
 
 async function showConnectionPicker(status?: OrbitDesktopConnectionStatus) {
+  closeOrbitWindows();
   await stopActiveConnection();
   const window = ensureWindow("picker");
   setStatus(
@@ -311,6 +349,96 @@ async function showConnectionPicker(status?: OrbitDesktopConnectionStatus) {
   );
   await window.loadFile(connectionHtmlPath());
   if (status) setStatus(status);
+}
+
+function installApplicationMenu() {
+  const isMac = process.platform === "darwin";
+  const template: MenuItemConstructorOptions[] = [
+    ...(isMac
+      ? [
+          {
+            label: app.name,
+            submenu: [
+              { role: "about" as const },
+              { type: "separator" as const },
+              { role: "services" as const },
+              { type: "separator" as const },
+              { role: "hide" as const },
+              { role: "hideOthers" as const },
+              { role: "unhide" as const },
+              { type: "separator" as const },
+              { role: "quit" as const },
+            ],
+          },
+        ]
+      : []),
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "New Window",
+          accelerator: "CommandOrControl+N",
+          click: () => {
+            openOrbitWindowFromActiveConnection().catch((error) =>
+              setStatus({ state: "failed", message: String(error) }),
+            );
+          },
+        },
+        {
+          label: "Connection Picker",
+          accelerator: "CommandOrControl+Shift+N",
+          click: () => {
+            showConnectionPicker().catch((error) =>
+              setStatus({ state: "failed", message: String(error) }),
+            );
+          },
+        },
+        { type: "separator" },
+        isMac ? { role: "close" } : { role: "quit" },
+      ],
+    },
+    {
+      label: "Edit",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "selectAll" },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "forceReload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" },
+      ],
+    },
+    {
+      label: "Window",
+      submenu: [
+        { role: "minimize" },
+        { role: "zoom" },
+        ...(isMac
+          ? [
+              { type: "separator" as const },
+              { role: "front" as const },
+            ]
+          : []),
+      ],
+    },
+  ];
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 async function loadOrbitUrl(
@@ -474,12 +602,17 @@ function registerIpc() {
 }
 
 app.whenReady().then(async () => {
+  installApplicationMenu();
   registerIpc();
   await showConnectionPicker();
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      showConnectionPicker().catch((error) =>
+      const opener =
+        activeStatus.state === "connected" && activeStatus.url
+          ? openOrbitWindowFromActiveConnection
+          : showConnectionPicker;
+      opener().catch((error) =>
         setStatus({ state: "failed", message: String(error) }),
       );
     }
