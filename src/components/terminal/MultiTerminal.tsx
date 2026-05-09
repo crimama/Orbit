@@ -32,6 +32,11 @@ interface MultiTerminalProps {
   onPaneSessionsChange?: (sessionIds: string[]) => void;
   /** Called when all panes are empty (all sessions closed) */
   onAllPanesEmpty?: () => void;
+  /** Called when this terminal tree is persisted as a workspace. */
+  onWorkspaceIdentityChange?: (
+    workspace: WorkspaceLayoutInfo,
+    sessionIds: string[],
+  ) => void;
 }
 
 function sanitizeTreeSessions(
@@ -51,6 +56,25 @@ function sanitizeTreeSessions(
       sanitizeTreeSessions(child, sessionIds),
     ),
   };
+}
+
+function collectSessionIds(node: PaneNode): string[] {
+  if (node.type === "leaf") return node.sessionId ? [node.sessionId] : [];
+  return node.children.flatMap(collectSessionIds);
+}
+
+function buildAutoWorkspaceName(
+  sessionIds: string[],
+  sessions: SessionInfo[],
+): string {
+  const names = sessionIds
+    .map((id) => sessions.find((session) => session.id === id))
+    .filter(Boolean)
+    .map((session) => session!.name?.trim() || session!.agentType);
+
+  if (names.length === 0) return "Workspace";
+  if (names.length === 1) return `${names[0]} Workspace`;
+  return `Workspace (${names.length})`;
 }
 
 function reorientSiblingLeafSplit(
@@ -169,6 +193,7 @@ export default function MultiTerminal({
   onKillSession,
   onPaneSessionsChange,
   onAllPanesEmpty,
+  onWorkspaceIdentityChange,
 }: MultiTerminalProps) {
   // Pane tree state
   const [tree, setTree] = useState<PaneNode>(() => {
@@ -196,6 +221,8 @@ export default function MultiTerminal({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoSaveSnapshotRef = useRef("");
 
   // Keep activePaneId pointing to a valid leaf after tree changes
   useEffect(() => {
@@ -210,13 +237,12 @@ export default function MultiTerminal({
   onPaneSessionsChangeRef.current = onPaneSessionsChange;
   const onAllPanesEmptyRef = useRef(onAllPanesEmpty);
   onAllPanesEmptyRef.current = onAllPanesEmpty;
+  const onWorkspaceIdentityChangeRef = useRef(onWorkspaceIdentityChange);
+  onWorkspaceIdentityChangeRef.current = onWorkspaceIdentityChange;
   const mountedRef = useRef(false);
 
   useEffect(() => {
-    const leaves = collectLeafIds(tree);
-    const sessionIds = leaves
-      .map((id) => findLeaf(tree, id)?.sessionId)
-      .filter((id): id is string => !!id);
+    const sessionIds = collectSessionIds(tree);
     onPaneSessionsChangeRef.current?.(sessionIds);
     // Only fire onAllPanesEmpty after mount (not on initial render)
     if (mountedRef.current && sessionIds.length === 0) {
@@ -601,6 +627,78 @@ export default function MultiTerminal({
       setSavingWorkspace(false);
     }
   }, [workspaceName, selectedWorkspaceId, tree, activePaneId, fetchWorkspaces]);
+
+  useEffect(() => {
+    const leafCount = collectLeafIds(tree).length;
+    const sessionIds = collectSessionIds(tree);
+    const shouldPersist =
+      sessionIds.length > 0 && (leafCount > 1 || Boolean(selectedWorkspaceId));
+
+    if (!shouldPersist) return;
+
+    const snapshot = JSON.stringify({
+      selectedWorkspaceId,
+      tree,
+      activePaneId,
+      sessionIds,
+    });
+    if (snapshot === lastAutoSaveSnapshotRef.current) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      void (async () => {
+        const name =
+          workspaceName.trim() || buildAutoWorkspaceName(sessionIds, sessions);
+        const isUpdate = Boolean(selectedWorkspaceId);
+        const url = isUpdate
+          ? `/api/workspaces/${selectedWorkspaceId}`
+          : "/api/workspaces";
+        const method = isUpdate ? "PATCH" : "POST";
+
+        const body = {
+          name,
+          tree: JSON.stringify(tree),
+          activePaneId,
+        };
+
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo>;
+          if (!("data" in json)) return;
+
+          lastAutoSaveSnapshotRef.current = snapshot;
+          setSelectedWorkspaceId(json.data.id);
+          setWorkspaceName(json.data.name);
+          localStorage.setItem(WORKSPACE_STORAGE_KEY, json.data.id);
+          onWorkspaceIdentityChangeRef.current?.(json.data, sessionIds);
+          await fetchWorkspaces();
+        } catch {
+          // Auto-persist is best-effort; manual Save remains available.
+        }
+      })();
+    }, 700);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [
+    activePaneId,
+    fetchWorkspaces,
+    selectedWorkspaceId,
+    sessions,
+    tree,
+    workspaceName,
+  ]);
 
   const deleteWorkspace = useCallback(async () => {
     if (!selectedWorkspaceId) return;
