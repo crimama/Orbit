@@ -297,6 +297,14 @@ export interface ProjectFileListResponse {
   entries: ProjectFileEntryInfo[];
 }
 
+export interface ProjectFileSearchResponse {
+  query: string;
+  root: string;
+  entries: ProjectFileEntryInfo[];
+  truncated: boolean;
+  visited: number;
+}
+
 export interface ProjectFileReadResponse {
   path: string;
   content: string | null;

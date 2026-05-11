@@ -6,6 +6,8 @@ import type {
   ApiResponse,
   ProjectFileListResponse,
   ProjectFileReadResponse,
+  ProjectFileSearchResponse,
+  ProjectFileUploadResponse,
 } from "@/lib/types";
 import ProjectDirPicker from "./ProjectDirPicker";
 
@@ -64,7 +66,16 @@ export default function SidebarFileTree({
   const [entries, setEntries] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingFile, setLoadingFile] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FileEntry[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchMeta, setSearchMeta] = useState<{
+    truncated: boolean;
+    visited: number;
+  } | null>(null);
 
   // --- Context menu state ---
   const [ctxMenu, setCtxMenu] = useState<{
@@ -84,6 +95,7 @@ export default function SidebarFileTree({
     entry?: FileEntry;
   } | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
   const entryMapRef = useRef<Map<string, FileEntry>>(new Map());
 
   const navigateTo = useCallback(
@@ -122,6 +134,72 @@ export default function SidebarFileTree({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery.trim());
+    }, 250);
+    return () => window.clearTimeout(handle);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (debouncedSearchQuery.length < 2) {
+      setSearchResults([]);
+      setSearchMeta(null);
+      setSearching(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setSearching(true);
+    setError(null);
+
+    const params = new URLSearchParams({
+      q: debouncedSearchQuery,
+    });
+    if (currentDir) {
+      params.set("path", currentDir);
+    }
+
+    void fetch(`/api/projects/${projectId}/files/search?${params}`, {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        const json = (await res.json()) as
+          | ApiResponse<ProjectFileSearchResponse>
+          | ApiError;
+        if (!res.ok || "error" in json) {
+          throw new Error(
+            "error" in json ? json.error : "Failed to search files",
+          );
+        }
+        setSearchResults(
+          json.data.entries.map((entry) => ({
+            name: entry.name,
+            path: entry.path,
+            isDir: entry.isDir,
+          })),
+        );
+        setSearchMeta({
+          truncated: json.data.truncated,
+          visited: json.data.visited,
+        });
+      })
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setSearchResults([]);
+        setSearchMeta(null);
+        setError(err instanceof Error ? err.message : "Failed to search files");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setSearching(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, [currentDir, debouncedSearchQuery, projectId]);
 
   const openFile = useCallback(
     async (filePath: string) => {
@@ -196,42 +274,52 @@ export default function SidebarFileTree({
     [currentDir, doFetch, navigateTo],
   );
 
-  const createFile = useCallback(async (nextName: string) => {
-    const name = nextName.trim();
-    if (!name) return;
-    const fullPath = currentDir ? `${currentDir}/${name}` : name;
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/projects/${projectId}/files/write?${new URLSearchParams({ path: fullPath }).toString()}`,
-        {
-          method: "PUT",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ content: "", create: true }),
-        },
-      );
-      const json = (await res.json()) as ApiResponse<{ ok: true }> | ApiError;
-      if (!res.ok || "error" in json) {
-        throw new Error("error" in json ? json.error : "Failed to create file");
+  const createFile = useCallback(
+    async (nextName: string) => {
+      const name = nextName.trim();
+      if (!name) return;
+      const fullPath = currentDir ? `${currentDir}/${name}` : name;
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/projects/${projectId}/files/write?${new URLSearchParams({ path: fullPath }).toString()}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ content: "", create: true }),
+          },
+        );
+        const json = (await res.json()) as ApiResponse<{ ok: true }> | ApiError;
+        if (!res.ok || "error" in json) {
+          throw new Error(
+            "error" in json ? json.error : "Failed to create file",
+          );
+        }
+        await navigateTo(currentDir);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to create file");
       }
-      await navigateTo(currentDir);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create file");
-    }
-  }, [currentDir, projectId, navigateTo]);
+    },
+    [currentDir, projectId, navigateTo],
+  );
 
-  const createFolder = useCallback(async (nextName: string) => {
-    const name = nextName.trim();
-    if (!name) return;
-    const fullPath = currentDir ? `${currentDir}/${name}` : name;
-    setError(null);
-    try {
-      await doFetch("mkdir", { path: fullPath });
-      await navigateTo(currentDir);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create folder");
-    }
-  }, [currentDir, doFetch, navigateTo]);
+  const createFolder = useCallback(
+    async (nextName: string) => {
+      const name = nextName.trim();
+      if (!name) return;
+      const fullPath = currentDir ? `${currentDir}/${name}` : name;
+      setError(null);
+      try {
+        await doFetch("mkdir", { path: fullPath });
+        await navigateTo(currentDir);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to create folder",
+        );
+      }
+    },
+    [currentDir, doFetch, navigateTo],
+  );
 
   const openCreateFileDialog = useCallback(() => {
     setNameDialog({
@@ -248,6 +336,49 @@ export default function SidebarFileTree({
       value: "new-folder",
     });
   }, []);
+
+  const openUploadPicker = useCallback(() => {
+    uploadInputRef.current?.click();
+  }, []);
+
+  const uploadFiles = useCallback(
+    async (fileList: FileList | null) => {
+      const selectedFiles = Array.from(fileList ?? []);
+      if (selectedFiles.length === 0) return;
+
+      setUploading(true);
+      setError(null);
+      try {
+        const form = new FormData();
+        if (currentDir) {
+          form.append("path", currentDir);
+        }
+        for (const file of selectedFiles) {
+          form.append("files", file);
+        }
+
+        const res = await fetch(`/api/projects/${projectId}/files/upload`, {
+          method: "POST",
+          body: form,
+        });
+        const json = (await res.json()) as
+          | ApiResponse<ProjectFileUploadResponse>
+          | ApiError;
+        if (!res.ok || "error" in json) {
+          throw new Error("error" in json ? json.error : "Failed to upload");
+        }
+        await navigateTo(currentDir);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to upload");
+      } finally {
+        setUploading(false);
+        if (uploadInputRef.current) {
+          uploadInputRef.current.value = "";
+        }
+      }
+    },
+    [currentDir, navigateTo, projectId],
+  );
 
   const openRenameDialog = useCallback((entry: FileEntry) => {
     setNameDialog({
@@ -322,14 +453,14 @@ export default function SidebarFileTree({
             await navigateTo(currentDir);
           } catch (retryErr) {
             setError(
-              retryErr instanceof Error ? retryErr.message : `Failed to ${mode}`,
+              retryErr instanceof Error
+                ? retryErr.message
+                : `Failed to ${mode}`,
             );
           }
           return;
         }
-        setError(
-          err instanceof Error ? err.message : `Failed to ${mode}`,
-        );
+        setError(err instanceof Error ? err.message : `Failed to ${mode}`);
       }
     },
     [picker, projectId, currentDir, doFetch, navigateTo],
@@ -393,7 +524,9 @@ export default function SidebarFileTree({
         }, 0);
         objectUrl = null;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to download file");
+        setError(
+          err instanceof Error ? err.message : "Failed to download file",
+        );
       } finally {
         if (objectUrl) {
           URL.revokeObjectURL(objectUrl);
@@ -448,7 +581,9 @@ export default function SidebarFileTree({
   }, [ctxMenu]);
 
   // --- Build sorted list ---
-  const sorted = [...entries].sort((a, b) => {
+  const hasSearch = debouncedSearchQuery.length >= 2;
+  const displayedEntries = hasSearch ? searchResults : entries;
+  const sorted = [...displayedEntries].sort((a, b) => {
     if (a.isDir !== b.isDir) return a.isDir ? -1 : 1;
     return a.name.localeCompare(b.name);
   });
@@ -460,20 +595,36 @@ export default function SidebarFileTree({
   }
 
   const dirLabel = currentDir
-    ? currentDir.split("/").filter(Boolean).pop() ?? currentDir
+    ? (currentDir.split("/").filter(Boolean).pop() ?? currentDir)
     : "/";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded border border-neutral-800 bg-neutral-900/40">
       {/* Current directory header */}
       <div className="flex shrink-0 items-center gap-1.5 border-b border-neutral-800 px-2 py-1.5">
+        <input
+          ref={uploadInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(event) => void uploadFiles(event.currentTarget.files)}
+        />
         <span className="text-[10px] text-amber-400">📁</span>
         <span className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-300">
           {dirLabel}
         </span>
-        {loading && (
+        {(loading || uploading) && (
           <span className="text-[10px] text-neutral-500">…</span>
         )}
+        <button
+          type="button"
+          onClick={openUploadPicker}
+          disabled={uploading}
+          className="rounded border border-neutral-700 px-1.5 py-0.5 text-[10px] font-medium text-neutral-300 hover:bg-neutral-800 hover:text-neutral-100 disabled:cursor-not-allowed disabled:opacity-50"
+          title="Upload files"
+        >
+          Upload
+        </button>
         <button
           type="button"
           onClick={openCreateFileDialog}
@@ -492,8 +643,52 @@ export default function SidebarFileTree({
         </button>
       </div>
 
+      <div className="shrink-0 border-b border-neutral-800 px-2 py-1.5">
+        <div className="flex items-center gap-1.5 rounded border border-neutral-800 bg-neutral-950 px-2 py-1">
+          <span className="text-[10px] text-neutral-500">⌕</span>
+          <input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search files"
+            className="min-w-0 flex-1 bg-transparent text-xs text-neutral-200 outline-none placeholder:text-neutral-600"
+          />
+          {searching ? (
+            <span className="text-[10px] text-neutral-500">…</span>
+          ) : null}
+          {searchQuery ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery("");
+                setDebouncedSearchQuery("");
+                setSearchResults([]);
+                setSearchMeta(null);
+              }}
+              className="rounded px-1 text-[10px] text-neutral-500 hover:bg-neutral-800 hover:text-neutral-200"
+              title="Clear search"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
+        {hasSearch && searchMeta ? (
+          <div className="mt-1 flex items-center justify-between px-1 text-[10px] text-neutral-500">
+            <span>{searchResults.length} matches</span>
+            <span>
+              {searchMeta.truncated
+                ? `limited after ${searchMeta.visited}`
+                : `${searchMeta.visited} checked`}
+            </span>
+          </div>
+        ) : searchQuery.trim().length === 1 ? (
+          <div className="mt-1 px-1 text-[10px] text-neutral-600">
+            Type at least 2 characters
+          </div>
+        ) : null}
+      </div>
+
       <div ref={listRef} className="min-h-0 flex-1 overflow-y-auto p-1">
-        {recentFiles.length > 0 ? (
+        {!hasSearch && recentFiles.length > 0 ? (
           <div className="mb-1 border-b border-neutral-800 pb-1">
             <div className="px-2 pb-1 text-[10px] font-medium uppercase text-neutral-500">
               Recent
@@ -520,7 +715,7 @@ export default function SidebarFileTree({
         ) : null}
 
         {/* Go up entry */}
-        {currentDir && (
+        {!hasSearch && currentDir && (
           <button
             type="button"
             onClick={goUp}
@@ -531,9 +726,9 @@ export default function SidebarFileTree({
           </button>
         )}
 
-        {sorted.length === 0 && !loading ? (
+        {sorted.length === 0 && !loading && !searching ? (
           <div className="px-2 py-4 text-center text-xs text-neutral-500">
-            Empty directory
+            {hasSearch ? "No matches" : "Empty directory"}
           </div>
         ) : (
           sorted.map((entry) => (
@@ -543,6 +738,10 @@ export default function SidebarFileTree({
               data-entry-path={entry.path}
               onClick={() => {
                 if (entry.isDir) {
+                  setSearchQuery("");
+                  setDebouncedSearchQuery("");
+                  setSearchResults([]);
+                  setSearchMeta(null);
                   void navigateTo(entry.path);
                 } else {
                   void openFile(entry.path);
@@ -558,13 +757,14 @@ export default function SidebarFileTree({
               title={entry.path}
             >
               <span className="w-4 shrink-0 text-center text-[11px] text-neutral-500">
-                {entry.isDir
-                  ? "📂"
-                  : loadingFile === entry.path
-                    ? "…"
-                    : "📄"}
+                {entry.isDir ? "📂" : loadingFile === entry.path ? "…" : "📄"}
               </span>
               <span className="min-w-0 flex-1 truncate">{entry.name}</span>
+              {hasSearch && parentPath(entry.path) ? (
+                <span className="min-w-0 max-w-[45%] truncate text-[10px] text-neutral-600">
+                  {parentPath(entry.path)}
+                </span>
+              ) : null}
               {entry.isDir && (
                 <span className="text-[10px] text-neutral-600">›</span>
               )}
@@ -644,6 +844,14 @@ export default function SidebarFileTree({
               >
                 New Folder
               </button>
+              <div className="mx-2 my-1 border-t border-neutral-700" />
+              <button
+                onClick={openUploadPicker}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-neutral-200 hover:bg-neutral-700"
+                type="button"
+              >
+                Upload File
+              </button>
             </>
           )}
         </div>
@@ -652,8 +860,16 @@ export default function SidebarFileTree({
       {picker ? (
         <ProjectDirPicker
           projectId={projectId}
-          title={picker.mode === "copy" ? `Copy "${picker.entry.name}"` : `Move "${picker.entry.name}"`}
-          defaultName={picker.mode === "copy" ? `${picker.entry.name}-copy` : picker.entry.name}
+          title={
+            picker.mode === "copy"
+              ? `Copy "${picker.entry.name}"`
+              : `Move "${picker.entry.name}"`
+          }
+          defaultName={
+            picker.mode === "copy"
+              ? `${picker.entry.name}-copy`
+              : picker.entry.name
+          }
           onSelect={(dest, destPid) => void handlePickerSelect(dest, destPid)}
           onClose={() => setPicker(null)}
         />

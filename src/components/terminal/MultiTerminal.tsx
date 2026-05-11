@@ -26,12 +26,19 @@ const WORKSPACE_STORAGE_KEY = "orbit:last-workspace:global";
 interface MultiTerminalProps {
   initialSessionId: string | null;
   initialWorkspaceId?: string | null;
+  focusSessionId?: string | null;
+  focusRequestId?: number;
   autoRestoreWorkspace?: boolean;
   onKillSession?: (sessionId: string) => Promise<void> | void;
   /** Called when the set of session IDs in panes changes */
   onPaneSessionsChange?: (sessionIds: string[]) => void;
   /** Called when all panes are empty (all sessions closed) */
   onAllPanesEmpty?: () => void;
+  /** Called when this terminal tree is persisted as a workspace. */
+  onWorkspaceIdentityChange?: (
+    workspace: WorkspaceLayoutInfo,
+    sessionIds: string[],
+  ) => void;
 }
 
 function sanitizeTreeSessions(
@@ -53,6 +60,38 @@ function sanitizeTreeSessions(
   };
 }
 
+function collectSessionIds(node: PaneNode): string[] {
+  if (node.type === "leaf") return node.sessionId ? [node.sessionId] : [];
+  return node.children.flatMap(collectSessionIds);
+}
+
+function findLeafIdBySession(node: PaneNode, sessionId: string): string | null {
+  if (node.type === "leaf") {
+    return node.sessionId === sessionId ? node.id : null;
+  }
+
+  for (const child of node.children) {
+    const found = findLeafIdBySession(child, sessionId);
+    if (found) return found;
+  }
+
+  return null;
+}
+
+function buildAutoWorkspaceName(
+  sessionIds: string[],
+  sessions: SessionInfo[],
+): string {
+  const names = sessionIds
+    .map((id) => sessions.find((session) => session.id === id))
+    .filter(Boolean)
+    .map((session) => session!.name?.trim() || session!.agentType);
+
+  if (names.length === 0) return "Workspace";
+  if (names.length === 1) return `${names[0]} Workspace`;
+  return `Workspace (${names.length})`;
+}
+
 function reorientSiblingLeafSplit(
   node: PaneNode,
   sourcePaneId: string,
@@ -62,7 +101,8 @@ function reorientSiblingLeafSplit(
   if (node.type === "leaf") return { node, changed: false };
 
   const leafChildren = node.children.filter(
-    (child): child is Extract<PaneNode, { type: "leaf" }> => child.type === "leaf",
+    (child): child is Extract<PaneNode, { type: "leaf" }> =>
+      child.type === "leaf",
   );
   const isSiblingLeafPair =
     leafChildren.length === 2 &&
@@ -144,11 +184,7 @@ function placeNewSessionByEdge(
   }
 
   for (let index = 0; index < node.children.length; index += 1) {
-    const next = placeNewSessionByEdge(
-      node.children[index],
-      paneId,
-      position,
-    );
+    const next = placeNewSessionByEdge(node.children[index], paneId, position);
     if (next.changed) {
       const children = [...node.children];
       children[index] = next.node;
@@ -165,10 +201,13 @@ function placeNewSessionByEdge(
 export default function MultiTerminal({
   initialSessionId,
   initialWorkspaceId,
+  focusSessionId,
+  focusRequestId = 0,
   autoRestoreWorkspace = true,
   onKillSession,
   onPaneSessionsChange,
   onAllPanesEmpty,
+  onWorkspaceIdentityChange,
 }: MultiTerminalProps) {
   // Pane tree state
   const [tree, setTree] = useState<PaneNode>(() => {
@@ -196,6 +235,9 @@ export default function MultiTerminal({
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastAutoSaveSnapshotRef = useRef("");
+  const lastFocusRequestRef = useRef(0);
 
   // Keep activePaneId pointing to a valid leaf after tree changes
   useEffect(() => {
@@ -205,18 +247,34 @@ export default function MultiTerminal({
     }
   }, [tree, activePaneId]);
 
+  useEffect(() => {
+    if (!focusSessionId) return;
+    if (focusRequestId === lastFocusRequestRef.current) return;
+
+    const paneId = findLeafIdBySession(tree, focusSessionId);
+    if (!paneId) return;
+
+    lastFocusRequestRef.current = focusRequestId;
+    setActivePaneId(paneId);
+    setAttentionPanes((prev) => {
+      if (!prev.has(paneId)) return prev;
+      const next = new Set(prev);
+      next.delete(paneId);
+      return next;
+    });
+  }, [focusRequestId, focusSessionId, tree]);
+
   // Notify parent of which sessions are in panes
   const onPaneSessionsChangeRef = useRef(onPaneSessionsChange);
   onPaneSessionsChangeRef.current = onPaneSessionsChange;
   const onAllPanesEmptyRef = useRef(onAllPanesEmpty);
   onAllPanesEmptyRef.current = onAllPanesEmpty;
+  const onWorkspaceIdentityChangeRef = useRef(onWorkspaceIdentityChange);
+  onWorkspaceIdentityChangeRef.current = onWorkspaceIdentityChange;
   const mountedRef = useRef(false);
 
   useEffect(() => {
-    const leaves = collectLeafIds(tree);
-    const sessionIds = leaves
-      .map((id) => findLeaf(tree, id)?.sessionId)
-      .filter((id): id is string => !!id);
+    const sessionIds = collectSessionIds(tree);
     onPaneSessionsChangeRef.current?.(sessionIds);
     // Only fire onAllPanesEmpty after mount (not on initial render)
     if (mountedRef.current && sessionIds.length === 0) {
@@ -302,7 +360,10 @@ export default function MultiTerminal({
         const activeSessionIds = new Set(
           sessions.filter((s) => s.status === "active").map((s) => s.id),
         );
-        const sanitizedTree = sanitizeTreeSessions(migratedTree, activeSessionIds);
+        const sanitizedTree = sanitizeTreeSessions(
+          migratedTree,
+          activeSessionIds,
+        );
         const leafIds = collectLeafIds(sanitizedTree);
         const nextActivePane =
           workspace.activePaneId && leafIds.includes(workspace.activePaneId)
@@ -336,39 +397,42 @@ export default function MultiTerminal({
   }, [workspaces, applyWorkspace, initialWorkspaceId, autoRestoreWorkspace]);
 
   // Ensure sockets exist for all leaves
-  const ensureSocket = useCallback((paneId: string) => {
-    if (socketsRef.current.has(paneId)) return;
-    const sock = createTerminalSocket();
+  const ensureSocket = useCallback(
+    (paneId: string) => {
+      if (socketsRef.current.has(paneId)) return;
+      const sock = createTerminalSocket();
 
-    socketsRef.current.set(paneId, sock);
+      socketsRef.current.set(paneId, sock);
 
-    sock.on("connect", () => {
-      setSocketStates((prev) => new Map(prev).set(paneId, true));
-    });
-    sock.on("disconnect", () => {
-      setSocketStates((prev) => new Map(prev).set(paneId, false));
-    });
-    // Notification ring: mark pane when agent needs attention
-    sock.on("session-notify", () => {
-      setAttentionPanes((prev) => {
-        if (prev.has(paneId)) return prev;
-        return new Set(prev).add(paneId);
+      sock.on("connect", () => {
+        setSocketStates((prev) => new Map(prev).set(paneId, true));
       });
-    });
-    sock.on("interceptor-pending", () => {
-      setAttentionPanes((prev) => {
-        if (prev.has(paneId)) return prev;
-        return new Set(prev).add(paneId);
+      sock.on("disconnect", () => {
+        setSocketStates((prev) => new Map(prev).set(paneId, false));
       });
-    });
-    // Session exit: close the pane immediately
-    sock.on("session-exit", (exitedSessionId: string) => {
-      closeSessionPane(exitedSessionId);
-    });
-    if (sock.connected) {
-      setSocketStates((prev) => new Map(prev).set(paneId, true));
-    }
-  }, [closeSessionPane]);
+      // Notification ring: mark pane when agent needs attention
+      sock.on("session-notify", () => {
+        setAttentionPanes((prev) => {
+          if (prev.has(paneId)) return prev;
+          return new Set(prev).add(paneId);
+        });
+      });
+      sock.on("interceptor-pending", () => {
+        setAttentionPanes((prev) => {
+          if (prev.has(paneId)) return prev;
+          return new Set(prev).add(paneId);
+        });
+      });
+      // Session exit: close the pane immediately
+      sock.on("session-exit", (exitedSessionId: string) => {
+        closeSessionPane(exitedSessionId);
+      });
+      if (sock.connected) {
+        setSocketStates((prev) => new Map(prev).set(paneId, true));
+      }
+    },
+    [closeSessionPane],
+  );
 
   const destroySocket = useCallback((paneId: string) => {
     const sock = socketsRef.current.get(paneId);
@@ -601,6 +665,78 @@ export default function MultiTerminal({
       setSavingWorkspace(false);
     }
   }, [workspaceName, selectedWorkspaceId, tree, activePaneId, fetchWorkspaces]);
+
+  useEffect(() => {
+    const leafCount = collectLeafIds(tree).length;
+    const sessionIds = collectSessionIds(tree);
+    const shouldPersist =
+      sessionIds.length > 0 && (leafCount > 1 || Boolean(selectedWorkspaceId));
+
+    if (!shouldPersist) return;
+
+    const snapshot = JSON.stringify({
+      selectedWorkspaceId,
+      tree,
+      activePaneId,
+      sessionIds,
+    });
+    if (snapshot === lastAutoSaveSnapshotRef.current) return;
+
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current);
+    }
+
+    autoSaveTimerRef.current = setTimeout(() => {
+      void (async () => {
+        const name =
+          workspaceName.trim() || buildAutoWorkspaceName(sessionIds, sessions);
+        const isUpdate = Boolean(selectedWorkspaceId);
+        const url = isUpdate
+          ? `/api/workspaces/${selectedWorkspaceId}`
+          : "/api/workspaces";
+        const method = isUpdate ? "PATCH" : "POST";
+
+        const body = {
+          name,
+          tree: JSON.stringify(tree),
+          activePaneId,
+        };
+
+        try {
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo>;
+          if (!("data" in json)) return;
+
+          lastAutoSaveSnapshotRef.current = snapshot;
+          setSelectedWorkspaceId(json.data.id);
+          setWorkspaceName(json.data.name);
+          localStorage.setItem(WORKSPACE_STORAGE_KEY, json.data.id);
+          onWorkspaceIdentityChangeRef.current?.(json.data, sessionIds);
+          await fetchWorkspaces();
+        } catch {
+          // Auto-persist is best-effort; manual Save remains available.
+        }
+      })();
+    }, 700);
+
+    return () => {
+      if (autoSaveTimerRef.current) {
+        clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+    };
+  }, [
+    activePaneId,
+    fetchWorkspaces,
+    selectedWorkspaceId,
+    sessions,
+    tree,
+    workspaceName,
+  ]);
 
   const deleteWorkspace = useCallback(async () => {
     if (!selectedWorkspaceId) return;

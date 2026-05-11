@@ -191,6 +191,7 @@ export default function Dashboard() {
   const [inlineWorkspaceId, setInlineWorkspaceId] = useState<string | null>(
     null,
   );
+  const [workspaceFocusRequestId, setWorkspaceFocusRequestId] = useState(0);
   const [quickSessionAgent, setQuickSessionAgent] =
     useState<NewSessionAgent>("claude-code");
   const [quickSessionProjectId, setQuickSessionProjectId] = useState("");
@@ -245,6 +246,12 @@ export default function Dashboard() {
     usePendingApprovals();
   const showResumeLoading = !resumeReady;
   const warmThemeActive = theme === "warm";
+
+  const focusInlineSession = useCallback((sessionId: string) => {
+    setInlineSessionId(sessionId);
+    setInlineWorkspaceId(null);
+    setWorkspaceFocusRequestId((value) => value + 1);
+  }, []);
 
   const openViewedFile = useCallback(
     (
@@ -600,7 +607,7 @@ export default function Dashboard() {
       });
       const json = (await res.json()) as ApiResponse<SessionInfo>;
       if ("data" in json) {
-        setInlineSessionId(json.data.id);
+        focusInlineSession(json.data.id);
         setSessions((prev) => {
           const withoutOld = prev.filter((s) => s.id !== id);
           return [json.data, ...withoutOld];
@@ -608,7 +615,7 @@ export default function Dashboard() {
       }
       void fetchSessions();
     },
-    [sessions, fetchSessions],
+    [focusInlineSession, sessions, fetchSessions],
   );
 
   const handleRenameSession = useCallback(
@@ -667,8 +674,7 @@ export default function Dashboard() {
           setProjectPaneMode("terminal");
 
           if (shouldActivate) {
-            setInlineSessionId(createdSession.id);
-            setInlineWorkspaceId(null);
+            focusInlineSession(createdSession.id);
           }
 
           void fetchProjects();
@@ -682,7 +688,7 @@ export default function Dashboard() {
         setCreatingSession(false);
       }
     },
-    [fetchProjects, fetchSessions, projects],
+    [fetchProjects, fetchSessions, focusInlineSession, projects],
   );
 
   const handleResumeSession = useCallback(
@@ -724,18 +730,15 @@ export default function Dashboard() {
     const autoName =
       quickSessionName.trim() ||
       `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    await createSession(
-      {
-        projectId,
-        agentType: quickSessionAgent,
-        name: autoName,
-        ...(skipPermissions &&
-          quickSessionAgent === "claude-code" && {
-            dangerouslySkipPermissions: true,
-          }),
-      },
-      { activateInWorkspace: false },
-    );
+    await createSession({
+      projectId,
+      agentType: quickSessionAgent,
+      name: autoName,
+      ...(skipPermissions &&
+        quickSessionAgent === "claude-code" && {
+          dangerouslySkipPermissions: true,
+        }),
+    });
     setQuickSessionName("");
   }, [
     quickSessionProjectId,
@@ -754,18 +757,15 @@ export default function Dashboard() {
     const autoName =
       projectSessionName.trim() ||
       `${quickSessionAgent} ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
-    await createSession(
-      {
-        projectId: selectedProject.id,
-        agentType: quickSessionAgent,
-        name: autoName,
-        ...(skipPermissions &&
-          quickSessionAgent === "claude-code" && {
-            dangerouslySkipPermissions: true,
-          }),
-      },
-      { activateInWorkspace: false },
-    );
+    await createSession({
+      projectId: selectedProject.id,
+      agentType: quickSessionAgent,
+      name: autoName,
+      ...(skipPermissions &&
+        quickSessionAgent === "claude-code" && {
+          dangerouslySkipPermissions: true,
+        }),
+    });
     setProjectSessionName("");
   }, [
     selectedProject,
@@ -787,12 +787,24 @@ export default function Dashboard() {
     [handleSelectProject],
   );
 
-  const handleVaultQuickConnect = useCallback((session: SessionInfo) => {
-    setInlineSessionId(session.id);
-    setSessions((prev) =>
-      prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
-    );
-  }, []);
+  const handleVaultQuickConnect = useCallback(
+    (session: SessionInfo) => {
+      const project = projects.find((item) => item.id === session.projectId);
+      if (project) {
+        setSelectedProject(project);
+      }
+
+      setSessionViewMode("active");
+      setProjectFocusTab("sessions");
+      setShowHarnessManager(false);
+      setProjectPaneMode("terminal");
+      focusInlineSession(session.id);
+      setSessions((prev) =>
+        prev.some((s) => s.id === session.id) ? prev : [session, ...prev],
+      );
+    },
+    [focusInlineSession, projects],
+  );
 
   const openSshProjectForm = useCallback((profileId?: string | null) => {
     setPrefillSshProfileId(profileId ?? null);
@@ -853,10 +865,9 @@ export default function Dashboard() {
       setProjectFocusTab("sessions");
       setShowHarnessManager(false);
       setProjectPaneMode("terminal");
-      setInlineSessionId(sessionId);
-      setInlineWorkspaceId(null);
+      focusInlineSession(sessionId);
     },
-    [sessions, projects],
+    [focusInlineSession, sessions, projects],
   );
 
   const openSessionInDashboard = useCallback(
@@ -870,11 +881,10 @@ export default function Dashboard() {
       setProjectFocusTab("sessions");
       setShowHarnessManager(false);
       setProjectPaneMode("terminal");
-      setInlineSessionId(session.id);
-      setInlineWorkspaceId(null);
+      focusInlineSession(session.id);
       void fetchSessions();
     },
-    [projects, fetchSessions],
+    [focusInlineSession, projects, fetchSessions],
   );
 
   const openFileInProject = useCallback(
@@ -1222,11 +1232,7 @@ export default function Dashboard() {
                         className="cursor-pointer border-b border-neutral-800/50 px-3 py-2.5 transition last:border-b-0 hover:bg-neutral-800/50"
                         onClick={() => {
                           if (session) {
-                            const project = projects.find(
-                              (p) => p.id === session.projectId,
-                            );
-                            if (project) setSelectedProject(project);
-                            setInlineSessionId(session.id);
+                            openSessionInDashboard(session);
                           }
                           setShowNotifications(false);
                         }}
@@ -1675,6 +1681,7 @@ export default function Dashboard() {
                         projectPaneMode={projectPaneMode}
                         inlineSessionId={inlineSessionId}
                         inlineWorkspaceId={inlineWorkspaceId}
+                        focusRequestId={workspaceFocusRequestId}
                         viewedFile={viewedFile}
                         onCloseFile={() => setViewedFile(null)}
                         onKillSession={handleTerminateSession}
@@ -1773,11 +1780,7 @@ export default function Dashboard() {
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
-                        const project = projects.find(
-                          (p) => p.id === session.projectId,
-                        );
-                        if (project) setSelectedProject(project);
-                        setInlineSessionId(sessionId);
+                        openSessionInDashboard(session);
                       }
                     }}
                   />
@@ -1787,11 +1790,7 @@ export default function Dashboard() {
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
-                        const project = projects.find(
-                          (p) => p.id === session.projectId,
-                        );
-                        if (project) setSelectedProject(project);
-                        setInlineSessionId(sessionId);
+                        openSessionInDashboard(session);
                       }
                     }}
                   />

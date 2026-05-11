@@ -5,7 +5,12 @@ import SplitDivider from "@/components/terminal/SplitDivider";
 import MultiTerminal from "@/components/terminal/MultiTerminal";
 import FileEditor from "@/components/dashboard/FileEditor";
 import PdfViewer from "@/components/dashboard/PdfViewer";
-import type { ProjectInfo, SessionInfo } from "@/lib/types";
+import type {
+  ApiResponse,
+  ProjectInfo,
+  SessionInfo,
+  WorkspaceLayoutInfo,
+} from "@/lib/types";
 
 type ProjectPaneMode = "terminal" | "files" | "harness";
 type SplitDirection = "horizontal" | "vertical";
@@ -20,6 +25,16 @@ type WorkspaceTab =
       projectColor: string;
       sessionId: string;
       status: SessionInfo["status"];
+    }
+  | {
+      id: string;
+      kind: "workspace";
+      title: string;
+      workspaceId: string;
+      projectId: string;
+      projectName: string;
+      projectColor: string;
+      sessionIds: string[];
     }
   | {
       id: string;
@@ -90,6 +105,7 @@ interface BorderlessWorkspaceProps {
   projectPaneMode: ProjectPaneMode;
   inlineSessionId: string | null;
   inlineWorkspaceId: string | null;
+  focusRequestId?: number;
   viewedFile?: ViewedFile | null;
   onCloseFile?: () => void;
   onKillSession: (sessionId: string) => Promise<void> | void;
@@ -109,6 +125,62 @@ function buildSessionTab(
     projectColor: session.projectColor,
     sessionId: session.id,
     status: session.status,
+  };
+}
+
+function collectSessionIdsFromWorkspaceTree(rawTree: string): string[] {
+  try {
+    const parsed = JSON.parse(rawTree) as unknown;
+    const sessionIds: string[] = [];
+    const visit = (node: unknown) => {
+      if (!node || typeof node !== "object") return;
+      const record = node as {
+        type?: unknown;
+        sessionId?: unknown;
+        children?: unknown;
+      };
+      if (record.type === "leaf") {
+        if (typeof record.sessionId === "string" && record.sessionId) {
+          sessionIds.push(record.sessionId);
+        }
+        return;
+      }
+      if (Array.isArray(record.children)) {
+        record.children.forEach(visit);
+      }
+    };
+    visit(parsed);
+    return sessionIds;
+  } catch {
+    return [];
+  }
+}
+
+function buildWorkspaceTab(
+  workspace: WorkspaceLayoutInfo,
+  sessions: SessionInfo[],
+  selectedProject: ProjectInfo | null,
+): Extract<WorkspaceTab, { kind: "workspace" }> {
+  const sessionIds = collectSessionIdsFromWorkspaceTree(workspace.tree);
+  const firstSession = sessionIds
+    .map((sessionId) => sessions.find((session) => session.id === sessionId))
+    .find(Boolean);
+  const projectId =
+    firstSession?.projectId ?? workspace.projectId ?? selectedProject?.id ?? "";
+  const projectName =
+    firstSession?.projectName ?? selectedProject?.name ?? "Workspace";
+  const projectColor =
+    firstSession?.projectColor ?? selectedProject?.color ?? "#64748b";
+
+  return {
+    id: `workspace:${workspace.id}`,
+    kind: "workspace",
+    title: workspace.name,
+    workspaceId: workspace.id,
+    projectId,
+    projectName,
+    projectColor,
+    sessionIds,
   };
 }
 
@@ -141,6 +213,21 @@ function mapPanel(
     ...node,
     first: mapPanel(node.first, panelId, updater),
     second: mapPanel(node.second, panelId, updater),
+  };
+}
+
+function mapPanels(
+  node: WorkspaceLayoutNode,
+  updater: (panel: WorkspacePanel) => WorkspacePanel,
+): WorkspaceLayoutNode {
+  if (node.type === "leaf") {
+    return { ...node, panel: updater(node.panel) };
+  }
+
+  return {
+    ...node,
+    first: mapPanels(node.first, updater),
+    second: mapPanels(node.second, updater),
   };
 }
 
@@ -249,6 +336,7 @@ function findFallbackTabId(tabs: WorkspaceTab[], tabId: string) {
 }
 
 function tabKindLabel(tab: WorkspaceTab) {
+  if (tab.kind === "workspace") return "Workspace";
   if (tab.kind === "session") return "Session";
   if (tab.kind === "file-view") return "File";
   if (tab.kind === "pdf-view") return "PDF";
@@ -258,6 +346,7 @@ function tabKindLabel(tab: WorkspaceTab) {
 }
 
 function tabKindMark(tab: WorkspaceTab) {
+  if (tab.kind === "workspace") return "WS";
   if (tab.kind === "session") return "$";
   if (tab.kind === "file-view") return "F";
   if (tab.kind === "pdf-view") return "PDF";
@@ -293,6 +382,7 @@ export default function BorderlessWorkspace({
   projectPaneMode,
   inlineSessionId,
   inlineWorkspaceId,
+  focusRequestId = 0,
   viewedFile,
   onCloseFile,
   onKillSession,
@@ -307,6 +397,7 @@ export default function BorderlessWorkspace({
   const [mountedBrowserTabs, setMountedBrowserTabs] = useState<
     Record<string, string[]>
   >({});
+  const [workspaces, setWorkspaces] = useState<WorkspaceLayoutInfo[]>([]);
 
   const tabsById = useMemo(
     () => new Map(tabs.map((tab) => [tab.id, tab])),
@@ -321,6 +412,8 @@ export default function BorderlessWorkspace({
   const panelIdCounterRef = useRef(1);
   const splitIdCounterRef = useRef(0);
   const lastInlineSessionIdRef = useRef<string | null>(null);
+  const lastFocusRequestIdRef = useRef(0);
+  const lastInlineTargetTabIdRef = useRef<string | null>(null);
   const lastProjectPaneKeyRef = useRef<string>("");
   const lastViewedFileRef = useRef<string | null>(null);
   const prevTabCountRef = useRef(tabs.length);
@@ -331,6 +424,19 @@ export default function BorderlessWorkspace({
     );
     setActivePanelId(panelId);
   }, []);
+
+  const replacePanelActiveTab = useCallback(
+    (fromTabId: string, toTabId: string) => {
+      setLayout((prev) =>
+        mapPanels(prev, (panel) =>
+          panel.activeTabId === fromTabId
+            ? { ...panel, activeTabId: toTabId }
+            : panel,
+        ),
+      );
+    },
+    [],
+  );
 
   const upsertTab = useCallback(
     (nextTab: WorkspaceTab, targetPanelId?: string) => {
@@ -355,6 +461,22 @@ export default function BorderlessWorkspace({
     [activePanelId],
   );
 
+  const fetchWorkspaces = useCallback(async () => {
+    try {
+      const res = await fetch("/api/workspaces", { cache: "no-store" });
+      const json = (await res.json()) as ApiResponse<WorkspaceLayoutInfo[]>;
+      if ("data" in json) {
+        setWorkspaces(json.data);
+      }
+    } catch {
+      // Workspace lookup is best-effort. Direct session tabs still work.
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchWorkspaces();
+  }, [fetchWorkspaces]);
+
   const splitPanelWithTab = useCallback(
     (targetPanelId: string, tabId: string, direction: SplitDirection) => {
       panelIdCounterRef.current += 1;
@@ -371,12 +493,61 @@ export default function BorderlessWorkspace({
     [],
   );
 
+  const findSessionPanelId = useCallback(
+    (sessionId: string | null) => {
+      if (sessionId) {
+        const tabId = `session:${sessionId}`;
+        const panel = panels.find((item) => item.activeTabId === tabId);
+        if (panel) return panel.id;
+      }
+
+      return activePanel?.id ?? panels[0]?.id ?? "panel-1";
+    },
+    [activePanel?.id, panels],
+  );
+
+  const findTabPanelId = useCallback(
+    (tabId: string) =>
+      panels.find((item) => item.activeTabId === tabId)?.id ?? null,
+    [panels],
+  );
+
   useEffect(() => {
     if (!inlineSessionId) return;
-    if (inlineSessionId === lastInlineSessionIdRef.current) return;
+    const containingWorkspace = workspaces.find((workspace) =>
+      collectSessionIdsFromWorkspaceTree(workspace.tree).includes(
+        inlineSessionId,
+      ),
+    );
+    const targetTabId = containingWorkspace
+      ? `workspace:${containingWorkspace.id}`
+      : `session:${inlineSessionId}`;
+
+    if (
+      inlineSessionId === lastInlineSessionIdRef.current &&
+      focusRequestId === lastFocusRequestIdRef.current &&
+      targetTabId === lastInlineTargetTabIdRef.current
+    ) {
+      return;
+    }
+    const previousInlineSessionId = lastInlineSessionIdRef.current;
     lastInlineSessionIdRef.current = inlineSessionId;
+    lastFocusRequestIdRef.current = focusRequestId;
+    lastInlineTargetTabIdRef.current = targetTabId;
 
     const session = sessions.find((item) => item.id === inlineSessionId);
+    const targetPanelId =
+      findTabPanelId(targetTabId) ??
+      findSessionPanelId(previousInlineSessionId);
+
+    if (containingWorkspace) {
+      upsertTab(
+        buildWorkspaceTab(containingWorkspace, sessions, selectedProject),
+        targetPanelId,
+      );
+      return;
+    }
+
     const tab: WorkspaceTab = session
       ? buildSessionTab(session)
       : {
@@ -390,8 +561,17 @@ export default function BorderlessWorkspace({
           status: "active",
         };
 
-    upsertTab(tab, activePanel.id);
-  }, [activePanel.id, inlineSessionId, selectedProject, sessions, upsertTab]);
+    upsertTab(tab, targetPanelId);
+  }, [
+    findSessionPanelId,
+    findTabPanelId,
+    focusRequestId,
+    inlineSessionId,
+    selectedProject,
+    sessions,
+    upsertTab,
+    workspaces,
+  ]);
 
   useEffect(() => {
     setTabs((prev) => {
@@ -416,6 +596,27 @@ export default function BorderlessWorkspace({
   }, [sessions]);
 
   useEffect(() => {
+    if (workspaces.length === 0) return;
+    setTabs((prev) =>
+      prev.map((tab) => {
+        if (tab.kind !== "workspace") return tab;
+        const fresh = workspaces.find(
+          (workspace) => workspace.id === tab.workspaceId,
+        );
+        if (!fresh) return tab;
+        const updated = buildWorkspaceTab(fresh, sessions, selectedProject);
+        if (
+          updated.title === tab.title &&
+          updated.sessionIds.join(":") === tab.sessionIds.join(":")
+        ) {
+          return tab;
+        }
+        return updated;
+      }),
+    );
+  }, [selectedProject, sessions, workspaces]);
+
+  useEffect(() => {
     const paneKey = `${selectedProject?.id ?? "none"}:${projectPaneMode}:${inlineSessionId ?? "none"}`;
     if (paneKey === lastProjectPaneKeyRef.current) return;
     lastProjectPaneKeyRef.current = paneKey;
@@ -432,10 +633,13 @@ export default function BorderlessWorkspace({
     );
 
     if (projectActiveSession) {
-      upsertTab(buildSessionTab(projectActiveSession), activePanel.id);
+      upsertTab(
+        buildSessionTab(projectActiveSession),
+        findSessionPanelId(projectActiveSession.id),
+      );
     }
   }, [
-    activePanel.id,
+    findSessionPanelId,
     inlineSessionId,
     projectPaneMode,
     selectedProject,
@@ -465,7 +669,9 @@ export default function BorderlessWorkspace({
 
     setLayout((prev) => {
       let changed = false;
-      const updateMissingTabs = (node: WorkspaceLayoutNode): WorkspaceLayoutNode => {
+      const updateMissingTabs = (
+        node: WorkspaceLayoutNode,
+      ): WorkspaceLayoutNode => {
         if (node.type === "leaf") {
           if (node.panel.activeTabId && tabsById.has(node.panel.activeTabId)) {
             return node;
@@ -563,6 +769,43 @@ export default function BorderlessWorkspace({
       setTabs((prev) => prev.filter((tab) => tab.id !== tabId));
     },
     [forgetClosedBrowserTab],
+  );
+
+  const handleWorkspaceIdentityChange = useCallback(
+    (sourceTabId: string, workspace: WorkspaceLayoutInfo) => {
+      const workspaceTab = buildWorkspaceTab(
+        workspace,
+        sessions,
+        selectedProject,
+      );
+      setWorkspaces((prev) => {
+        const existing = prev.find((item) => item.id === workspace.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.id === workspace.id ? workspace : item,
+          );
+        }
+        return [workspace, ...prev];
+      });
+
+      setTabs((prev) => {
+        const withoutDuplicate = prev.filter(
+          (tab) => tab.id !== workspaceTab.id || tab.id === sourceTabId,
+        );
+        const found = withoutDuplicate.find((tab) => tab.id === sourceTabId);
+        if (found) {
+          return withoutDuplicate.map((tab) =>
+            tab.id === sourceTabId ? workspaceTab : tab,
+          );
+        }
+        return [...withoutDuplicate, workspaceTab];
+      });
+
+      if (sourceTabId !== workspaceTab.id) {
+        replacePanelActiveTab(sourceTabId, workspaceTab.id);
+      }
+    },
+    [replacePanelActiveTab, selectedProject, sessions],
   );
 
   const [dropTarget, setDropTarget] = useState<string | null>(null);
@@ -765,21 +1008,27 @@ export default function BorderlessWorkspace({
       ? (tabsById.get(panel.activeTabId) ?? null)
       : null;
     const isActiveSession = activeTab?.kind === "session";
+    const isActiveWorkspace = activeTab?.kind === "workspace";
     const isActiveBrowser = activeTab?.kind === "browser";
 
     return (
       <>
-        {isActiveSession && activeTab ? (
-          <div
-            key={activeTab.id}
-            className="absolute inset-0"
-          >
+        {(isActiveSession || isActiveWorkspace) && activeTab ? (
+          <div key={activeTab.id} className="absolute inset-0">
             <MultiTerminal
               key={`${panel.id}:${activeTab.id}`}
-              initialSessionId={activeTab.sessionId}
-              initialWorkspaceId={
-                panel.activeTabId === activeTab.id ? inlineWorkspaceId : undefined
+              initialSessionId={
+                activeTab.kind === "session" ? activeTab.sessionId : null
               }
+              initialWorkspaceId={
+                activeTab.kind === "workspace"
+                  ? activeTab.workspaceId
+                  : panel.activeTabId === activeTab.id
+                    ? inlineWorkspaceId
+                    : undefined
+              }
+              focusSessionId={inlineSessionId}
+              focusRequestId={focusRequestId}
               autoRestoreWorkspace={false}
               onKillSession={onKillSession}
               onPaneSessionsChange={(sessionIds) => {
@@ -804,6 +1053,9 @@ export default function BorderlessWorkspace({
                 );
               }}
               onAllPanesEmpty={() => removeTab(activeTab.id)}
+              onWorkspaceIdentityChange={(workspace) =>
+                handleWorkspaceIdentityChange(activeTab.id, workspace)
+              }
             />
           </div>
         ) : null}
@@ -819,7 +1071,7 @@ export default function BorderlessWorkspace({
             {renderNonSessionTab(tab)}
           </div>
         ))}
-        {!isActiveSession && !isActiveBrowser && activeTab
+        {!isActiveSession && !isActiveWorkspace && !isActiveBrowser && activeTab
           ? renderNonSessionTab(activeTab)
           : null}
       </>
@@ -907,7 +1159,10 @@ export default function BorderlessWorkspace({
                     />
                   )}
                   <span
-                    className={`${"projectName" in tab ? "ml-0.5 " : ""}max-w-[13rem] truncate text-neutral-300`}
+                    className={[
+                      "max-w-[13rem] truncate text-neutral-300",
+                      "projectName" in tab ? "ml-0.5" : "",
+                    ].join(" ")}
                   >
                     {tab.title}
                   </span>
@@ -1005,7 +1260,7 @@ export default function BorderlessWorkspace({
     return (
       <section
         key={panel.id}
-        className={`relative h-full w-full min-h-0 min-w-0 overflow-hidden border ${
+        className={`relative h-full min-h-0 w-full min-w-0 overflow-hidden border ${
           activePanelId === panel.id
             ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
             : "border-transparent"
@@ -1015,7 +1270,7 @@ export default function BorderlessWorkspace({
         onDragLeave={handlePanelDragLeave}
         onDrop={(event) => handleTabDrop(panel.id, event)}
       >
-        <div className="flex h-full w-full min-h-0 min-w-0 flex-col">
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
           {renderTabBar(panel, panelIndex)}
           <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
             {renderPanelContent(panel)}
@@ -1041,7 +1296,7 @@ export default function BorderlessWorkspace({
         }`}
       >
         <div
-          className="h-full w-full min-h-0 min-w-0 overflow-hidden"
+          className="h-full min-h-0 w-full min-w-0 overflow-hidden"
           style={{ flex: `${node.ratio} 1 0` }}
         >
           {renderLayoutNode(node.first)}
@@ -1059,7 +1314,7 @@ export default function BorderlessWorkspace({
           }}
         />
         <div
-          className="h-full w-full min-h-0 min-w-0 overflow-hidden"
+          className="h-full min-h-0 w-full min-w-0 overflow-hidden"
           style={{ flex: `${1 - node.ratio} 1 0` }}
         >
           {renderLayoutNode(node.second)}
