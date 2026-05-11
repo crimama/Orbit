@@ -8,7 +8,11 @@ import {
   PROJECT_FILES_MAX_EDIT_BYTES,
   PROJECT_FILES_MAX_ENTRIES,
   PROJECT_FILES_MAX_READ_BYTES,
+  PROJECT_FILES_MAX_SEARCH_DEPTH,
+  PROJECT_FILES_MAX_SEARCH_RESULTS,
+  PROJECT_FILES_MAX_SEARCH_VISITED,
   PROJECT_FILES_MAX_VIEW_BYTES,
+  PROJECT_FILES_SEARCH_TIMEOUT_MS,
   PROJECT_FILES_MAX_UPLOAD_BYTES,
 } from "@/lib/constants";
 import type {
@@ -19,6 +23,7 @@ import type {
   ProjectFileMoveRequest,
   ProjectFileReadResponse,
   ProjectFileRenameRequest,
+  ProjectFileSearchResponse,
   ProjectFileWriteRequest,
   ProjectFileWriteResponse,
   ProjectType,
@@ -423,6 +428,35 @@ const DOCKER_LIST_SCRIPT = [
   'find "$CANON_TARGET" -mindepth 1 -maxdepth 1 -print | while IFS= read -r P; do N=$(basename "$P"); if [ -L "$P" ]; then T=l; S=""; M=""; elif [ -d "$P" ]; then T=d; S=""; M=$(mtime "$P"); else T=f; S=$(wc -c < "$P" | tr -d " "); M=$(mtime "$P"); fi; printf "%s\t%s\t%s\t%s\n" "$T" "$N" "${S:-}" "${M:-}"; done',
 ].join("; ");
 
+const DOCKER_SEARCH_SCRIPT = [
+  'ROOT="$1"',
+  'REL="$2"',
+  'QUERY="$3"',
+  'MAX_RESULTS="$4"',
+  'MAX_VISITED="$5"',
+  'MAX_DEPTH="$6"',
+  'resolve_root() { cd "$ROOT" 2>/dev/null && pwd -P; }',
+  'mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0; }',
+  'CANON_ROOT=$(resolve_root) || { echo "__ERR__:ROOT"; exit 1; }',
+  'TARGET="$CANON_ROOT"',
+  'if [ -n "$REL" ]; then TARGET="$CANON_ROOT/$REL"; fi',
+  'CANON_TARGET=$(cd "$TARGET" 2>/dev/null && pwd -P) || { echo "__ERR__:NOT_DIR"; exit 1; }',
+  'case "$CANON_TARGET/" in "$CANON_ROOT"/*|"$CANON_ROOT"/) ;; *) echo "__ERR__:OUTSIDE"; exit 1 ;; esac',
+  'echo "__ROOT__"',
+  'echo "$CANON_ROOT"',
+  'echo "__CURRENT__"',
+  'echo "$CANON_TARGET"',
+  'echo "__ENTRIES__"',
+  'LOWER_QUERY=$(printf "%s" "$QUERY" | tr "[:upper:]" "[:lower:]")',
+  "VISITED=0",
+  "MATCHED=0",
+  "TRUNCATED=0",
+  'TMP=$(mktemp) || { echo "__ERR__:SEARCH"; exit 1; }',
+  "trap 'rm -f \"$TMP\"' EXIT",
+  'find "$CANON_TARGET" -mindepth 1 -maxdepth "$MAX_DEPTH" \\( -name node_modules -o -name .git -o -name .next -o -name dist -o -name dist-packaged -o -name dist-packaged-local -o -name dist-electron -o -name .turbo -o -name coverage -o -name .cache -o -name build -o -name out \\) -prune -o -print > "$TMP"',
+  'while IFS= read -r P; do VISITED=$((VISITED + 1)); if [ "$VISITED" -gt "$MAX_VISITED" ]; then TRUNCATED=1; break; fi; REL_PATH=${P#"$CANON_ROOT"/}; LOWER_PATH=$(printf "%s" "$REL_PATH" | tr "[:upper:]" "[:lower:]"); case "$LOWER_PATH" in *"$LOWER_QUERY"*) if [ "$MATCHED" -ge "$MAX_RESULTS" ]; then TRUNCATED=1; break; fi; N=$(basename "$P"); if [ -L "$P" ]; then T=l; S=""; M=""; elif [ -d "$P" ]; then T=d; S=""; M=$(mtime "$P"); else T=f; S=$(wc -c < "$P" | tr -d " "); M=$(mtime "$P"); fi; printf "%s\t%s\t%s\t%s\t%s\n" "$T" "$REL_PATH" "${S:-}" "${M:-}" "$N"; MATCHED=$((MATCHED + 1));; esac; done < "$TMP"; echo "__META__"; echo "$VISITED"; echo "$TRUNCATED"',
+].join("; ");
+
 const DOCKER_READ_SCRIPT = [
   'ROOT="$1"',
   'REL="$2"',
@@ -654,6 +688,46 @@ export function fileErrorMessage(error: unknown): string {
   return "Unexpected file API error";
 }
 
+const SEARCH_IGNORED_DIRS = new Set([
+  "node_modules",
+  ".git",
+  ".next",
+  "dist",
+  "dist-packaged",
+  "dist-packaged-local",
+  "dist-electron",
+  ".turbo",
+  "coverage",
+  ".cache",
+  "build",
+  "out",
+]);
+
+function normalizeSearchQuery(rawQuery: string | null | undefined): string {
+  return (rawQuery ?? "").trim().slice(0, 120);
+}
+
+function searchEntryMatches(
+  entry: ProjectFileEntryInfo,
+  query: string,
+): boolean {
+  const normalized = query.toLocaleLowerCase();
+  return (
+    entry.name.toLocaleLowerCase().includes(normalized) ||
+    entry.path.toLocaleLowerCase().includes(normalized)
+  );
+}
+
+function sortProjectFileEntries(entries: ProjectFileEntryInfo[]) {
+  return entries.sort(
+    (a, b) => Number(b.isDir) - Number(a.isDir) || a.path.localeCompare(b.path),
+  );
+}
+
+function shouldStopSearch(startedAt: number): boolean {
+  return Date.now() - startedAt >= PROJECT_FILES_SEARCH_TIMEOUT_MS;
+}
+
 export async function listProjectFiles(
   project: ProjectRecord,
   rawPath: string,
@@ -788,6 +862,237 @@ export async function listProjectFiles(
       : null;
 
     return { current, parent, entries: mapped };
+  });
+}
+
+export async function searchProjectFiles(
+  project: ProjectRecord,
+  rawQuery: string,
+  rawRoot = "",
+): Promise<ProjectFileSearchResponse> {
+  const query = normalizeSearchQuery(rawQuery);
+  const backend = pathByType(project);
+  const startedAt = Date.now();
+
+  if (query.length < 2) {
+    const root =
+      backend === "DOCKER"
+        ? normalizeSshRelative(rawRoot)
+        : normalizeRelativePath(rawRoot);
+    return { query, root, entries: [], truncated: false, visited: 0 };
+  }
+
+  if (backend === "DOCKER") {
+    const relPath = normalizeSshRelative(rawRoot);
+    const stdout = await dockerExec(project, DOCKER_SEARCH_SCRIPT, [
+      project.path,
+      relPath,
+      query,
+      String(PROJECT_FILES_MAX_SEARCH_RESULTS),
+      String(PROJECT_FILES_MAX_SEARCH_VISITED),
+      String(PROJECT_FILES_MAX_SEARCH_DEPTH),
+    ]).catch((error) => {
+      dockerErrorFromText(dockerExecErrorText(error));
+    });
+
+    const lines = stdout.split("\n").map((line) => line.trimEnd());
+    const rootMarker = lines.indexOf("__ROOT__");
+    const currentMarker = lines.indexOf("__CURRENT__");
+    const entriesMarker = lines.indexOf("__ENTRIES__");
+    const metaMarker = lines.indexOf("__META__");
+    if (
+      rootMarker === -1 ||
+      currentMarker === -1 ||
+      entriesMarker === -1 ||
+      metaMarker === -1
+    ) {
+      dockerErrorFromText(stdout);
+    }
+
+    const root = lines[rootMarker + 1] ?? "";
+    const currentAbs = lines[currentMarker + 1] ?? "";
+    if (!root || !currentAbs) {
+      fail("Failed to parse docker search results", 500);
+    }
+
+    const entries = lines
+      .slice(entriesMarker + 1, metaMarker)
+      .filter((line) => line.length > 0)
+      .map((line) => {
+        const [
+          typeCode = "f",
+          pathRel = "",
+          sizeRaw = "",
+          mtimeRaw = "",
+          nameRaw = "",
+        ] = line.split("\t");
+        const isDir = typeCode === "d";
+        const isSymlink = typeCode === "l";
+        return {
+          name: nameRaw || path.posix.basename(pathRel),
+          path: pathRel,
+          isDir,
+          isSymlink,
+          size: isDir || isSymlink ? null : Number(sizeRaw || 0),
+          mtimeMs: mtimeRaw ? Number(mtimeRaw) * 1000 : null,
+        } as ProjectFileEntryInfo;
+      })
+      .filter((entry) => entry.path.length > 0);
+
+    return {
+      query,
+      root: dockerRelativePath(root, currentAbs),
+      entries: sortProjectFileEntries(entries),
+      truncated: (lines[metaMarker + 2] ?? "0").trim() === "1",
+      visited: Number((lines[metaMarker + 1] ?? "0").trim() || 0),
+    };
+  }
+
+  if (backend === "LOCAL") {
+    const resolved = await resolveLocalExisting(project.path, rawRoot);
+    if (!resolved.st.isDirectory()) fail("Not a directory", 400);
+
+    const entries: ProjectFileEntryInfo[] = [];
+    const stack = [{ dir: resolved.realPath, depth: 0 }];
+    let visited = 0;
+    let truncated = false;
+
+    while (stack.length > 0) {
+      if (shouldStopSearch(startedAt)) {
+        truncated = true;
+        break;
+      }
+
+      const current = stack.shift();
+      if (!current) break;
+
+      const children = await fs
+        .readdir(current.dir, { withFileTypes: true })
+        .catch(() => []);
+
+      for (const child of children) {
+        if (shouldStopSearch(startedAt)) {
+          truncated = true;
+          break;
+        }
+        if (visited >= PROJECT_FILES_MAX_SEARCH_VISITED) {
+          truncated = true;
+          break;
+        }
+
+        visited += 1;
+        const childAbs = path.join(current.dir, child.name);
+        const childLst = await fs.lstat(childAbs).catch(() => null);
+        if (!childLst) continue;
+
+        const childIsSymlink = childLst.isSymbolicLink();
+        const childIsDir = childLst.isDirectory();
+        const relPath = toRelativeFromRoot(resolved.rootReal, childAbs);
+        const entry: ProjectFileEntryInfo = {
+          name: child.name,
+          path: relPath,
+          isDir: childIsDir,
+          isSymlink: childIsSymlink,
+          size: childIsDir ? null : Number(childLst.size),
+          mtimeMs: Number(childLst.mtimeMs),
+        };
+
+        if (searchEntryMatches(entry, query)) {
+          entries.push(entry);
+          if (entries.length >= PROJECT_FILES_MAX_SEARCH_RESULTS) {
+            truncated = true;
+            break;
+          }
+        }
+
+        if (
+          childIsDir &&
+          !childIsSymlink &&
+          current.depth < PROJECT_FILES_MAX_SEARCH_DEPTH &&
+          !SEARCH_IGNORED_DIRS.has(child.name)
+        ) {
+          stack.push({ dir: childAbs, depth: current.depth + 1 });
+        }
+      }
+
+      if (truncated) break;
+    }
+
+    return {
+      query,
+      root: toRelativeFromRoot(resolved.rootReal, resolved.realPath),
+      entries: sortProjectFileEntries(entries),
+      truncated,
+      visited,
+    };
+  }
+
+  return withSshRoot(project, async (sftp, rootReal) => {
+    const resolved = await resolveSshExisting(sftp, rootReal, rawRoot);
+    if (!attrsIsDirectory(resolved.attrs)) fail("Not a directory", 400);
+
+    const entries: ProjectFileEntryInfo[] = [];
+    const stack = [{ dir: resolved.canonicalPath, depth: 0 }];
+    let visited = 0;
+    let truncated = false;
+
+    while (stack.length > 0) {
+      if (shouldStopSearch(startedAt)) {
+        truncated = true;
+        break;
+      }
+
+      const current = stack.shift();
+      if (!current) break;
+
+      const children = await sftpReadDir(sftp, current.dir).catch(() => []);
+      for (const child of children) {
+        if (child.filename === "." || child.filename === "..") continue;
+        if (shouldStopSearch(startedAt)) {
+          truncated = true;
+          break;
+        }
+        if (visited >= PROJECT_FILES_MAX_SEARCH_VISITED) {
+          truncated = true;
+          break;
+        }
+
+        visited += 1;
+        const childCanonical = path.posix.join(current.dir, child.filename);
+        const relPath = path.posix.relative(rootReal, childCanonical);
+        if (relPath.startsWith("..") || path.posix.isAbsolute(relPath)) {
+          continue;
+        }
+
+        const entry = attrsToEntry(child.filename, relPath || "", child.attrs);
+        if (searchEntryMatches(entry, query)) {
+          entries.push(entry);
+          if (entries.length >= PROJECT_FILES_MAX_SEARCH_RESULTS) {
+            truncated = true;
+            break;
+          }
+        }
+
+        if (
+          entry.isDir &&
+          !entry.isSymlink &&
+          current.depth < PROJECT_FILES_MAX_SEARCH_DEPTH &&
+          !SEARCH_IGNORED_DIRS.has(child.filename)
+        ) {
+          stack.push({ dir: childCanonical, depth: current.depth + 1 });
+        }
+      }
+
+      if (truncated) break;
+    }
+
+    return {
+      query,
+      root: path.posix.relative(rootReal, resolved.canonicalPath) || "",
+      entries: sortProjectFileEntries(entries),
+      truncated,
+      visited,
+    };
   });
 }
 
