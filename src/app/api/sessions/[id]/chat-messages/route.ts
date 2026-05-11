@@ -25,7 +25,11 @@ function toInfo(row: {
   };
 }
 
-function validRole(role: string): boolean {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function validRole(role: unknown): role is SessionChatMessageInfo["role"] {
   return role === "user" || role === "assistant";
 }
 
@@ -63,10 +67,27 @@ export async function PUT(
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
 
-  const body = (await request.json()) as ReplaceSessionChatMessagesRequest;
-  const messages = Array.isArray(body.messages) ? body.messages : [];
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
 
-  for (const msg of messages) {
+  if (!isRecord(body)) {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const rawMessages = Array.isArray(body.messages) ? body.messages : [];
+  const messages: ReplaceSessionChatMessagesRequest["messages"] = [];
+
+  for (const msg of rawMessages) {
+    if (!isRecord(msg)) {
+      return NextResponse.json(
+        { error: "message must be object" },
+        { status: 400 },
+      );
+    }
     if (!validRole(msg.role)) {
       return NextResponse.json(
         { error: 'message role must be "user" or "assistant"' },
@@ -79,6 +100,7 @@ export async function PUT(
         { status: 400 },
       );
     }
+    messages.push({ role: msg.role, text: msg.text });
   }
 
   await prisma.$transaction(async (tx) => {
