@@ -9,15 +9,19 @@ class AuditLogger {
     projectId?: string;
     detail?: Record<string, unknown>;
   }): Promise<void> {
-    await prisma.auditLog.create({
-      data: {
-        eventType: params.eventType,
-        action: params.action,
-        sessionId: params.sessionId ?? null,
-        projectId: params.projectId ?? null,
-        detail: params.detail ? JSON.stringify(params.detail) : null,
-      },
-    });
+    try {
+      await prisma.auditLog.create({
+        data: {
+          eventType: params.eventType,
+          action: params.action,
+          sessionId: params.sessionId ?? null,
+          projectId: params.projectId ?? null,
+          detail: params.detail ? JSON.stringify(params.detail) : null,
+        },
+      });
+    } catch (error) {
+      console.error("[AuditLogger] failed to persist audit event:", error);
+    }
   }
 }
 

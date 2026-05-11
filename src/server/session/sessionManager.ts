@@ -580,29 +580,25 @@ class SessionManager {
     } catch {
       // Session may not exist in DB
     }
-    void auditLogger.log({
+    await auditLogger.log({
       eventType: "session_terminate",
       action: `Terminated session ${sessionId}`,
       sessionId,
     });
-    void agentRunLedger
-      .ensureRunForSession(sessionId)
-      .then((run) =>
-        run
-          ? Promise.all([
-              agentRunLedger.appendEvent(
-                run.id,
-                "session-exit",
-                { status: "terminated" },
-                "session-manager",
-              ),
-              agentRunLedger.updateRun(run.id, { status: "cancelled" }),
-            ])
-          : null,
-      )
-      .catch((err) => {
-        console.error("[AgentRunLedger] failed to terminate run:", err);
-      });
+    try {
+      const run = await agentRunLedger.ensureRunForSession(sessionId);
+      if (run) {
+        await agentRunLedger.appendEvent(
+          run.id,
+          "session-exit",
+          { status: "terminated" },
+          "session-manager",
+        );
+        await agentRunLedger.updateRun(run.id, { status: "cancelled" });
+      }
+    } catch (err) {
+      console.error("[AgentRunLedger] failed to terminate run:", err);
+    }
   }
 
   async sendInput(sessionId: string, input: string): Promise<void> {
