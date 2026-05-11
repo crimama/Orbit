@@ -506,6 +506,12 @@ export default function BorderlessWorkspace({
     [activePanel?.id, panels],
   );
 
+  const findTabPanelId = useCallback(
+    (tabId: string) =>
+      panels.find((item) => item.activeTabId === tabId)?.id ?? null,
+    [panels],
+  );
+
   useEffect(() => {
     if (!inlineSessionId) return;
     const containingWorkspace = workspaces.find((workspace) =>
@@ -530,11 +536,14 @@ export default function BorderlessWorkspace({
     lastInlineTargetTabIdRef.current = targetTabId;
 
     const session = sessions.find((item) => item.id === inlineSessionId);
+    const targetPanelId =
+      findTabPanelId(targetTabId) ??
+      findSessionPanelId(previousInlineSessionId);
 
     if (containingWorkspace) {
       upsertTab(
         buildWorkspaceTab(containingWorkspace, sessions, selectedProject),
-        findSessionPanelId(previousInlineSessionId),
+        targetPanelId,
       );
       return;
     }
@@ -552,9 +561,10 @@ export default function BorderlessWorkspace({
           status: "active",
         };
 
-    upsertTab(tab, findSessionPanelId(previousInlineSessionId));
+    upsertTab(tab, targetPanelId);
   }, [
     findSessionPanelId,
+    findTabPanelId,
     focusRequestId,
     inlineSessionId,
     selectedProject,
@@ -659,7 +669,9 @@ export default function BorderlessWorkspace({
 
     setLayout((prev) => {
       let changed = false;
-      const updateMissingTabs = (node: WorkspaceLayoutNode): WorkspaceLayoutNode => {
+      const updateMissingTabs = (
+        node: WorkspaceLayoutNode,
+      ): WorkspaceLayoutNode => {
         if (node.type === "leaf") {
           if (node.panel.activeTabId && tabsById.has(node.panel.activeTabId)) {
             return node;
@@ -760,11 +772,12 @@ export default function BorderlessWorkspace({
   );
 
   const handleWorkspaceIdentityChange = useCallback(
-    (
-      sourceTabId: string,
-      workspace: WorkspaceLayoutInfo,
-    ) => {
-      const workspaceTab = buildWorkspaceTab(workspace, sessions, selectedProject);
+    (sourceTabId: string, workspace: WorkspaceLayoutInfo) => {
+      const workspaceTab = buildWorkspaceTab(
+        workspace,
+        sessions,
+        selectedProject,
+      );
       setWorkspaces((prev) => {
         const existing = prev.find((item) => item.id === workspace.id);
         if (existing) {
@@ -1001,10 +1014,7 @@ export default function BorderlessWorkspace({
     return (
       <>
         {(isActiveSession || isActiveWorkspace) && activeTab ? (
-          <div
-            key={activeTab.id}
-            className="absolute inset-0"
-          >
+          <div key={activeTab.id} className="absolute inset-0">
             <MultiTerminal
               key={`${panel.id}:${activeTab.id}`}
               initialSessionId={
@@ -1017,6 +1027,8 @@ export default function BorderlessWorkspace({
                     ? inlineWorkspaceId
                     : undefined
               }
+              focusSessionId={inlineSessionId}
+              focusRequestId={focusRequestId}
               autoRestoreWorkspace={false}
               onKillSession={onKillSession}
               onPaneSessionsChange={(sessionIds) => {
@@ -1147,7 +1159,10 @@ export default function BorderlessWorkspace({
                     />
                   )}
                   <span
-                    className={`${"projectName" in tab ? "ml-0.5 " : ""}max-w-[13rem] truncate text-neutral-300`}
+                    className={[
+                      "max-w-[13rem] truncate text-neutral-300",
+                      "projectName" in tab ? "ml-0.5" : "",
+                    ].join(" ")}
                   >
                     {tab.title}
                   </span>
@@ -1245,7 +1260,7 @@ export default function BorderlessWorkspace({
     return (
       <section
         key={panel.id}
-        className={`relative h-full w-full min-h-0 min-w-0 overflow-hidden border ${
+        className={`relative h-full min-h-0 w-full min-w-0 overflow-hidden border ${
           activePanelId === panel.id
             ? "border-cyan-400 shadow-[0_0_0_1px_rgba(34,211,238,0.55)]"
             : "border-transparent"
@@ -1255,7 +1270,7 @@ export default function BorderlessWorkspace({
         onDragLeave={handlePanelDragLeave}
         onDrop={(event) => handleTabDrop(panel.id, event)}
       >
-        <div className="flex h-full w-full min-h-0 min-w-0 flex-col">
+        <div className="flex h-full min-h-0 w-full min-w-0 flex-col">
           {renderTabBar(panel, panelIndex)}
           <div className="relative min-h-0 min-w-0 flex-1 overflow-hidden">
             {renderPanelContent(panel)}
@@ -1281,7 +1296,7 @@ export default function BorderlessWorkspace({
         }`}
       >
         <div
-          className="h-full w-full min-h-0 min-w-0 overflow-hidden"
+          className="h-full min-h-0 w-full min-w-0 overflow-hidden"
           style={{ flex: `${node.ratio} 1 0` }}
         >
           {renderLayoutNode(node.first)}
@@ -1299,7 +1314,7 @@ export default function BorderlessWorkspace({
           }}
         />
         <div
-          className="h-full w-full min-h-0 min-w-0 overflow-hidden"
+          className="h-full min-h-0 w-full min-w-0 overflow-hidden"
           style={{ flex: `${1 - node.ratio} 1 0` }}
         >
           {renderLayoutNode(node.second)}

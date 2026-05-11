@@ -26,6 +26,8 @@ const WORKSPACE_STORAGE_KEY = "orbit:last-workspace:global";
 interface MultiTerminalProps {
   initialSessionId: string | null;
   initialWorkspaceId?: string | null;
+  focusSessionId?: string | null;
+  focusRequestId?: number;
   autoRestoreWorkspace?: boolean;
   onKillSession?: (sessionId: string) => Promise<void> | void;
   /** Called when the set of session IDs in panes changes */
@@ -63,6 +65,19 @@ function collectSessionIds(node: PaneNode): string[] {
   return node.children.flatMap(collectSessionIds);
 }
 
+function findLeafIdBySession(node: PaneNode, sessionId: string): string | null {
+  if (node.type === "leaf") {
+    return node.sessionId === sessionId ? node.id : null;
+  }
+
+  for (const child of node.children) {
+    const found = findLeafIdBySession(child, sessionId);
+    if (found) return found;
+  }
+
+  return null;
+}
+
 function buildAutoWorkspaceName(
   sessionIds: string[],
   sessions: SessionInfo[],
@@ -86,7 +101,8 @@ function reorientSiblingLeafSplit(
   if (node.type === "leaf") return { node, changed: false };
 
   const leafChildren = node.children.filter(
-    (child): child is Extract<PaneNode, { type: "leaf" }> => child.type === "leaf",
+    (child): child is Extract<PaneNode, { type: "leaf" }> =>
+      child.type === "leaf",
   );
   const isSiblingLeafPair =
     leafChildren.length === 2 &&
@@ -168,11 +184,7 @@ function placeNewSessionByEdge(
   }
 
   for (let index = 0; index < node.children.length; index += 1) {
-    const next = placeNewSessionByEdge(
-      node.children[index],
-      paneId,
-      position,
-    );
+    const next = placeNewSessionByEdge(node.children[index], paneId, position);
     if (next.changed) {
       const children = [...node.children];
       children[index] = next.node;
@@ -189,6 +201,8 @@ function placeNewSessionByEdge(
 export default function MultiTerminal({
   initialSessionId,
   initialWorkspaceId,
+  focusSessionId,
+  focusRequestId = 0,
   autoRestoreWorkspace = true,
   onKillSession,
   onPaneSessionsChange,
@@ -223,6 +237,7 @@ export default function MultiTerminal({
   const [savingWorkspace, setSavingWorkspace] = useState(false);
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastAutoSaveSnapshotRef = useRef("");
+  const lastFocusRequestRef = useRef(0);
 
   // Keep activePaneId pointing to a valid leaf after tree changes
   useEffect(() => {
@@ -231,6 +246,23 @@ export default function MultiTerminal({
       setActivePaneId(leaves[0]);
     }
   }, [tree, activePaneId]);
+
+  useEffect(() => {
+    if (!focusSessionId) return;
+    if (focusRequestId === lastFocusRequestRef.current) return;
+
+    const paneId = findLeafIdBySession(tree, focusSessionId);
+    if (!paneId) return;
+
+    lastFocusRequestRef.current = focusRequestId;
+    setActivePaneId(paneId);
+    setAttentionPanes((prev) => {
+      if (!prev.has(paneId)) return prev;
+      const next = new Set(prev);
+      next.delete(paneId);
+      return next;
+    });
+  }, [focusRequestId, focusSessionId, tree]);
 
   // Notify parent of which sessions are in panes
   const onPaneSessionsChangeRef = useRef(onPaneSessionsChange);
@@ -328,7 +360,10 @@ export default function MultiTerminal({
         const activeSessionIds = new Set(
           sessions.filter((s) => s.status === "active").map((s) => s.id),
         );
-        const sanitizedTree = sanitizeTreeSessions(migratedTree, activeSessionIds);
+        const sanitizedTree = sanitizeTreeSessions(
+          migratedTree,
+          activeSessionIds,
+        );
         const leafIds = collectLeafIds(sanitizedTree);
         const nextActivePane =
           workspace.activePaneId && leafIds.includes(workspace.activePaneId)
@@ -362,39 +397,42 @@ export default function MultiTerminal({
   }, [workspaces, applyWorkspace, initialWorkspaceId, autoRestoreWorkspace]);
 
   // Ensure sockets exist for all leaves
-  const ensureSocket = useCallback((paneId: string) => {
-    if (socketsRef.current.has(paneId)) return;
-    const sock = createTerminalSocket();
+  const ensureSocket = useCallback(
+    (paneId: string) => {
+      if (socketsRef.current.has(paneId)) return;
+      const sock = createTerminalSocket();
 
-    socketsRef.current.set(paneId, sock);
+      socketsRef.current.set(paneId, sock);
 
-    sock.on("connect", () => {
-      setSocketStates((prev) => new Map(prev).set(paneId, true));
-    });
-    sock.on("disconnect", () => {
-      setSocketStates((prev) => new Map(prev).set(paneId, false));
-    });
-    // Notification ring: mark pane when agent needs attention
-    sock.on("session-notify", () => {
-      setAttentionPanes((prev) => {
-        if (prev.has(paneId)) return prev;
-        return new Set(prev).add(paneId);
+      sock.on("connect", () => {
+        setSocketStates((prev) => new Map(prev).set(paneId, true));
       });
-    });
-    sock.on("interceptor-pending", () => {
-      setAttentionPanes((prev) => {
-        if (prev.has(paneId)) return prev;
-        return new Set(prev).add(paneId);
+      sock.on("disconnect", () => {
+        setSocketStates((prev) => new Map(prev).set(paneId, false));
       });
-    });
-    // Session exit: close the pane immediately
-    sock.on("session-exit", (exitedSessionId: string) => {
-      closeSessionPane(exitedSessionId);
-    });
-    if (sock.connected) {
-      setSocketStates((prev) => new Map(prev).set(paneId, true));
-    }
-  }, [closeSessionPane]);
+      // Notification ring: mark pane when agent needs attention
+      sock.on("session-notify", () => {
+        setAttentionPanes((prev) => {
+          if (prev.has(paneId)) return prev;
+          return new Set(prev).add(paneId);
+        });
+      });
+      sock.on("interceptor-pending", () => {
+        setAttentionPanes((prev) => {
+          if (prev.has(paneId)) return prev;
+          return new Set(prev).add(paneId);
+        });
+      });
+      // Session exit: close the pane immediately
+      sock.on("session-exit", (exitedSessionId: string) => {
+        closeSessionPane(exitedSessionId);
+      });
+      if (sock.connected) {
+        setSocketStates((prev) => new Map(prev).set(paneId, true));
+      }
+    },
+    [closeSessionPane],
+  );
 
   const destroySocket = useCallback((paneId: string) => {
     const sock = socketsRef.current.get(paneId);

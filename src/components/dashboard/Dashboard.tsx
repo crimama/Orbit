@@ -1232,11 +1232,7 @@ export default function Dashboard() {
                         className="cursor-pointer border-b border-neutral-800/50 px-3 py-2.5 transition last:border-b-0 hover:bg-neutral-800/50"
                         onClick={() => {
                           if (session) {
-                            const project = projects.find(
-                              (p) => p.id === session.projectId,
-                            );
-                            if (project) setSelectedProject(project);
-                            focusInlineSession(session.id);
+                            openSessionInDashboard(session);
                           }
                           setShowNotifications(false);
                         }}
@@ -1784,11 +1780,7 @@ export default function Dashboard() {
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
-                        const project = projects.find(
-                          (p) => p.id === session.projectId,
-                        );
-                        if (project) setSelectedProject(project);
-                        focusInlineSession(sessionId);
+                        openSessionInDashboard(session);
                       }
                     }}
                   />
@@ -1798,11 +1790,7 @@ export default function Dashboard() {
                     onNavigateSession={(sessionId) => {
                       const session = sessions.find((s) => s.id === sessionId);
                       if (session) {
-                        const project = projects.find(
-                          (p) => p.id === session.projectId,
-                        );
-                        if (project) setSelectedProject(project);
-                        focusInlineSession(sessionId);
+                        openSessionInDashboard(session);
                       }
                     }}
                   />
