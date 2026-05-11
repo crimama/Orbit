@@ -55,7 +55,6 @@ class FetchError extends Error {
 
 export default function SidebarFileTree({
   projectId,
-  files,
   activePath,
   initialDir,
   recentFiles = [],
@@ -126,12 +125,13 @@ export default function SidebarFileTree({
   );
 
   useEffect(() => {
-    if (initialDir) {
-      void navigateTo(initialDir);
-    } else {
-      setEntries(files);
-      setCurrentDir("");
-    }
+    setSearchQuery("");
+    setDebouncedSearchQuery("");
+    setSearchResults([]);
+    setSearchMeta(null);
+    void navigateTo(initialDir ?? "");
+    // `initialDir` is only the project switch restore point. Directory clicks
+    // call navigateTo directly and then persist through onDirChange.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
