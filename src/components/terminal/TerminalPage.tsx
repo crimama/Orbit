@@ -147,7 +147,7 @@ export default function TerminalPage({
           </div>
         </div>
         <div className="flex w-full items-center gap-2 sm:w-auto">
-          <div className="border-orbit-border-default bg-orbit-bg-secondary hidden rounded-full border p-0.5 sm:flex">
+          <div className="border-orbit-border-default bg-orbit-bg-secondary flex shrink-0 rounded-full border p-0.5">
             <button
               type="button"
               onClick={() => setViewMode("chat")}
