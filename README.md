@@ -149,7 +149,7 @@ orbit access-code set "your-strong-access-code"
 환경변수로 직접 지정할 수도 있습니다.
 
 ```bash
-ORBIT_ACCESS_CODE="your-strong-access-code" npm run dev
+ORBIT_ACCESS_CODE="your-strong-access-code" orbit start server
 ```
 
 기존 이름인 `ORBIT_ACCESS_TOKEN`도 호환됩니다.
@@ -159,7 +159,7 @@ ORBIT_ACCESS_CODE="your-strong-access-code" npm run dev
 1. 프로젝트를 선택합니다.
 2. `Terminal`, `Claude Code`, `Codex`, `OpenCode` 중 하나를 선택합니다.
 3. 세션 탭이 열리면 터미널 또는 채팅 입력을 사용합니다.
-4. Mac 앱 채팅 입력은 일반 `Enter`가 줄바꿈이고, `Cmd/Ctrl+Enter`가 전송입니다.
+4. Mac 앱 채팅 입력은 일반 `Enter`가 전송이고, `Option+Enter`가 줄바꿈입니다.
 
 로컬 앱 모드에서 agent CLI가 바로 종료되면 터미널 안에 종료 코드와 오류 메시지가 남습니다. 아래 명령으로 Mac login shell에서 CLI가 잡히는지 확인합니다.
 
