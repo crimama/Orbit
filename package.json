@@ -3,12 +3,31 @@
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "orbit": "./bin/orbit.ts"
+    "orbit": "./bin/orbit.mjs"
   },
+  "files": [
+    "assets/",
+    "bin/",
+    "docs/",
+    "electron/",
+    "electron-builder.local.yml",
+    "electron-builder.remote.yml",
+    "middleware.ts",
+    "next.config.mjs",
+    "postcss.config.mjs",
+    "prisma/",
+    "public/",
+    "scripts/",
+    "server.ts",
+    "src/",
+    "tailwind.config.ts",
+    "tsconfig*.json"
+  ],
   "scripts": {
     "dev": "rm -rf .next && tsx watch --tsconfig tsconfig.server.json server.ts",
     "dev:tailnet": "bash scripts/run-tailscale.sh",
     "access:code": "bash scripts/access-code.sh",
+    "orbit": "node bin/orbit.mjs",
     "build": "next build",
     "start": "NODE_ENV=production tsx --tsconfig tsconfig.server.json server.ts",
     "lint": "next lint",
