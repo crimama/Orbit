@@ -14,8 +14,11 @@ export async function GET(
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
 
-  const sessionCount = await prisma.agentSession.count({
+  const activeSessionCount = await prisma.agentSession.count({
     where: { projectId: project.id, status: "active" },
+  });
+  const totalSessionCount = await prisma.agentSession.count({
+    where: { projectId: project.id },
   });
 
   const harnessRows = await prisma.$queryRaw<{ enabled: number }[]>`
@@ -32,7 +35,9 @@ export async function GET(
     path: project.path,
     sshConfigId: project.sshConfigId,
     dockerContainer: project.dockerContainer,
-    sessionCount,
+    activeSessionCount,
+    totalSessionCount,
+    sessionCount: activeSessionCount,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
@@ -40,7 +45,7 @@ export async function GET(
   const resource: ProjectContextResource = {
     uri: `orbit://project/${project.id}/context`,
     project: data,
-    activeSessions: sessionCount,
+    activeSessions: activeSessionCount,
     harnessEnabled,
     next: [
       {

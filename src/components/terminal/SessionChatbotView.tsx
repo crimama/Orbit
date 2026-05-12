@@ -251,17 +251,11 @@ export default function SessionChatbotView({
     e.preventDefault();
     e.stopPropagation();
 
-    const hasModifier =
+    const wantsNewline =
       e.altKey ||
-      e.metaKey ||
-      e.ctrlKey ||
-      e.shiftKey ||
-      e.nativeEvent.getModifierState("Alt") ||
-      e.nativeEvent.getModifierState("Meta") ||
-      e.nativeEvent.getModifierState("Control") ||
-      e.nativeEvent.getModifierState("Shift");
+      e.nativeEvent.getModifierState("Alt");
 
-    if (!hasModifier) {
+    if (!wantsNewline) {
       void sendPrompt();
       return;
     }

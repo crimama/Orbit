@@ -33,6 +33,7 @@ orbit start server
 orbit start server --tailnet
 orbit install mac-app
 orbit access-code show
+orbit doctor
 ```
 
 ## 1. 원격 서버에 Mac 앱으로 접속
@@ -153,6 +154,22 @@ ORBIT_ACCESS_CODE="your-strong-access-code" orbit start server
 ```
 
 기존 이름인 `ORBIT_ACCESS_TOKEN`도 호환됩니다.
+
+## 설치 상태 점검
+
+Mac 앱이나 로컬 서버가 켜지지 않을 때는 먼저 진단 명령을 실행합니다.
+
+```bash
+orbit doctor
+```
+
+특정 포트를 기준으로 확인하려면:
+
+```bash
+orbit doctor --port 3000
+```
+
+이 명령은 Node/npm, 의존성, Prisma client, SQLite DB, access code, 포트 점유, Mac 앱 빌드 산출물, `claude`/`codex`/`opencode` CLI 인식 여부를 확인하고 필요한 복구 명령을 같이 보여줍니다.
 
 ## Mac 앱에서 세션 열기
 

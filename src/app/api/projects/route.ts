@@ -12,7 +12,11 @@ export async function GET() {
     where: { adhoc: false },
     include: {
       _count: {
-        select: { sessions: { where: { status: "active" } } },
+        select: { sessions: true },
+      },
+      sessions: {
+        where: { status: "active" },
+        select: { id: true },
       },
       sshConfig: { select: { label: true, host: true } },
     },
@@ -29,7 +33,9 @@ export async function GET() {
     sshLabel: p.sshConfig?.label ?? null,
     sshHost: p.sshConfig?.host ?? null,
     dockerContainer: p.dockerContainer,
-    sessionCount: p._count.sessions,
+    activeSessionCount: p.sessions.length,
+    totalSessionCount: p._count.sessions,
+    sessionCount: p.sessions.length,
     createdAt: p.createdAt.toISOString(),
     updatedAt: p.updatedAt.toISOString(),
   }));
@@ -79,7 +85,11 @@ export async function POST(request: Request) {
     },
     include: {
       _count: {
-        select: { sessions: { where: { status: "active" } } },
+        select: { sessions: true },
+      },
+      sessions: {
+        where: { status: "active" },
+        select: { id: true },
       },
       sshConfig: { select: { label: true, host: true } },
     },
@@ -95,7 +105,9 @@ export async function POST(request: Request) {
     sshLabel: project.sshConfig?.label ?? null,
     sshHost: project.sshConfig?.host ?? null,
     dockerContainer: project.dockerContainer,
-    sessionCount: project._count.sessions,
+    activeSessionCount: project.sessions.length,
+    totalSessionCount: project._count.sessions,
+    sessionCount: project.sessions.length,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };

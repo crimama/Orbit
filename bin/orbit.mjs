@@ -7,12 +7,14 @@ import {
   cpSync,
   existsSync,
   mkdirSync,
+  readFileSync,
   readdirSync,
   rmSync,
   statSync,
 } from "node:fs";
+import { createConnection } from "node:net";
 import { homedir } from "node:os";
-import { basename, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -26,12 +28,14 @@ Usage:
   orbit start server [--tailnet] [--production] [--skip-db] [--port <port>]
   orbit install mac-app [--local|--remote] [--open] [--install-dir <dir>] [--no-copy]
   orbit access-code <show|set|rotate> [value]
+  orbit doctor [--port <port>]
 
 Examples:
   orbit start server
   orbit start server --tailnet
   orbit install mac-app
   orbit install mac-app --remote --open
+  orbit doctor
 `);
 }
 
@@ -199,7 +203,203 @@ function accessCode(args) {
   run("bash", [join(root, "scripts", "access-code.sh"), ...args]);
 }
 
-function main() {
+function commandVersion(command, args = ["--version"]) {
+  const result = spawnSync(command, args, {
+    cwd: root,
+    env: process.env,
+    encoding: "utf8",
+    shell: false,
+  });
+  if (result.error || result.status !== 0) return null;
+  return (result.stdout || result.stderr || "").trim().split("\n")[0] || "ok";
+}
+
+function commandPath(command) {
+  const lookupCommand = process.platform === "win32" ? "where" : "sh";
+  const lookupArgs =
+    process.platform === "win32" ? [command] : ["-lc", `command -v ${command}`];
+  const result = spawnSync(lookupCommand, lookupArgs, {
+    cwd: root,
+    env: process.env,
+    encoding: "utf8",
+    shell: false,
+  });
+  if (result.error || result.status !== 0) return null;
+  return result.stdout.trim().split("\n")[0] || null;
+}
+
+function checkPort(host, port, timeoutMs = 500) {
+  return new Promise((resolve) => {
+    const socket = createConnection({ host, port });
+    let settled = false;
+    const finish = (open) => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      resolve(open);
+    };
+    socket.setTimeout(timeoutMs);
+    socket.once("connect", () => finish(true));
+    socket.once("timeout", () => finish(false));
+    socket.once("error", () => finish(false));
+  });
+}
+
+function sqlitePathFromDatabaseUrl(databaseUrl) {
+  const value = databaseUrl?.trim() || "file:./orbit.db";
+  if (!value.startsWith("file:")) return null;
+  const rawPath = value.slice("file:".length);
+  return isAbsolute(rawPath) ? rawPath : resolve(root, rawPath);
+}
+
+function packageVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    return typeof pkg.version === "string" ? pkg.version : "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+function printCheck(label, ok, detail, fix) {
+  const icon = ok ? "OK" : "WARN";
+  console.log(`[${icon}] ${label}${detail ? ` - ${detail}` : ""}`);
+  if (!ok && fix) console.log(`      fix: ${fix}`);
+}
+
+async function doctor(args) {
+  if (hasFlag(args, "--help") || hasFlag(args, "-h")) {
+    console.log(`Usage:
+  orbit doctor [--port <port>]
+
+Checks the local Orbit source checkout, Mac app prerequisites, database,
+access code, ports, and agent CLI availability without changing files.
+`);
+    return;
+  }
+
+  const port = Number(valueAfter(args, "--port") ?? process.env.PORT ?? 3000);
+  const databaseUrl = databaseEnv().DATABASE_URL;
+  const sqlitePath = sqlitePathFromDatabaseUrl(databaseUrl);
+  const nodeVersion = commandVersion(process.execPath, ["--version"]);
+  const npmVersion = commandVersion(npmCommand, ["--version"]);
+  const npxVersion = commandVersion(npxCommand, ["--version"]);
+  const packageJson = existsSync(join(root, "package.json"));
+  const nodeModules = existsSync(join(root, "node_modules"));
+  const prismaSchema = existsSync(join(root, "prisma", "schema.prisma"));
+  const prismaClient =
+    existsSync(join(root, "node_modules", ".prisma", "client")) &&
+    existsSync(join(root, "node_modules", "@prisma", "client"));
+  const nextBuild = existsSync(join(root, ".next", "BUILD_ID"));
+  const distServer = existsSync(join(root, "dist", "server.js"));
+  const accessCodeFile = existsSync(join(homedir(), ".orbit", "access-token"));
+  const dbExists = sqlitePath ? existsSync(sqlitePath) : false;
+  const dbDirExists = sqlitePath ? existsSync(dirname(sqlitePath)) : false;
+  const portOpen = Number.isSafeInteger(port)
+    ? await checkPort("127.0.0.1", port)
+    : false;
+  const localApp = findBuiltApp(join(root, "dist-packaged-local"));
+  const remoteApp = findBuiltApp(join(root, "dist-packaged"));
+
+  console.log(`Orbit doctor (${packageVersion()})`);
+  console.log(`Root: ${root}`);
+  console.log("");
+
+  printCheck("Node", Boolean(nodeVersion), nodeVersion ?? "not found");
+  printCheck("npm", Boolean(npmVersion), npmVersion ?? "not found");
+  printCheck("npx", Boolean(npxVersion), npxVersion ?? "not found");
+  printCheck("package.json", packageJson, packageJson ? "found" : "missing");
+  printCheck(
+    "Dependencies",
+    nodeModules,
+    nodeModules ? "node_modules found" : "node_modules missing",
+    "npm install",
+  );
+  printCheck(
+    "Prisma schema",
+    prismaSchema,
+    prismaSchema ? "found" : "missing",
+  );
+  printCheck(
+    "Prisma client",
+    prismaClient,
+    prismaClient ? "generated" : "missing",
+    "npx prisma generate",
+  );
+  printCheck(
+    "Database URL",
+    Boolean(sqlitePath),
+    sqlitePath ? `${databaseUrl} -> ${sqlitePath}` : databaseUrl,
+  );
+  printCheck(
+    "Database directory",
+    dbDirExists,
+    sqlitePath && dbDirExists ? dirname(sqlitePath) : "missing",
+    sqlitePath ? `mkdir -p "${dirname(sqlitePath)}"` : undefined,
+  );
+  printCheck(
+    "Database file",
+    dbExists,
+    dbExists ? sqlitePath : "not created yet",
+    "orbit start server",
+  );
+  printCheck(
+    "Access code",
+    accessCodeFile,
+    accessCodeFile ? "~/.orbit/access-token exists" : "not configured",
+    "orbit access-code rotate",
+  );
+  printCheck(
+    `Port ${port}`,
+    !portOpen,
+    portOpen ? "already in use" : "available",
+    portOpen ? `PORT=<other-port> orbit start server` : undefined,
+  );
+  printCheck(
+    "Next production build",
+    nextBuild,
+    nextBuild ? ".next/BUILD_ID found" : "missing",
+    "npm run build",
+  );
+  printCheck(
+    "Packaged server bundle",
+    distServer,
+    distServer ? "dist/server.js found" : "missing",
+    "orbit install mac-app",
+  );
+  printCheck(
+    "Local Mac app build",
+    Boolean(localApp),
+    localApp ?? "not built",
+    "orbit install mac-app",
+  );
+  printCheck(
+    "Remote Mac app build",
+    Boolean(remoteApp),
+    remoteApp ?? "not built",
+    "orbit install mac-app --remote",
+  );
+
+  console.log("");
+  for (const command of ["claude", "codex", "opencode"]) {
+    const found = commandPath(command);
+    printCheck(
+      `${command} CLI`,
+      Boolean(found),
+      found ?? "not found in PATH",
+      `Install ${command} or add it to your login shell PATH`,
+    );
+  }
+
+  console.log("");
+  console.log("Useful commands:");
+  console.log("  orbit start server");
+  console.log("  orbit start server --tailnet");
+  console.log("  orbit install mac-app --open");
+  console.log("  orbit access-code show");
+}
+
+async function main() {
   const [command, subcommand, ...rest] = process.argv.slice(2);
   if (!command || command === "help" || command === "--help" || command === "-h") {
     printHelp();
@@ -221,6 +421,11 @@ function main() {
     return;
   }
 
+  if (command === "doctor") {
+    await doctor([subcommand, ...rest].filter(Boolean));
+    return;
+  }
+
   fail(`Unknown command: ${[command, subcommand, ...rest].filter(Boolean).join(" ")}\nRun: orbit --help`);
 }
 
@@ -230,4 +435,4 @@ try {
   // Best effort for source checkouts; npm also preserves bin executability.
 }
 
-main();
+await main();
