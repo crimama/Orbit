@@ -1,6 +1,8 @@
 # Agent Orbit
 
-Mac 앱으로 Claude Code, Codex, OpenCode 같은 AI 에이전트 세션을 열고 관리하는 Orbit 클라이언트입니다.
+Agent Orbit은 Claude Code, Codex, OpenCode 같은 터미널 기반 AI 에이전트를 한 곳에서 열고, 이어가고, 관리하는 **terminal(CLI)-centric workspace**입니다. 브라우저나 Mac 앱 안에서 여러 CLI 세션을 탭처럼 다루면서도, 실제 작업 단위는 기존 터미널/SSH/프로젝트 디렉토리 흐름을 중심에 둡니다.
+
+Orbit이 목표로 하는 사용감은 “터미널을 숨긴 대시보드”가 아니라, **터미널과 CLI 에이전트를 더 오래 지속되고 더 쉽게 전환되는 작업 공간으로 확장하는 것**입니다. 프로젝트별 세션, 파일 탐색, 원격 서버 접속, access code 기반 보호를 묶어 로컬 Mac과 원격 개발 서버 사이를 같은 방식으로 오가게 합니다.
 
 이 README는 **Mac 앱으로 쓰는 경우**를 기준으로 설명합니다. Orbit은 앱 창 안에서 Orbit UI를 띄우며, 백엔드는 두 방식 중 하나로 연결합니다.
 

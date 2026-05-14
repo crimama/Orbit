@@ -14,7 +14,7 @@ The first packaged app should let a user:
 
 1. Open `Orbit.app` from Finder.
 2. Choose Remote URL.
-3. Enter a URL such as `http://100.77.148.38:4444`.
+3. Enter a URL such as `http://<tailnet-ip>:4444`.
 4. Enter the current session access token.
 5. Connect to the remote Orbit web UI inside Electron.
 

@@ -60,6 +60,7 @@ note.md
 .claude/worktrees/
 .clone/
 .codex
+.omx/
 .orchestrator/
 orchestrator/
 .sisyphus/
