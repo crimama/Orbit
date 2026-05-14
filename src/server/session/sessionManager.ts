@@ -787,12 +787,11 @@ class SessionManager {
 
       return true;
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       console.error(
         `[SessionManager] ensureSessionRunning failed for ${sessionId}:`,
         err,
       );
-      const message =
-        err instanceof Error ? err.message : "Unknown terminal startup error";
       const updated = await prisma.agentSession
         .update({
           where: { id: sessionId },

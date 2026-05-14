@@ -163,6 +163,8 @@ export interface ProjectInfo {
   sshLabel?: string | null;
   sshHost?: string | null;
   dockerContainer?: string | null;
+  activeSessionCount: number;
+  totalSessionCount: number;
   sessionCount: number;
   createdAt: string;
   updatedAt: string;

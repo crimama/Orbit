@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Connect to Orbit</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: #0f172a;
+        color: #e2e8f0;
+      }
+      main {
+        width: min(920px, calc(100vw - 48px));
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 34px;
+      }
+      p {
+        color: #94a3b8;
+        line-height: 1.5;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .card,
+      form {
+        border: 1px solid rgba(148, 163, 184, 0.25);
+        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.8);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+      }
+      .card {
+        padding: 18px;
+        cursor: pointer;
+        transition:
+          transform 0.15s ease,
+          border-color 0.15s ease;
+      }
+      .card:hover,
+      .card.active {
+        transform: translateY(-2px);
+        border-color: #38bdf8;
+      }
+      .card.disabled {
+        cursor: not-allowed;
+        opacity: 0.52;
+      }
+      .card.disabled:hover {
+        transform: none;
+        border-color: rgba(148, 163, 184, 0.25);
+      }
+      .card .badge {
+        display: inline-flex;
+        margin-bottom: 10px;
+        border-radius: 999px;
+        background: rgba(14, 165, 233, 0.16);
+        color: #bae6fd;
+        padding: 4px 8px;
+        font-size: 11px;
+        font-weight: 700;
+      }
+      .card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      form {
+        margin-top: 18px;
+        padding: 20px;
+        display: grid;
+        gap: 14px;
+      }
+      label {
+        display: grid;
+        gap: 6px;
+        color: #cbd5e1;
+        font-size: 13px;
+      }
+      input {
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        border-radius: 10px;
+        background: #020617;
+        color: #e2e8f0;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+      button {
+        border: 0;
+        border-radius: 12px;
+        background: #0ea5e9;
+        color: white;
+        padding: 12px 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      button.secondary {
+        background: #334155;
+      }
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+      #status {
+        min-height: 24px;
+        color: #bae6fd;
+      }
+      .diagnostic {
+        margin-top: 8px;
+        color: #cbd5e1;
+        font-size: 13px;
+      }
+      .hint {
+        margin-top: 6px;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+      .profiles {
+        margin-top: 16px;
+        display: grid;
+        gap: 8px;
+      }
+      .profile {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 12px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 12px;
+      }
+      .profile.unavailable {
+        opacity: 0.58;
+      }
+      @media (max-width: 760px) {
+        .grid,
+        .row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Connect to Orbit</h1>
+      <p>
+        Choose a local developer server, a remote Orbit URL, or a loopback SSH
+        tunnel. Remote pages are loaded without privileged desktop APIs. Remote
+        and SSH tokens are used only for the active connection and are not saved
+        in profiles.
+      </p>
+
+      <section class="grid" aria-label="Connection types">
+        <article class="card active" data-kind="local">
+          <h2>This Mac</h2>
+          <p>
+            Load an Orbit server on loopback. Auto-start support is added by the
+            local supervisor lane.
+          </p>
+        </article>
+        <article class="card" data-kind="remote">
+          <span class="badge">Packaged app path</span>
+          <h2>Remote URL</h2>
+          <p>
+            Connect to an already-running Orbit instance over HTTP or HTTPS.
+            Failures include safe network/TLS hints without token values.
+          </p>
+        </article>
+        <article class="card" data-kind="ssh-tunnel">
+          <h2>SSH Tunnel</h2>
+          <p>
+            Forward a remote loopback Orbit server through OpenSSH. Failures
+            include safe SSH/port-forward hints without token values.
+          </p>
+        </article>
+      </section>
+
+      <form id="profile-form">
+        <input type="hidden" id="kind" value="local" />
+        <label>Name <input id="name" required value="This Mac" /></label>
+        <section id="fields"></section>
+        <div class="row">
+          <button type="submit">Connect</button>
+          <button type="button" class="secondary" id="save">
+            Save profile
+          </button>
+        </div>
+        <div id="status" role="status"></div>
+      </form>
+
+      <section
+        class="profiles"
+        id="profiles"
+        aria-label="Saved profiles"
+      ></section>
+    </main>
+
+    <script>
+      const fields = document.querySelector("#fields");
+      const kindInput = document.querySelector("#kind");
+      const nameInput = document.querySelector("#name");
+      const statusEl = document.querySelector("#status");
+      const profilesEl = document.querySelector("#profiles");
+      const api = window.orbitDesktop;
+      let capabilities = {
+        packaged: false,
+        localModeEnabled: true,
+        sshTunnelEnabled: true,
+        packagingProfile: "developer-preview",
+      };
+
+      function escapeHtml(value) {
+        return String(value).replace(
+          /[&<>"]/g,
+          (char) =>
+            ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char],
+        );
+      }
+      function setStatus(message, diagnostic, diagnosticCode) {
+        const parts = [];
+        if (message) parts.push(`<div>${escapeHtml(message)}</div>`);
+        if (diagnostic) {
+          const code = diagnosticCode
+            ? ` <strong>${escapeHtml(diagnosticCode)}</strong>`
+            : "";
+          parts.push(
+            `<div class="diagnostic">${code} ${escapeHtml(diagnostic)}</div>`,
+          );
+        }
+        statusEl.innerHTML = parts.join("");
+      }
+      function setStatusFromResult(status) {
+        setStatus(status?.message, status?.diagnostic, status?.diagnosticCode);
+      }
+      function numberOrAuto(value) {
+        return value === "auto" || value === "" ? "auto" : Number(value);
+      }
+      function idFor(profile) {
+        return profile.id || `${profile.kind}-${Date.now()}`;
+      }
+
+      function renderFields(kind) {
+        if (kind === "local") {
+          fields.innerHTML = `<label>Port <input id="port" value="auto" placeholder="auto or 3000" /></label>`;
+          nameInput.value = nameInput.value || "This Mac";
+        } else if (kind === "remote") {
+          fields.innerHTML = `
+            <label>Orbit URL <input id="url" required placeholder="https://orbit.example.com" /></label>
+            <label>Access token (used once, not saved) <input id="sessionAccessToken" type="password" autocomplete="off" /></label>
+            <p class="hint">Profiles save only the endpoint. Enter an access token for this connection attempt if the server requires one.</p>`;
+          nameInput.value =
+            nameInput.value === "This Mac" ? "Remote Orbit" : nameInput.value;
+        } else {
+          fields.innerHTML = `
+            <div class="row"><label>SSH host <input id="sshHost" required /></label><label>SSH port <input id="sshPort" value="22" type="number" min="1" max="65535" /></label></div>
+            <div class="row"><label>Username <input id="sshUsername" required /></label><label>Private key path <input id="privateKeyPath" placeholder="Optional" /></label></div>
+            <div class="row"><label>Remote Orbit port <input id="remoteOrbitPort" value="3000" type="number" min="1" max="65535" /></label><label>Local port <input id="localPort" value="auto" /></label></div>
+            <label>Orbit access token (used once, not saved) <input id="sessionAccessToken" type="password" autocomplete="off" /></label>
+            <p class="hint">Profiles save SSH and port settings only. Enter an Orbit access token for this connection attempt if required.</p>`;
+          nameInput.value =
+            nameInput.value === "This Mac" ? "SSH Tunnel" : nameInput.value;
+        }
+      }
+
+      function kindEnabled(kind) {
+        if (kind === "local") return capabilities.localModeEnabled !== false;
+        if (kind === "ssh-tunnel")
+          return capabilities.sshTunnelEnabled !== false;
+        return true;
+      }
+
+      function activateKind(kind) {
+        if (!kindEnabled(kind)) {
+          setStatus(
+            "This mode is not available in the packaged Remote URL preview.",
+            capabilities.unavailableReason,
+            "PACKAGED_REMOTE_ONLY",
+          );
+          return;
+        }
+        document
+          .querySelectorAll(".card")
+          .forEach((item) => item.classList.remove("active"));
+        document
+          .querySelector(`.card[data-kind="${kind}"]`)
+          ?.classList.add("active");
+        kindInput.value = kind;
+        renderFields(kind);
+        requestAnimationFrame(() => {
+          if (kind === "remote") document.querySelector("#url")?.focus();
+        });
+      }
+
+      function applyCapabilities(nextCapabilities) {
+        capabilities = nextCapabilities || capabilities;
+        document.querySelectorAll(".card").forEach((card) => {
+          const disabled = !kindEnabled(card.dataset.kind);
+          card.classList.toggle("disabled", disabled);
+          card.setAttribute("aria-disabled", disabled ? "true" : "false");
+        });
+
+        if (!kindEnabled(kindInput.value)) activateKind("remote");
+        if (
+          capabilities.packaged &&
+          capabilities.packagingProfile === "remote-url"
+        ) {
+          setStatus(
+            "Remote URL packaged preview. Connect to an already-running Orbit server.",
+            capabilities.unavailableReason,
+          );
+        }
+      }
+
+      function sessionAccessToken() {
+        const input = document.querySelector("#sessionAccessToken");
+        return input?.value.trim() || undefined;
+      }
+
+      function withSessionToken(profile, includeSessionToken) {
+        const token = includeSessionToken ? sessionAccessToken() : undefined;
+        return token ? { ...profile, sessionAccessToken: token } : profile;
+      }
+
+      function formProfile(options = {}) {
+        const includeSessionToken = options.includeSessionToken === true;
+        const kind = kindInput.value;
+        const base = {
+          id: `${kind}-${Date.now()}`,
+          kind,
+          name: nameInput.value.trim() || kind,
+        };
+        if (kind === "local")
+          return {
+            ...base,
+            port: numberOrAuto(document.querySelector("#port").value.trim()),
+          };
+        if (kind === "remote") {
+          return withSessionToken(
+            { ...base, url: document.querySelector("#url").value.trim() },
+            includeSessionToken,
+          );
+        }
+        return withSessionToken(
+          {
+            ...base,
+            sshHost: document.querySelector("#sshHost").value.trim(),
+            sshPort: Number(document.querySelector("#sshPort").value),
+            sshUsername: document.querySelector("#sshUsername").value.trim(),
+            remoteOrbitPort: Number(
+              document.querySelector("#remoteOrbitPort").value,
+            ),
+            localPort: numberOrAuto(
+              document.querySelector("#localPort").value.trim(),
+            ),
+            privateKeyPath:
+              document.querySelector("#privateKeyPath").value.trim() ||
+              undefined,
+          },
+          includeSessionToken,
+        );
+      }
+
+      async function connect(profile) {
+        if (!profileAvailable(profile)) {
+          setStatus(
+            "This saved profile is not available in the packaged Remote URL preview.",
+            capabilities.unavailableReason,
+            "PACKAGED_REMOTE_ONLY",
+          );
+          return;
+        }
+        setStatus("Connecting…");
+        try {
+          const result = await api.connect(profile);
+          setStatusFromResult(result);
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : String(error));
+        }
+      }
+
+      async function renderProfiles() {
+        const profiles = await api.getProfiles();
+        profilesEl.innerHTML = profiles
+          .map((profile) => {
+            const available = profileAvailable(profile);
+            return `<div class="profile ${available ? "" : "unavailable"}"><span>${profile.name} · ${profile.kind}</span><button type="button" data-id="${profile.id}" ${available ? "" : "disabled"}>Connect</button></div>`;
+          })
+          .join("");
+        profilesEl.querySelectorAll("button").forEach((button) => {
+          button.addEventListener("click", () =>
+            connect(
+              profiles.find((profile) => profile.id === button.dataset.id),
+            ),
+          );
+        });
+      }
+
+      function profileAvailable(profile) {
+        return profile ? kindEnabled(profile.kind) : false;
+      }
+
+      document.querySelectorAll(".card").forEach((card) => {
+        card.addEventListener("click", () => {
+          activateKind(card.dataset.kind);
+        });
+      });
+
+      document
+        .querySelector("#profile-form")
+        .addEventListener("submit", (event) => {
+          event.preventDefault();
+          connect(formProfile({ includeSessionToken: true }));
+        });
+
+      document.querySelector("#save").addEventListener("click", async () => {
+        await api.saveProfile(formProfile({ includeSessionToken: false }));
+        setStatus(
+          "Profile saved without access token. Enter a token when connecting if required.",
+        );
+        await renderProfiles();
+      });
+
+      api.onStatusChange(setStatusFromResult);
+      renderFields("local");
+      Promise.all([
+        api.getCapabilities().then(applyCapabilities),
+        renderProfiles(),
+      ]).catch((error) => setStatus(String(error)));
+    </script>
+  </body>
+</html>

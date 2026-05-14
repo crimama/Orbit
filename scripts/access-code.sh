@@ -6,9 +6,9 @@ code_file="${ORBIT_ACCESS_CODE_FILE:-${ORBIT_ACCESS_TOKEN_FILE:-$HOME/.orbit/acc
 usage() {
   cat <<'EOF'
 Usage:
-  npm run access:code -- show
-  npm run access:code -- set <access-code>
-  npm run access:code -- rotate
+  orbit access-code show
+  orbit access-code set <access-code>
+  orbit access-code rotate
 
 Environment:
   ORBIT_ACCESS_CODE_FILE=/custom/path
@@ -60,7 +60,7 @@ case "$command" in
     code="$(read_code || true)"
     if [[ -z "$code" ]]; then
       echo "No access code is configured at ${code_file}."
-      echo "Create one with: npm run access:code -- rotate"
+      echo "Create one with: orbit access-code rotate"
       exit 1
     fi
     echo "Access code file: ${code_file}"

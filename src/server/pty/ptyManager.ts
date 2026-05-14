@@ -1,5 +1,6 @@
 import * as pty from "node-pty";
 import type { IPty } from "node-pty";
+import { existsSync } from "node:fs";
 import type { PtyBackend } from "@/server/pty/ptyBackend";
 import {
   getScreenPreviewFromScrollback,
@@ -24,6 +25,14 @@ interface PtySession {
 type DataCallback = (data: string) => void;
 type ExitCallback = (exitCode: number) => void;
 
+function defaultShell(): string {
+  const configured = process.env.SHELL?.trim();
+  if (configured) return configured;
+  if (process.platform === "darwin" && existsSync("/bin/zsh"))
+    return "/bin/zsh";
+  return DEFAULT_SHELL;
+}
+
 function desktopPath(): string {
   if (process.platform !== "darwin") return process.env.PATH ?? "";
   const pathParts = [
@@ -42,6 +51,13 @@ function desktopPath(): string {
     .flatMap((value) => value.split(":"));
 
   return Array.from(new Set(pathParts)).join(":");
+}
+
+function formatSpawnError(error: unknown, command: string, cwd: string): Error {
+  const detail = error instanceof Error ? error.message : String(error);
+  return new Error(
+    `Failed to start PTY command "${command}" in "${cwd}": ${detail}`,
+  );
 }
 
 export interface CreateOptions {
@@ -68,12 +84,13 @@ class PtyManager implements PtyBackend {
     const rows = opts.rows ?? DEFAULT_ROWS;
     const cwd = opts.cwd ?? process.env.HOME ?? "/";
 
-    const command = opts.command ?? DEFAULT_SHELL;
+    const command = opts.command ?? defaultShell();
     const args = opts.args ?? [];
     const env: Record<string, string> = {
       ...(process.env as Record<string, string>),
       ...(opts.env ?? {}),
       PATH: opts.env?.PATH ?? desktopPath(),
+      SHELL: process.env.SHELL ?? defaultShell(),
     };
     delete env.ELECTRON_RUN_AS_NODE;
     delete env.NODE_PATH;
@@ -88,10 +105,7 @@ class PtyManager implements PtyBackend {
         env,
       });
     } catch (error) {
-      const detail = error instanceof Error ? error.message : String(error);
-      throw new Error(
-        `Failed to start PTY command "${command}" in "${cwd}": ${detail}`,
-      );
+      throw formatSpawnError(error, command, cwd);
     }
 
     const session: PtySession = {

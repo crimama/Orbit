@@ -3,17 +3,48 @@
   "version": "0.1.0",
   "private": true,
   "bin": {
-    "orbit": "./bin/orbit.ts"
+    "orbit": "./bin/orbit.mjs"
   },
+  "files": [
+    "assets/",
+    "bin/",
+    "docs/",
+    "electron/",
+    "electron-builder.local.yml",
+    "electron-builder.remote.yml",
+    "middleware.ts",
+    "next.config.mjs",
+    "postcss.config.mjs",
+    "prisma/",
+    "public/",
+    "scripts/",
+    "server.ts",
+    "src/",
+    "tailwind.config.ts",
+    "tsconfig*.json"
+  ],
   "scripts": {
     "dev": "rm -rf .next && tsx watch --tsconfig tsconfig.server.json server.ts",
     "dev:tailnet": "bash scripts/run-tailscale.sh",
     "access:code": "bash scripts/access-code.sh",
+    "orbit": "node bin/orbit.mjs",
     "build": "next build",
     "start": "NODE_ENV=production tsx --tsconfig tsconfig.server.json server.ts",
     "lint": "next lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "desktop:dev": "node scripts/desktop-dev.mjs",
+    "desktop:typecheck": "node scripts/desktop-typecheck.mjs",
+    "desktop:electron-build": "node scripts/desktop-electron-build.mjs",
+    "desktop:local-server-build": "node scripts/desktop-local-server-build.mjs",
+    "desktop:rebuild:local-native": "node scripts/desktop-rebuild-local-native.mjs",
+    "desktop:smoke": "node scripts/desktop-smoke.mjs",
+    "desktop:package-smoke": "node scripts/desktop-package-smoke.mjs",
+    "desktop:build": "npm run desktop:typecheck && npm run desktop:smoke && npm run desktop:package-smoke",
+    "desktop:pack:remote": "npm run desktop:build && npm run desktop:electron-build && electron-builder --mac dir --arm64 --config electron-builder.remote.yml",
+    "desktop:pack:remote:zip": "npm run desktop:build && npm run desktop:electron-build && electron-builder --mac zip --arm64 --config electron-builder.remote.yml",
+    "desktop:pack:local": "npm run build && npm run desktop:build && npm run desktop:local-server-build && npm run desktop:electron-build && npm run desktop:rebuild:local-native && electron-builder --mac dir --arm64 --config electron-builder.local.yml",
+    "desktop:preview": "npm run build && npm run desktop:build"
   },
   "dependencies": {
     "@codemirror/lang-css": "^6.3.1",
@@ -49,6 +80,9 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/ssh2": "^1.15.5",
+    "concurrently": "^9.2.1",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
     "eslint-config-prettier": "^10.1.8",
@@ -57,6 +91,8 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.21.0",
-    "typescript": "^5"
-  }
+    "typescript": "^5",
+    "wait-on": "^9.0.5"
+  },
+  "main": "electron/bootstrap.cjs"
 }

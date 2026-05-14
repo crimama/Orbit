@@ -1,0 +1,31 @@
+appId: app.orbit.desktop
+productName: Orbit
+artifactName: "${productName}-${version}-local-${os}-${arch}.${ext}"
+directories:
+  output: dist-packaged-local
+files:
+  - dist-electron/**/*
+  - dist/**/*
+  - .next/**/*
+  - public/**/*
+  - scripts/desktop-db-bootstrap.mjs
+  - prisma/schema.prisma
+  - package.json
+  - from: node_modules/.prisma
+    to: node_modules/.prisma
+    filter:
+      - "**/*"
+extraMetadata:
+  main: dist-electron/main.js
+mac:
+  category: public.app-category.developer-tools
+  hardenedRuntime: false
+  gatekeeperAssess: false
+  icon: assets/desktop/orbit-icon.png
+  identity: null
+  target:
+    - target: dir
+      arch:
+        - arm64
+asar: false
+npmRebuild: false

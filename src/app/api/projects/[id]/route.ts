@@ -17,7 +17,13 @@ export async function GET(
 ) {
   const project = await prisma.project.findUnique({
     where: { id: params.id },
-    include: { _count: { select: { sessions: true } } },
+    include: {
+      _count: { select: { sessions: true } },
+      sessions: {
+        where: { status: "active" },
+        select: { id: true },
+      },
+    },
   });
 
   if (!project) {
@@ -32,7 +38,9 @@ export async function GET(
     path: project.path,
     sshConfigId: project.sshConfigId,
     dockerContainer: project.dockerContainer,
-    sessionCount: project._count.sessions,
+    activeSessionCount: project.sessions.length,
+    totalSessionCount: project._count.sessions,
+    sessionCount: project.sessions.length,
     createdAt: project.createdAt.toISOString(),
     updatedAt: project.updatedAt.toISOString(),
   };
@@ -104,7 +112,13 @@ export async function PATCH(
           ? { dockerContainer: dockerContainer || null }
           : {}),
       },
-      include: { _count: { select: { sessions: true } } },
+      include: {
+        _count: { select: { sessions: true } },
+        sessions: {
+          where: { status: "active" },
+          select: { id: true },
+        },
+      },
     });
 
     const data: ProjectInfo = {
@@ -115,7 +129,9 @@ export async function PATCH(
       path: project.path,
       sshConfigId: project.sshConfigId,
       dockerContainer: project.dockerContainer,
-      sessionCount: project._count.sessions,
+      activeSessionCount: project.sessions.length,
+      totalSessionCount: project._count.sessions,
+      sessionCount: project.sessions.length,
       createdAt: project.createdAt.toISOString(),
       updatedAt: project.updatedAt.toISOString(),
     };
