@@ -41,6 +41,14 @@ orbit access-code show
 orbit doctor
 ```
 
+기본 SQLite DB는 `.env`의 `DATABASE_URL`로 정합니다. 소스 체크아웃에서 쓰는 표준값은 아래와 같습니다.
+
+```env
+DATABASE_URL="file:./orbit.db"
+```
+
+Prisma 기준 상대 경로이므로 실제 파일은 `prisma/orbit.db`입니다. `orbit start server`, `orbit start server --tailnet`, `orbit install mac-app`, `orbit doctor`는 shell 환경변수의 `DATABASE_URL`을 먼저 보고, 없으면 `.env.local`, `.env` 값을 사용합니다.
+
 ## 1. 원격 서버에 Mac 앱으로 접속
 
 서버나 데스크탑에서 Orbit 백엔드를 실행하고, Mac 앱은 클라이언트처럼 접속하는 방식입니다. 여러 기기에서 같은 Orbit에 들어가려면 이 방식을 권장합니다.
@@ -219,6 +227,13 @@ SQLite schema가 아직 적용되지 않은 상태입니다.
 
 ```bash
 orbit start server
+```
+
+`orbit doctor`에서 표시되는 DB가 기대한 파일인지도 같이 확인합니다. 표준 설정이면 다음처럼 보여야 합니다.
+
+```txt
+Database source: .env
+Database URL - file:./orbit.db -> .../prisma/orbit.db
 ```
 
 ### Mac 로컬 세션이 바로 꺼짐

@@ -66,16 +66,66 @@ function valueAfter(args, name) {
   return args[index + 1] ?? null;
 }
 
+function parseEnvFile(path) {
+  if (!existsSync(path)) return {};
+  const parsed = {};
+  for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const match = /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(
+      trimmed,
+    );
+    if (!match) continue;
+    let value = match[2].trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    } else {
+      const commentIndex = value.indexOf(" #");
+      if (commentIndex !== -1) value = value.slice(0, commentIndex).trim();
+    }
+    parsed[match[1]] = value;
+  }
+  return parsed;
+}
+
+function projectEnv() {
+  return {
+    ...parseEnvFile(join(root, ".env")),
+    ...parseEnvFile(join(root, ".env.local")),
+  };
+}
+
 function databaseEnv() {
-  const configured = process.env.DATABASE_URL?.trim();
+  const configured =
+    process.env.DATABASE_URL?.trim() || projectEnv().DATABASE_URL?.trim();
   return {
     DATABASE_URL: configured || "file:./orbit.db",
   };
 }
 
-function ensureDatabase() {
-  run(npxCommand, ["prisma", "generate"], { env: databaseEnv() });
-  run(npxCommand, ["prisma", "db", "push"], { env: databaseEnv() });
+function databaseSource() {
+  if (process.env.DATABASE_URL?.trim()) return "shell";
+  if (projectEnv().DATABASE_URL?.trim()) return ".env";
+  return "default";
+}
+
+function safeDatabaseUrlForLog(databaseUrl) {
+  if (databaseUrl.startsWith("file:")) return databaseUrl;
+  try {
+    const url = new URL(databaseUrl);
+    if (url.password) url.password = "****";
+    return url.toString();
+  } catch {
+    return "<configured>";
+  }
+}
+
+function ensureDatabase(env) {
+  run(npxCommand, ["prisma", "generate"], { env });
+  run(npxCommand, ["prisma", "db", "push"], { env });
 }
 
 function startServer(args) {
@@ -96,8 +146,13 @@ Options:
   const port = valueAfter(args, "--port");
   if (port) env.PORT = port;
 
+  console.log(
+    `Orbit server database: ${safeDatabaseUrlForLog(env.DATABASE_URL)} (${databaseSource()})`,
+  );
+  if (env.PORT) console.log(`Orbit server port: ${env.PORT}`);
+
   if (!hasFlag(args, "--skip-db")) {
-    ensureDatabase();
+    ensureDatabase(env);
   }
 
   if (hasFlag(args, "--tailnet")) {
@@ -249,7 +304,7 @@ function sqlitePathFromDatabaseUrl(databaseUrl) {
   const value = databaseUrl?.trim() || "file:./orbit.db";
   if (!value.startsWith("file:")) return null;
   const rawPath = value.slice("file:".length);
-  return isAbsolute(rawPath) ? rawPath : resolve(root, rawPath);
+  return isAbsolute(rawPath) ? rawPath : resolve(root, "prisma", rawPath);
 }
 
 function packageVersion() {
@@ -303,6 +358,7 @@ access code, ports, and agent CLI availability without changing files.
 
   console.log(`Orbit doctor (${packageVersion()})`);
   console.log(`Root: ${root}`);
+  console.log(`Database source: ${databaseSource()}`);
   console.log("");
 
   printCheck("Node", Boolean(nodeVersion), nodeVersion ?? "not found");
