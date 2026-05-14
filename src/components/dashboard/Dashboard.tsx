@@ -11,7 +11,6 @@ import InterceptorBanner from "./InterceptorBanner";
 import InterceptorModal from "./InterceptorModal";
 import BorderlessWorkspace from "./BorderlessWorkspace";
 import SshVaultPanel from "./SshVaultPanel";
-import CostDashboard from "./CostDashboard";
 import AgentRunsPanel from "./AgentRunsPanel";
 import AuditLogPanel from "./AuditLogPanel";
 import { usePendingApprovals } from "@/lib/hooks/usePendingApprovals";
@@ -1700,8 +1699,6 @@ export default function Dashboard() {
                     selectedProject || inlineSessionId ? "hidden" : ""
                   }`}
                 >
-                  <CostDashboard />
-
                   <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 p-3">
                     <div className="mb-2 text-xs text-neutral-500">
                       Quick Session Launch
