@@ -25,6 +25,7 @@
   ],
   "scripts": {
     "dev": "rm -rf .next && tsx watch --tsconfig tsconfig.server.json server.ts",
+    "postinstall": "node scripts/setup-orbit-cli.mjs",
     "dev:tailnet": "bash scripts/run-tailscale.sh",
     "access:code": "bash scripts/access-code.sh",
     "orbit": "node bin/orbit.mjs",
