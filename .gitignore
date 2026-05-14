@@ -39,6 +39,9 @@ next-env.d.ts
 # prisma
 prisma/*.db
 prisma/*.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
+prisma/*.db.backup-*
 
 # build output
 /dist
