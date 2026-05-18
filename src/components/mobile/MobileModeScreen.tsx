@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import MobileFilesPanel from "@/components/mobile/MobileFilesPanel";
 import MobileTerminalShell from "@/components/mobile/MobileTerminalShell";
 import Button from "@/components/ui/Button";
 import { useSocket } from "@/lib/useSocket";
@@ -17,6 +18,7 @@ const ACTIVE_SESSION_STORAGE_KEY = "orbit:mobile:active-session";
 
 type ControlState = "browse" | "terminal";
 type MobileSessionAgent = "terminal" | "claude-code" | "codex" | "opencode";
+type BrowseTab = "sessions" | "files";
 
 const MOBILE_AGENT_OPTIONS: Array<{
   value: MobileSessionAgent;
@@ -60,6 +62,10 @@ function dedupeById<T extends { id: string }>(items: T[]): T[] {
   return Array.from(new Map(items.map((item) => [item.id, item])).values());
 }
 
+function sessionLabel(session: SessionInfo): string {
+  return session.name?.trim() || `${session.agentType} session`;
+}
+
 export default function MobileModeScreen() {
   const { socket, connected, backgrounded } = useSocket();
   const [projects, setProjects] = useState<ProjectInfo[]>([]);
@@ -77,6 +83,7 @@ export default function MobileModeScreen() {
   >("idle");
   const [selectedAgent, setSelectedAgent] =
     useState<MobileSessionAgent>("claude-code");
+  const [browseTab, setBrowseTab] = useState<BrowseTab>("sessions");
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
 
@@ -107,6 +114,16 @@ export default function MobileModeScreen() {
 
   const isOffline = !online;
   const isBusy = mutationState !== "idle";
+  const selectedProjectSessions = useMemo(
+    () =>
+      sessions.filter(
+        (session) =>
+          session.projectId === selectedProjectId &&
+          session.source !== "claude-history" &&
+          session.status === "active",
+      ),
+    [selectedProjectId, sessions],
+  );
 
   const fetchProjects = useCallback(async () => {
     setProjectsLoading(true);
@@ -236,6 +253,15 @@ export default function MobileModeScreen() {
     setError(null);
     setSelectedProjectId(projectId);
     setControlState("browse");
+  }, []);
+
+  const handleOpenSession = useCallback((session: SessionInfo) => {
+    setError(null);
+    setSelectedProjectId(session.projectId);
+    writeStorage(SELECTED_PROJECT_STORAGE_KEY, session.projectId);
+    setBoundSessionId(session.id);
+    writeStorage(ACTIVE_SESSION_STORAGE_KEY, session.id);
+    setControlState("terminal");
   }, []);
 
   const handleStart = useCallback(async () => {
@@ -373,8 +399,7 @@ export default function MobileModeScreen() {
           </div>
         </div>
         <p className="mt-2 text-sm text-neutral-500">
-          Start one session at a time, use the live terminal, and stop it when
-          you’re done.
+          Open active sessions, start new terminals, and inspect project files.
         </p>
       </div>
 
@@ -401,7 +426,7 @@ export default function MobileModeScreen() {
               </div>
               <div className="truncate text-xs text-neutral-500">
                 {activeSession
-                  ? (activeSession.name ?? `${activeSession.agentType} session`)
+                  ? sessionLabel(activeSession)
                   : "Preparing your mobile session…"}
               </div>
             </div>
@@ -442,159 +467,268 @@ export default function MobileModeScreen() {
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-4">
-          <div className="mb-4" data-testid="mobile-project-list">
-            <h2 className="mb-2 text-sm font-medium text-neutral-300">
-              Projects
-            </h2>
-            <div className="space-y-2">
-              {projectsLoading ? (
-                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-5 text-sm text-neutral-500">
-                  Loading projects…
-                </div>
-              ) : projects.length === 0 ? (
-                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-5 text-sm text-neutral-500">
-                  No projects available yet.
-                </div>
-              ) : (
-                projects.map((project) => {
-                  const isSelected = project.id === selectedProjectId;
-                  return (
-                    <button
-                      key={project.id}
-                      type="button"
-                      onClick={() => handleSelectProject(project.id)}
-                      className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-                        isSelected
-                          ? "border-orbit-accent-primary bg-neutral-900"
-                          : "border-neutral-800 bg-neutral-900/60"
-                      }`}
-                      data-testid={`mobile-project-card-${project.id}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="h-3 w-3 rounded-full"
-                          style={{ backgroundColor: project.color }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-neutral-100">
-                            {project.name}
-                          </div>
-                          <div className="text-xs text-neutral-500">
-                            {project.sessionCount} active session
-                            {project.sessionCount === 1 ? "" : "s"}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
+          <div className="mb-4 grid grid-cols-2 rounded-lg border border-neutral-800 bg-neutral-900/60 p-1">
+            {(["sessions", "files"] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setBrowseTab(tab)}
+                className={`min-h-10 rounded-md text-sm font-medium capitalize ${
+                  browseTab === tab
+                    ? "bg-neutral-100 text-neutral-950"
+                    : "text-neutral-400 active:bg-neutral-800"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          <section
-            className="rounded-2xl border border-neutral-800 bg-neutral-900/60 px-4 py-4"
-            data-testid="mobile-session-controls"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-medium text-neutral-200">
-                  Session
-                </h2>
-                <p className="mt-1 text-xs text-neutral-500">
-                  {selectedProject
-                    ? boundSessionId &&
-                      activeSession &&
-                      activeSession.projectId !== selectedProject.id
-                      ? `A session is already active in ${activeSession.projectName}. Re-enter or stop it before starting another.`
-                      : `Use ${selectedProject.name} as the current mobile workspace.`
-                    : "Select a project to start a terminal session."}
-                </p>
-              </div>
-              <div className="rounded-full bg-neutral-800 px-2.5 py-1 text-[11px] text-neutral-400">
-                {sessionsLoading
-                  ? "Loading"
-                  : activeSession
-                    ? activeSession.status === "active"
-                      ? "Active"
-                      : activeSession.status
-                    : "Idle"}
-              </div>
-            </div>
-
-            {selectedProject ? (
-              <div className="mt-4 rounded-xl border border-neutral-800 bg-neutral-950/70 px-4 py-3">
-                <div className="text-sm font-medium text-neutral-100">
-                  {selectedProject.name}
+          {browseTab === "files" ? (
+            <MobileFilesPanel
+              projectId={selectedProject?.id ?? null}
+              projectName={selectedProject?.name ?? null}
+            />
+          ) : (
+            <>
+              <section className="mb-5" data-testid="mobile-active-sessions">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-medium text-neutral-300">
+                    Active sessions
+                  </h2>
+                  <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-[11px] text-neutral-500">
+                    {activeSessions.length}
+                  </span>
                 </div>
-                <div className="mt-1 text-xs text-neutral-500">
-                  {activeSession
-                    ? `${activeSession.name ?? activeSession.agentType} is ready in ${activeSession.projectName}.`
-                    : "No active mobile session yet."}
+                <div className="space-y-2">
+                  {activeSessions.length === 0 ? (
+                    <div className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-3 py-4 text-sm text-neutral-500">
+                      No sessions are running.
+                    </div>
+                  ) : (
+                    activeSessions.map((session) => {
+                      const isBound = activeSession?.id === session.id;
+                      return (
+                        <button
+                          key={session.id}
+                          type="button"
+                          onClick={() => handleOpenSession(session)}
+                          className={`w-full rounded-lg border px-3 py-3 text-left transition ${
+                            isBound
+                              ? "border-orbit-accent-primary bg-neutral-900"
+                              : "border-neutral-800 bg-neutral-900/60 active:bg-neutral-900"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="h-2.5 w-2.5 shrink-0 rounded-full"
+                              style={{ backgroundColor: session.projectColor }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium text-neutral-100">
+                                {sessionLabel(session)}
+                              </div>
+                              <div className="mt-0.5 truncate text-xs text-neutral-500">
+                                {session.projectName} · {session.agentType}
+                              </div>
+                            </div>
+                            <span className="rounded bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-300">
+                              Live
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
-              </div>
-            ) : null}
+              </section>
 
-            <div className="mt-4">
-              <label
-                htmlFor="mobile-agent-select"
-                className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-neutral-500"
-              >
-                Session agent
-              </label>
-              <select
-                id="mobile-agent-select"
-                value={selectedAgent}
-                onChange={(e) =>
-                  setSelectedAgent(e.target.value as MobileSessionAgent)
-                }
-                className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-3 text-sm text-neutral-200 focus:border-border-focus focus:outline-none"
-                data-testid="mobile-agent-select"
-              >
-                {MOBILE_AGENT_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+              <section className="mb-5" data-testid="mobile-project-list">
+                <div className="mb-2 flex items-center justify-between">
+                  <h2 className="text-sm font-medium text-neutral-300">
+                    Projects
+                  </h2>
+                  <span className="text-[11px] text-neutral-500">
+                    {projects.length}
+                  </span>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {projectsLoading ? (
+                    <div className="min-w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-5 text-sm text-neutral-500">
+                      Loading projects…
+                    </div>
+                  ) : projects.length === 0 ? (
+                    <div className="min-w-full rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-5 text-sm text-neutral-500">
+                      No projects available yet.
+                    </div>
+                  ) : (
+                    projects.map((project) => {
+                      const isSelected = project.id === selectedProjectId;
+                      return (
+                        <button
+                          key={project.id}
+                          type="button"
+                          onClick={() => handleSelectProject(project.id)}
+                          className={`min-w-44 rounded-lg border px-3 py-3 text-left transition ${
+                            isSelected
+                              ? "border-orbit-accent-primary bg-neutral-900"
+                              : "border-neutral-800 bg-neutral-900/60"
+                          }`}
+                          data-testid={`mobile-project-card-${project.id}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <span
+                              className="h-3 w-3 rounded-full"
+                              style={{ backgroundColor: project.color }}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate text-sm font-medium text-neutral-100">
+                                {project.name}
+                              </div>
+                              <div className="text-xs text-neutral-500">
+                                {project.sessionCount} active session
+                                {project.sessionCount === 1 ? "" : "s"}
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </section>
 
-            <div className="mt-4 flex flex-col gap-3">
-              <Button
-                size="lg"
-                onClick={() => void handleStart()}
-                disabled={!selectedProject || isBusy || isOffline}
-                data-testid="mobile-start-button"
+              <section
+                className="rounded-lg border border-neutral-800 bg-neutral-900/60 px-4 py-4"
+                data-testid="mobile-session-controls"
               >
-                {mutationState === "starting"
-                  ? "Starting…"
-                  : activeSession
-                    ? `Re-enter current ${activeSession.agentType} session`
-                    : `Start ${MOBILE_AGENT_OPTIONS.find((option) => option.value === selectedAgent)?.label ?? "session"}`}
-              </Button>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-medium text-neutral-200">
+                      Session
+                    </h2>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      {selectedProject
+                        ? boundSessionId &&
+                          activeSession &&
+                          activeSession.projectId !== selectedProject.id
+                          ? `A session is already active in ${activeSession.projectName}. Re-enter or stop it before starting another.`
+                          : `Use ${selectedProject.name} as the current mobile workspace.`
+                        : "Select a project to start a terminal session."}
+                    </p>
+                  </div>
+                  <div className="rounded-full bg-neutral-800 px-2.5 py-1 text-[11px] text-neutral-400">
+                    {sessionsLoading
+                      ? "Loading"
+                      : activeSession
+                        ? activeSession.status === "active"
+                          ? "Active"
+                          : activeSession.status
+                        : "Idle"}
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="secondary"
-                  size="lg"
-                  onClick={handleReenter}
-                  disabled={!activeSession || isBusy}
-                  data-testid="mobile-reenter-button"
-                >
-                  Re-enter
-                </Button>
-                <Button
-                  variant="danger"
-                  size="lg"
-                  onClick={() => void handleStop()}
-                  disabled={!activeSession || isBusy || isOffline}
-                  data-testid="mobile-stop-button"
-                >
-                  {mutationState === "stopping" ? "Stopping…" : "Stop"}
-                </Button>
-              </div>
-            </div>
-          </section>
+                {selectedProject ? (
+                  <div className="mt-4 rounded-lg border border-neutral-800 bg-neutral-950/70 px-4 py-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-medium text-neutral-100">
+                          {selectedProject.name}
+                        </div>
+                        <div className="mt-1 text-xs text-neutral-500">
+                          {selectedProjectSessions.length} active session
+                          {selectedProjectSessions.length === 1 ? "" : "s"}
+                        </div>
+                      </div>
+                      <span
+                        className="h-3 w-3 shrink-0 rounded-full"
+                        style={{ backgroundColor: selectedProject.color }}
+                      />
+                    </div>
+                    {selectedProjectSessions.length > 0 ? (
+                      <div className="mt-3 space-y-2">
+                        {selectedProjectSessions.map((session) => (
+                          <button
+                            key={session.id}
+                            type="button"
+                            onClick={() => handleOpenSession(session)}
+                            className="flex w-full items-center justify-between gap-3 rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 text-left active:bg-neutral-800"
+                          >
+                            <span className="min-w-0 truncate text-sm text-neutral-200">
+                              {sessionLabel(session)}
+                            </span>
+                            <span className="text-[11px] text-neutral-500">
+                              Open
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <div className="mt-4">
+                  <label
+                    htmlFor="mobile-agent-select"
+                    className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-neutral-500"
+                  >
+                    Session agent
+                  </label>
+                  <select
+                    id="mobile-agent-select"
+                    value={selectedAgent}
+                    onChange={(e) =>
+                      setSelectedAgent(e.target.value as MobileSessionAgent)
+                    }
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-3 text-sm text-neutral-200 focus:border-border-focus focus:outline-none"
+                    data-testid="mobile-agent-select"
+                  >
+                    {MOBILE_AGENT_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mt-4 flex flex-col gap-3">
+                  <Button
+                    size="lg"
+                    onClick={() => void handleStart()}
+                    disabled={!selectedProject || isBusy || isOffline}
+                    data-testid="mobile-start-button"
+                  >
+                    {mutationState === "starting"
+                      ? "Starting…"
+                      : activeSession
+                        ? `Re-enter current ${activeSession.agentType} session`
+                        : `Start ${MOBILE_AGENT_OPTIONS.find((option) => option.value === selectedAgent)?.label ?? "session"}`}
+                  </Button>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="secondary"
+                      size="lg"
+                      onClick={handleReenter}
+                      disabled={!activeSession || isBusy}
+                      data-testid="mobile-reenter-button"
+                    >
+                      Re-enter
+                    </Button>
+                    <Button
+                      variant="danger"
+                      size="lg"
+                      onClick={() => void handleStop()}
+                      disabled={!activeSession || isBusy || isOffline}
+                      data-testid="mobile-stop-button"
+                    >
+                      {mutationState === "stopping" ? "Stopping…" : "Stop"}
+                    </Button>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
         </div>
       )}
     </main>
