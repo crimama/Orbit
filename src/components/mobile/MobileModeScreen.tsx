@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import MobileChatTerminal from "@/components/terminal/MobileChatTerminal";
+import MobileTerminalShell from "@/components/mobile/MobileTerminalShell";
 import Button from "@/components/ui/Button";
 import { useSocket } from "@/lib/useSocket";
 import type {
@@ -15,7 +15,7 @@ import type {
 const SELECTED_PROJECT_STORAGE_KEY = "orbit:mobile:selected-project";
 const ACTIVE_SESSION_STORAGE_KEY = "orbit:mobile:active-session";
 
-type ControlState = "browse" | "chat";
+type ControlState = "browse" | "terminal";
 type MobileSessionAgent = "terminal" | "claude-code" | "codex" | "opencode";
 
 const MOBILE_AGENT_OPTIONS: Array<{
@@ -224,10 +224,10 @@ export default function MobileModeScreen() {
   }, []);
 
   useEffect(() => {
-    if (activeSession && controlState !== "chat") {
+    if (activeSession && controlState !== "terminal") {
       return;
     }
-    if (!activeSession && controlState === "chat" && !boundSessionId) {
+    if (!activeSession && controlState === "terminal" && !boundSessionId) {
       setControlState("browse");
     }
   }, [activeSession, boundSessionId, controlState]);
@@ -241,7 +241,7 @@ export default function MobileModeScreen() {
   const handleStart = useCallback(async () => {
     if (!selectedProjectId || isBusy || isOffline) return;
     if (activeSession) {
-      setControlState("chat");
+      setControlState("terminal");
       return;
     }
 
@@ -265,7 +265,7 @@ export default function MobileModeScreen() {
 
       setBoundSessionId(json.data.id);
       writeStorage(ACTIVE_SESSION_STORAGE_KEY, json.data.id);
-      setControlState("chat");
+      setControlState("terminal");
       await fetchAllSessions();
       await fetchSessions(selectedProjectId);
       await fetchProjects();
@@ -331,10 +331,10 @@ export default function MobileModeScreen() {
     if (!activeSession) return;
     setBoundSessionId(activeSession.id);
     writeStorage(ACTIVE_SESSION_STORAGE_KEY, activeSession.id);
-    setControlState("chat");
+    setControlState("terminal");
   }, [activeSession]);
 
-  const handleChatExit = useCallback(() => {
+  const handleTerminalExit = useCallback(() => {
     setControlState("browse");
     if (selectedProjectId) {
       void fetchSessions(selectedProjectId);
@@ -373,8 +373,8 @@ export default function MobileModeScreen() {
           </div>
         </div>
         <p className="mt-2 text-sm text-neutral-500">
-          Start one session at a time, chat with it, and stop it when you’re
-          done.
+          Start one session at a time, use the live terminal, and stop it when
+          you’re done.
         </p>
       </div>
 
@@ -387,10 +387,10 @@ export default function MobileModeScreen() {
         </div>
       ) : null}
 
-      {controlState === "chat" && (activeSession || boundSessionId) ? (
+      {controlState === "terminal" && (activeSession || boundSessionId) ? (
         <div
           className="flex min-h-0 flex-1 flex-col"
-          data-testid="mobile-chat-shell"
+          data-testid="mobile-terminal-shell"
         >
           <div className="flex items-center justify-between gap-2 border-b border-neutral-800 px-4 py-3">
             <div className="min-w-0">
@@ -409,7 +409,7 @@ export default function MobileModeScreen() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={handleChatExit}
+                onClick={handleTerminalExit}
                 data-testid="mobile-back-button"
               >
                 Back
@@ -427,12 +427,11 @@ export default function MobileModeScreen() {
           </div>
           <div className="min-h-0 flex-1">
             {activeSession && socket ? (
-              <MobileChatTerminal
+              <MobileTerminalShell
                 sessionId={activeSession.id}
                 socket={socket}
                 connected={connected}
-                yoloMode={false}
-                onExit={handleChatExit}
+                onExit={handleTerminalExit}
               />
             ) : (
               <div className="flex h-full items-center justify-center px-6 text-sm text-neutral-500">
@@ -509,7 +508,7 @@ export default function MobileModeScreen() {
                       activeSession.projectId !== selectedProject.id
                       ? `A session is already active in ${activeSession.projectName}. Re-enter or stop it before starting another.`
                       : `Use ${selectedProject.name} as the current mobile workspace.`
-                    : "Select a project to start chatting."}
+                    : "Select a project to start a terminal session."}
                 </p>
               </div>
               <div className="rounded-full bg-neutral-800 px-2.5 py-1 text-[11px] text-neutral-400">

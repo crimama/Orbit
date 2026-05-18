@@ -6,6 +6,7 @@ interface VirtualKeyboardProps {
   onKey: (data: string) => void;
   visible: boolean;
   applicationCursorMode?: boolean;
+  defaultExpanded?: boolean;
 }
 
 type ModifierMode = "off" | "oneshot" | "locked";
@@ -31,10 +32,11 @@ export default function VirtualKeyboard({
   onKey,
   visible,
   applicationCursorMode = false,
+  defaultExpanded = true,
 }: VirtualKeyboardProps) {
   const [ctrlMode, setCtrlMode] = useState<ModifierMode>("off");
   const [altMode, setAltMode] = useState<ModifierMode>("off");
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(defaultExpanded);
   const [pressedKey, setPressedKey] = useState<string | null>(null);
 
   const pressTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
